@@ -44,6 +44,13 @@ final class OTE_Departures {
 			KEY tour_status_date (tour_id,status,start_date)
 		) {$charset};";
 		dbDelta( $sql );
+		update_option( 'ote_departures_db_version', '1' );
+	}
+
+	public function maybe_install() {
+		if ( '1' !== get_option( 'ote_departures_db_version' ) ) {
+			self::install();
+		}
 	}
 
 	public function admin_menu() {
