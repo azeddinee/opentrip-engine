@@ -31,7 +31,7 @@ Edit a tour and enter one item per line in the Tour Inclusions & Exclusions pane
 
 == Tour Reviews & Ratings ==
 
-Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings and includes only a basic honeypot spam check.
+Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings and includes only a basic honeypot spam check. Booking and review records are restricted to users with site-administrator permissions.
 
 == Tour Photo Gallery ==
 
