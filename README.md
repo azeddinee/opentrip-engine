@@ -38,7 +38,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
 - Booking and review data are available through WordPress privacy export and erasure tools.
 
-## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for content types, shortcode output/escaping, real database inventory, failed seat-release transitions, and privacy export/erasure. The PHP syntax and smoke-test jobs run across PHP 7.4–8.3. The suite does not yet simulate simultaneous administrator confirmations or cover every form and email path. Review the Actions results before treating a commit as verified.\n\n## Requirements
+## Testing
+
+Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for content types, shortcode output/escaping, real database inventory, failed seat-release transitions, and privacy export/erasure. The PHP syntax and smoke-test jobs run across PHP 7.4–8.3. The suite does not yet simulate simultaneous administrator confirmations or cover every form and email path. Review the Actions results before treating a commit as verified.\n\n## Requirements
 - WordPress 6.2+
 - PHP 7.4+
 
@@ -71,7 +73,7 @@ Edit a tour and use the **Tour Inclusions & Exclusions** panel. Enter one item p
 Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
-This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat inventory update is atomic at the database level, but simultaneous administrator confirmations have not yet been stress-tested.
+This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat inventory update is atomic at the database level, but simultaneous administrator confirmations have not yet been stress-tested. Public forms use a honeypot and input limits; they do not currently include CAPTCHA or request rate limiting.
 
 Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration is available; automated coverage is included for booking and review export/erasure. Site owners remain responsible for reviewing legal retention obligations and configuring their privacy policy.
 
