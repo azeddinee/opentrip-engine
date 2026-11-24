@@ -3,15 +3,15 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A lightweight tour catalogue and booking-request engine for WordPress.
+A lightweight tour catalogue, departure inventory and booking-request engine for WordPress.
 
 == Description ==
 
-Publish tours, organize destinations, display tour cards, collect booking requests, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, display tour cards, collect booking requests, manage dated departures and seat inventory, track request status and notify the site administrator without WooCommerce.
 
 == Installation ==
 
@@ -26,13 +26,22 @@ Publish tours, organize destinations, display tour cards, collect booking reques
 = Does it process payments? =
 No. Version 0.1.0 collects booking requests only.
 
+= How do departures and seats work? =
+Administrators create dated departures with a capacity. Customers select a departure when submitting a request. Requests reserve seats only after an administrator confirms them; cancelling a confirmed request releases its seats.
+
 = Can I track booking request status? =
 Yes. Administrators can mark requests Pending, Confirmed or Cancelled. These are internal statuses only.
 
-= Does it guarantee available places? =
-No. The capacity field is informational in this early version.
+= Does it process payments? =
+No. Version 0.3.0 manages departure seat inventory but does not collect payments.
+
+= Are pending requests holding seats? =
+No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.3.0 =
+* Add departure management, departure selection on booking forms and atomic seat reservation/release when confirming or cancelling requests.
 
 = 0.2.0 =
 * Add booking request status management, admin list columns, admin email notification and frontend styles.
