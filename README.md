@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.1 — release-candidate testing and compatibility checks.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 1.0.0-beta.2 — release-candidate testing and compatibility checks.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
