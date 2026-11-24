@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.7.0
+Stable tag: 0.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, collect moderated guest reviews and star ratings, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
 
 == Installation ==
 
@@ -28,6 +28,10 @@ Edit a tour and use the Day-by-Day Itinerary panel. Enter a JSON array with one 
 == Tour Inclusions & Exclusions ==
 
 Edit a tour and enter one item per line in the Tour Inclusions & Exclusions panel. Add [opentrip_inclusions] to the tour template or page to display the two lists, or use [opentrip_inclusions tour_id="123"] for a specific tour. Empty lists are hidden.
+
+== Tour Reviews & Ratings ==
+
+Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings and includes only a basic honeypot spam check.
 
 == Tour Photo Gallery ==
 
@@ -54,6 +58,11 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.8.0 =
+* Add visitor review submission, 1–5 star ratings and administrator moderation.
+* Add approved review display with average rating and review count.
+
 
 = 0.7.0 =
 * Add Media Library gallery picker and frontend gallery shortcode.
