@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.7.0
+ * Version: 0.8.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.7.0' );
+define( 'OTE_VERSION', '0.8.0' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -43,6 +43,9 @@ final class OpenTrip_Engine {
 		add_shortcode( 'opentrip_tours', array( $this, 'tours_shortcode' ) );
 		add_shortcode( 'opentrip_booking_form', array( $this, 'booking_shortcode' ) );
 		add_action( 'init', array( $this, 'handle_booking' ) );
+		add_shortcode( 'opentrip_reviews', array( $this, 'reviews_shortcode' ) );
+		add_shortcode( 'opentrip_review_form', array( $this, 'review_form_shortcode' ) );
+		add_action( 'init', array( $this, 'handle_review_submission' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_booking_meta_box' ) );
 		add_action( 'save_post_ote_booking', array( $this, 'save_booking_status' ) );
 		add_filter( 'manage_ote_booking_posts_columns', array( $this, 'booking_columns' ) );
@@ -100,6 +103,20 @@ final class OpenTrip_Engine {
 			'show_ui' => true,
 			'show_in_menu' => 'edit.php?post_type=ote_tour',
 			'supports' => array( 'title' ),
+			'capability_type' => 'post',
+			'map_meta_cap' => true,
+		) );
+
+		register_post_type( 'ote_review', array(
+			'labels' => array(
+				'name' => __( 'Tour Reviews', 'opentrip-engine' ),
+				'singular_name' => __( 'Tour Review', 'opentrip-engine' ),
+				'edit_item' => __( 'Moderate Tour Review', 'opentrip-engine' ),
+			),
+			'public' => false,
+			'show_ui' => true,
+			'show_in_menu' => 'edit.php?post_type=ote_tour',
+			'supports' => array( 'title', 'editor' ),
 			'capability_type' => 'post',
 			'map_meta_cap' => true,
 		) );
@@ -695,6 +712,116 @@ final class OpenTrip_Engine {
 		<p class="description"><?php esc_html_e( 'This is an internal request status. It does not take payment or guarantee availability.', 'opentrip-engine' ); ?></p>
 		<?php
 	}
+
+	public function review_form_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'tour_id' => 0 ), $atts, 'opentrip_review_form' );
+		$tour_id = absint( $atts['tour_id'] );
+		if ( ! $tour_id && is_singular( 'ote_tour' ) ) {
+			$tour_id = get_the_ID();
+		}
+		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
+			return '';
+		}
+		ob_start();
+		if ( isset( $_GET['ote_review'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_review'] ) ) ) {
+			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
+		}
+		?>
+		<form method="post" class="ote-review-form">
+			<input type="hidden" name="ote_review_action" value="submit_review">
+			<input type="hidden" name="ote_review_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
+			<?php wp_nonce_field( 'ote_submit_review', 'ote_review_nonce' ); ?>
+			<p class="ote-review-trap" aria-hidden="true"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></p>
+			<p><label><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></label></p>
+			<p><label><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?><br><input required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></label></p>
+			<p><label><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?><br><select required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></label></p>
+			<p><label><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?><br><textarea required name="ote_review_content" rows="5" maxlength="5000"></textarea></label></p>
+			<p><button type="submit"><?php esc_html_e( 'Submit review', 'opentrip-engine' ); ?></button></p>
+		</form>
+		<?php
+		return ob_get_clean();
+	}
+
+	public function handle_review_submission() {
+		if ( empty( $_POST['ote_review_action'] ) || 'submit_review' !== sanitize_key( wp_unslash( $_POST['ote_review_action'] ) ) ) {
+			return;
+		}
+		if ( ! isset( $_POST['ote_review_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_review_nonce'] ) ), 'ote_submit_review' ) ) {
+			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
+		}
+		if ( ! empty( $_POST['ote_website'] ) ) {
+			wp_die( esc_html__( 'Your review could not be submitted.', 'opentrip-engine' ), 400 );
+		}
+		$tour_id = isset( $_POST['ote_review_tour_id'] ) ? absint( $_POST['ote_review_tour_id'] ) : 0;
+		$name = isset( $_POST['ote_review_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_review_name'] ) ) : '';
+		$email = isset( $_POST['ote_review_email'] ) ? sanitize_email( wp_unslash( $_POST['ote_review_email'] ) ) : '';
+		$rating = isset( $_POST['ote_review_rating'] ) ? absint( $_POST['ote_review_rating'] ) : 0;
+		$content = isset( $_POST['ote_review_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_review_content'] ) ) : '';
+		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || ! is_email( $email ) || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
+			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), 400 );
+		}
+		$review_id = wp_insert_post( array(
+			'post_type' => 'ote_review',
+			'post_status' => 'pending',
+			'post_title' => sprintf( __( 'Review for %1$s by %2$s', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
+			'post_content' => $content,
+		), true );
+		if ( is_wp_error( $review_id ) ) {
+			wp_die( esc_html__( 'We could not save your review. Please try again later.', 'opentrip-engine' ), 500 );
+		}
+		update_post_meta( $review_id, '_ote_review_tour_id', $tour_id );
+		update_post_meta( $review_id, '_ote_review_name', $name );
+		update_post_meta( $review_id, '_ote_review_email', $email );
+		update_post_meta( $review_id, '_ote_review_rating', $rating );
+		$referer = wp_get_referer();
+		$redirect = $referer ? $referer : get_permalink( $tour_id );
+		wp_safe_redirect( add_query_arg( 'ote_review', 'received', $redirect ) );
+		exit;
+	}
+
+	public function reviews_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'tour_id' => 0, 'limit' => 10 ), $atts, 'opentrip_reviews' );
+		$tour_id = absint( $atts['tour_id'] );
+		if ( ! $tour_id && is_singular( 'ote_tour' ) ) {
+			$tour_id = get_the_ID();
+		}
+		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) ) {
+			return '';
+		}
+		$reviews = new WP_Query( array(
+			'post_type' => 'ote_review',
+			'post_status' => 'publish',
+			'posts_per_page' => min( 50, max( 1, absint( $atts['limit'] ) ) ),
+			'no_found_rows' => true,
+			'meta_query' => array( array( 'key' => '_ote_review_tour_id', 'value' => $tour_id, 'compare' => '=' ) ),
+		) );
+		if ( ! $reviews->have_posts() ) {
+			return '<section class="ote-reviews"><h2>' . esc_html__( 'Guest reviews', 'opentrip-engine' ) . '</h2><p>' . esc_html__( 'No approved reviews yet.', 'opentrip-engine' ) . '</p></section>';
+		}
+		$ratings = array();
+		foreach ( $reviews->posts as $review ) {
+			$ratings[] = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) );
+		}
+		$average = array_sum( $ratings ) / count( $ratings );
+		ob_start();
+		?>
+		<section class="ote-reviews">
+			<h2><?php esc_html_e( 'Guest reviews', 'opentrip-engine' ); ?></h2>
+			<p class="ote-review-summary"><strong><?php echo esc_html( number_format_i18n( $average, 1 ) ); ?>/5</strong> — <?php echo esc_html( sprintf( _n( '%d approved review', '%d approved reviews', count( $ratings ), 'opentrip-engine' ), count( $ratings ) ) ); ?></p>
+			<?php foreach ( $reviews->posts as $review ) : $rating = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) ); ?>
+				<article class="ote-review">
+					<p class="ote-review-stars" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></p>
+					<h3><?php echo esc_html( get_post_meta( $review->ID, '_ote_review_name', true ) ); ?></h3>
+					<div class="ote-review-content"><?php echo wpautop( esc_html( $review->post_content ) ); ?></div>
+					<small><?php echo esc_html( get_the_date( '', $review ) ); ?></small>
+				</article>
+			<?php endforeach; ?>
+		</section>
+		<?php
+		wp_reset_postdata();
+		return ob_get_clean();
+	}
+
 }
 
 OpenTrip_Engine::instance();
