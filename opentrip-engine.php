@@ -722,8 +722,9 @@ final class OpenTrip_Engine {
 	public function export_personal_data( $email_address, $page = 1 ) {
 		$limit  = 100;
 		$offset = max( 0, ( absint( $page ) - 1 ) * $limit );
-		$data   = array();
-		$types  = array(
+		$data      = array();
+		$has_more = false;
+		$types     = array(
 			'ote_booking' => '_ote_customer_email',
 			'ote_review'  => '_ote_review_email',
 		);
@@ -737,6 +738,9 @@ final class OpenTrip_Engine {
 				'meta_key'       => $email_meta,
 				'meta_value'     => sanitize_email( $email_address ),
 			) );
+			if ( count( $ids ) === $limit ) {
+				$has_more = true;
+			}
 			foreach ( $ids as $post_id ) {
 				if ( 'ote_booking' === $post_type ) {
 					$items = array(
@@ -777,13 +781,14 @@ final class OpenTrip_Engine {
 				);
 			}
 		}
-		return array( 'data' => $data, 'done' => count( $data ) < ( 2 * $limit ) );
+		return array( 'data' => $data, 'done' => ! $has_more );
 	}
 
 	public function erase_personal_data( $email_address, $page = 1 ) {
 		$limit = 100;
-		$removed = 0;
-		$types = array(
+		$removed  = 0;
+		$has_more = false;
+		$types    = array(
 			'ote_booking' => '_ote_customer_email',
 			'ote_review'  => '_ote_review_email',
 		);
@@ -796,6 +801,9 @@ final class OpenTrip_Engine {
 				'meta_key'       => $email_meta,
 				'meta_value'     => sanitize_email( $email_address ),
 			) );
+			if ( count( $ids ) === $limit ) {
+				$has_more = true;
+			}
 			foreach ( $ids as $post_id ) {
 				if ( 'ote_booking' === $post_type ) {
 					update_post_meta( $post_id, '_ote_customer_name', __( 'Anonymized customer', 'opentrip-engine' ) );
@@ -818,7 +826,7 @@ final class OpenTrip_Engine {
 			'items_removed'  => $removed,
 			'items_retained' => 0,
 			'messages'       => array(),
-			'done'           => $removed < ( 2 * $limit ),
+			'done'           => ! $has_more,
 		);
 	}
 
