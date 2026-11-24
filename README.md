@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.4.0 — traveller details and quote snapshot MVP.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 0.5.0 — itinerary builder MVP.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -20,6 +20,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Admin departure manager with dates, capacity, price and currency.
 - Booking form selects a real departure and displays remaining seats.
 - Booking requests capture adult and child counts plus rooms required.
+- Day-by-day itinerary editor for up to 60 days, with city, activities, overnight stay, meals and transportation.
+- `[opentrip_itinerary]` renders the current tour's itinerary; `[opentrip_itinerary tour_id="123"]` renders a selected tour's itinerary.
+- Itinerary data is stored as structured tour metadata and sanitized on save.
 - The estimated total and unit price are saved as a booking-time price snapshot.
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
 - Nonce verification, capability checks, input sanitization and output escaping.
@@ -37,7 +40,10 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 6. Place `[opentrip_tours]` on a page.
 7. Add `[opentrip_booking_form]` to a single tour template/page.
 
-## Agency workflow in 0.4.0
+## Itinerary workflow in 0.5.0
+Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
+
+## Agency workflow in 0.5.0
 Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
