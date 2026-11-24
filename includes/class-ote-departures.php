@@ -125,6 +125,16 @@ final class OTE_Departures {
 		exit;
 	}
 
+	public function get_departure( $departure_id, $tour_id ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare(
+			"SELECT id,tour_id,start_date,end_date,capacity,reserved,price,currency FROM {$this->table} WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved < capacity",
+			$departure_id,
+			$tour_id,
+			wp_date( 'Y-m-d' )
+		) );
+	}
+
 	public function get_available( $tour_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
