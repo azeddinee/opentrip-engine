@@ -690,7 +690,10 @@ final class OpenTrip_Engine {
 			return;
 		}
 		if ( ( 'cancelled' === $status || 'pending' === $status ) && 'confirmed' === $previous ) {
-			$inventory->release( $departure_id, $seats );
+			if ( ! $inventory->release( $departure_id, $seats ) ) {
+				set_transient( 'ote_inventory_error_' . get_current_user_id(), __( 'The reserved seats could not be released. The booking status was not changed; please check the departure inventory.', 'opentrip-engine' ), 30 );
+				return;
+			}
 		}
 		update_post_meta( $post_id, '_ote_booking_status', $status );
 		if ( $status !== $previous ) {
