@@ -179,6 +179,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Anonymized customer', get_post_meta( $booking_id, '_ote_customer_name', true ) );
 		$this->assertSame( '', get_post_meta( $review_id, '_ote_review_email', true ) );
 		$this->assertSame( '', get_post_field( 'post_content', $review_id ) );
+		$this->assertSame( 'draft', get_post_status( $review_id ) );
 	}
 
 }
