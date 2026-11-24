@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '1.0.0-beta.1' );
+define( 'OTE_VERSION', '1.0.0-beta.2' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
