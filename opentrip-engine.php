@@ -39,6 +39,7 @@ final class OpenTrip_Engine {
 		add_action( 'manage_ote_booking_posts_custom_column', array( $this, 'booking_column_content' ), 10, 2 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_notices', array( $this, 'inventory_admin_notice' ) );
+		add_action( 'init', array( OTE_Departures::instance(), 'maybe_install' ) );
 	}
 
 	public static function activate() {
