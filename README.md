@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.3.0 — departure inventory MVP.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 0.4.0 — traveller details and quote snapshot MVP.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -19,6 +19,8 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Responsive frontend CSS for tour cards and booking forms.
 - Admin departure manager with dates, capacity, price and currency.
 - Booking form selects a real departure and displays remaining seats.
+- Booking requests capture adult and child counts plus rooms required.
+- The estimated total and unit price are saved as a booking-time price snapshot.
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
 - Nonce verification, capability checks, input sanitization and output escaping.
 
@@ -35,8 +37,8 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 6. Place `[opentrip_tours]` on a page.
 7. Add `[opentrip_booking_form]` to a single tour template/page.
 
-## Agency workflow in 0.3.0
-Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
+## Agency workflow in 0.4.0
+Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
 This MVP does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat reservation update is atomic at the database level, but the plugin still needs integration tests and broader production hardening.
