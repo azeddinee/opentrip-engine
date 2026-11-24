@@ -52,7 +52,7 @@ jobs:
       - name: Install WordPress test library
         run: |
           mkdir -p /tmp/wordpress-tests-lib
-          curl -fsSL https://develop.svn.wordpress.org/trunk/bin/install-wp-tests.sh -o /tmp/install-wp-tests.sh
+          curl -fsSL https://raw.githubusercontent.com/wp-cli/scaffold-command/main/templates/install-wp-tests.sh -o /tmp/install-wp-tests.sh
           bash /tmp/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 latest
       - name: Run WordPress integration tests
         env:
