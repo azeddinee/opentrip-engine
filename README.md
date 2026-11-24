@@ -38,7 +38,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
 - Booking and review data are available through WordPress privacy export and erasure tools.
 
-## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow also installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for custom post types, shortcode output/escaping, and real database seat reservation/release. The PHP syntax and smoke-test job runs across PHP 7.4–8.3. These tests are a starting point, not proof of production readiness: the suite does not yet simulate concurrent booking requests or cover every form, email and status-transition path. Review the Actions results before treating a commit as verified.\n\n## Requirements
+## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for content types, shortcode output/escaping, real database inventory, failed seat-release transitions, and privacy export/erasure. The PHP syntax and smoke-test jobs run across PHP 7.4–8.3. The suite does not yet simulate simultaneous administrator confirmations or cover every form and email path. Review the Actions results before treating a commit as verified.\n\n## Requirements
 - WordPress 6.2+
 - PHP 7.4+
 
@@ -49,7 +49,8 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 4. Create tours under **Tours → Add New**.
 5. Add destination terms under **Tours → Destinations**.
 6. Place `[opentrip_tours]` on a page.
-7. Add `[opentrip_booking_form]` to a single tour template/page.
+7. Open **Tours → Departures** and create dated departures with capacity and price.
+8. Add `[opentrip_booking_form]` to a single tour template/page.
 
 ## Itinerary workflow in 0.5.0
 Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
@@ -70,7 +71,7 @@ Edit a tour and use the **Tour Inclusions & Exclusions** panel. Enter one item p
 Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
-This MVP does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat reservation update is atomic at the database level, but the plugin still needs integration tests and broader production hardening.
+This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat inventory update is atomic at the database level, but simultaneous administrator confirmations have not yet been stress-tested.
 
 Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration is available; automated coverage is included for booking and review export/erasure. Site owners remain responsible for reviewing legal retention obligations and configuring their privacy policy.
 
@@ -80,7 +81,8 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Basic PHP syntax check workflow (GitHub Actions)
 - [x] Initial WordPress integration tests (content types, shortcode output and MySQL inventory)
 - [x] Departure dates and atomic seat inventory reservation
-- [ ] Email notification settings and customer confirmations
+- [x] Customer booking receipts and status-change notifications
+- [ ] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
 - [ ] Permission-checked REST API
 - [ ] Pricing rules and multi-currency formatting
