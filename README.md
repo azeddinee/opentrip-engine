@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.2 — release-candidate testing and compatibility checks.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 1.0.0-beta.3 — security, privacy and compatibility hardening.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -30,12 +30,13 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Media Library gallery picker for each tour, supporting up to 40 images.
 - Visitor review form with 1–5 star ratings; submissions are saved as Pending and require administrator approval.
 - `[opentrip_reviews]` displays approved reviews and their average rating; `[opentrip_review_form]` displays the review form for the current tour.
-- Review author email is stored privately in review metadata and is not displayed publicly; a basic honeypot field helps deter automated spam.
+- Review author email is stored privately in review metadata and is not displayed publicly; booking and review forms include a basic honeypot to deter automated spam.
 - `[opentrip_gallery]` renders the current tour gallery; `[opentrip_gallery tour_id="123" columns="4"]` renders a selected tour gallery.
 - Itinerary data is stored as structured tour metadata and sanitized on save.
 - The estimated total and unit price are saved as a booking-time price snapshot.
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
-- Nonce verification, capability checks, input sanitization and output escaping.
+- Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
+- Booking and review data are available through WordPress privacy export and erasure tools.
 
 ## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow also installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for custom post types, shortcode output/escaping, and real database seat reservation/release. The PHP syntax and smoke-test job runs across PHP 7.4–8.3. These tests are a starting point, not proof of production readiness: the suite does not yet simulate concurrent booking requests or cover every form, email and status-transition path. Review the Actions results before treating a commit as verified.\n\n## Requirements
 - WordPress 6.2+
