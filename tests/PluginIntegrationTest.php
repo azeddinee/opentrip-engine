@@ -182,4 +182,27 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'draft', get_post_status( $review_id ) );
 	}
 
+	public function test_booking_and_review_records_are_admin_only() {
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Private booking' )
+		);
+		$review_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_review', 'post_status' => 'pending', 'post_title' => 'Private review' )
+		);
+
+		$author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $author_id );
+		$this->assertFalse( current_user_can( 'edit_post', $booking_id ) );
+		$this->assertFalse( current_user_can( 'read_post', $booking_id ) );
+		$this->assertFalse( current_user_can( 'edit_post', $review_id ) );
+		$this->assertFalse( current_user_can( 'read_post', $review_id ) );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+		$this->assertTrue( current_user_can( 'edit_post', $booking_id ) );
+		$this->assertTrue( current_user_can( 'read_post', $booking_id ) );
+		$this->assertTrue( current_user_can( 'edit_post', $review_id ) );
+		$this->assertTrue( current_user_can( 'read_post', $review_id ) );
+	}
+
 }
