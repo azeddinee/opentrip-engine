@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.2.0' );
+define( 'OTE_VERSION', '0.3.0' );
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -37,10 +38,12 @@ final class OpenTrip_Engine {
 		add_filter( 'manage_ote_booking_posts_columns', array( $this, 'booking_columns' ) );
 		add_action( 'manage_ote_booking_posts_custom_column', array( $this, 'booking_column_content' ), 10, 2 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'admin_notices', array( $this, 'inventory_admin_notice' ) );
 	}
 
 	public static function activate() {
 		self::instance()->register_types();
+		OTE_Departures::install();
 		flush_rewrite_rules();
 	}
 
@@ -197,7 +200,18 @@ final class OpenTrip_Engine {
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
 			<p><label><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_name" autocomplete="name"></label></p>
 			<p><label><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?><br><input required type="email" name="ote_email" autocomplete="email"></label></p>
-			<p><label><?php esc_html_e( 'Travel date', 'opentrip-engine' ); ?><br><input required type="date" name="ote_date" min="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>"></label></p>
+			<?php $available_departures = OTE_Departures::instance()->get_available( $tour_id ); ?>
+		<?php if ( $available_departures ) : ?>
+		<p><label><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?><br>
+		<select required name="ote_departure_id">
+			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
+			<?php foreach ( $available_departures as $departure ) : ?>
+			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
+			<?php endforeach; ?>
+		</select></label></p>
+		<?php else : ?>
+		<p><?php esc_html_e( 'No departures are currently available for this tour. Please contact us.', 'opentrip-engine' ); ?></p>
+		<?php endif; ?>
 			<p><label><?php esc_html_e( 'Number of travellers', 'opentrip-engine' ); ?><br><input required type="number" name="ote_travellers" min="1" max="30" value="1"></label></p>
 			<p><label><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?><br><textarea name="ote_message" rows="4"></textarea></label></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
@@ -219,11 +233,11 @@ final class OpenTrip_Engine {
 		}
 		$name = isset( $_POST['ote_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_name'] ) ) : '';
 		$email = isset( $_POST['ote_email'] ) ? sanitize_email( wp_unslash( $_POST['ote_email'] ) ) : '';
-		$date = isset( $_POST['ote_date'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_date'] ) ) : '';
+		$departure_id = isset( $_POST['ote_departure_id'] ) ? absint( $_POST['ote_departure_id'] ) : 0;
 		$travellers = isset( $_POST['ote_travellers'] ) ? absint( $_POST['ote_travellers'] ) : 0;
 		$message = isset( $_POST['ote_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_message'] ) ) : '';
-		$date_obj = DateTime::createFromFormat( '!Y-m-d', $date );
-		if ( ! $name || ! is_email( $email ) || ! $date_obj || $date_obj->format( 'Y-m-d' ) !== $date || $date < wp_date( 'Y-m-d' ) || $travellers < 1 || $travellers > 30 ) {
+		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
+		if ( ! $name || ! is_email( $email ) || ! $departure || $travellers < 1 || $travellers > 30 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
 		}
 		$booking_id = wp_insert_post( array(
@@ -237,7 +251,8 @@ final class OpenTrip_Engine {
 		update_post_meta( $booking_id, '_ote_tour_id', $tour_id );
 		update_post_meta( $booking_id, '_ote_customer_name', $name );
 		update_post_meta( $booking_id, '_ote_customer_email', $email );
-		update_post_meta( $booking_id, '_ote_travel_date', $date );
+		update_post_meta( $booking_id, '_ote_departure_id', $departure_id );
+		update_post_meta( $booking_id, '_ote_travel_date', $departure->start_date );
 		update_post_meta( $booking_id, '_ote_travellers', $travellers );
 		update_post_meta( $booking_id, '_ote_customer_message', $message );
 		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
@@ -330,8 +345,29 @@ final class OpenTrip_Engine {
 		}
 		$status = isset( $_POST['ote_booking_status'] ) ? sanitize_key( wp_unslash( $_POST['ote_booking_status'] ) ) : 'pending';
 		$allowed = array( 'pending', 'confirmed', 'cancelled' );
-		if ( in_array( $status, $allowed, true ) ) {
-			update_post_meta( $post_id, '_ote_booking_status', $status );
+		if ( ! in_array( $status, $allowed, true ) ) {
+			return;
+		}
+		$previous = get_post_meta( $post_id, '_ote_booking_status', true );
+		$departure_id = (int) get_post_meta( $post_id, '_ote_departure_id', true );
+		$seats = (int) get_post_meta( $post_id, '_ote_travellers', true );
+		$inventory = OTE_Departures::instance();
+		if ( 'confirmed' === $status && 'confirmed' !== $previous && ! $inventory->reserve( $departure_id, (int) get_post_meta( $post_id, '_ote_tour_id', true ), $seats ) ) {
+			set_transient( 'ote_inventory_error_' . get_current_user_id(), __( 'Not enough seats remain for this departure. The booking was not confirmed.', 'opentrip-engine' ), 30 );
+			return;
+		}
+		if ( ( 'cancelled' === $status || 'pending' === $status ) && 'confirmed' === $previous ) {
+			$inventory->release( $departure_id, $seats );
+		}
+		update_post_meta( $post_id, '_ote_booking_status', $status );
+	}
+
+	public function inventory_admin_notice() {
+		$key = 'ote_inventory_error_' . get_current_user_id();
+		$message = get_transient( $key );
+		if ( $message ) {
+			delete_transient( $key );
+			echo '<div class="notice notice-error"><p>' . esc_html( $message ) . '</p></div>';
 		}
 	}
 
