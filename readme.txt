@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, display tour cards, collect booking requests, manage dated departures and seat inventory, record adult/child counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, build day-by-day itineraries, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
 
 == Installation ==
 
@@ -20,6 +20,10 @@ Publish tours, organize destinations, display tour cards, collect booking reques
 3. Create tours under Tours.
 4. Use [opentrip_tours] to display tours.
 5. Use [opentrip_booking_form] on a single tour page to collect requests.
+
+== Itinerary Builder ==
+
+Edit a tour and use the Day-by-Day Itinerary panel. Enter a JSON array with one object per day. Supported keys: day, title, city, activities, overnight, meals and transport. Display the current tour itinerary with [opentrip_itinerary], or use [opentrip_itinerary tour_id="123"]. The current editor is JSON-based; invalid JSON is not saved.
 
 == Frequently Asked Questions ==
 
@@ -42,6 +46,9 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.5.0 =
+* Add structured day-by-day itinerary editing and frontend shortcode output.
 
 = 0.4.0 =
 * Capture adult/child counts and rooms; save a booking-time price snapshot.
