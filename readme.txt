@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, display tour cards, collect booking requests, manage dated departures and seat inventory, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, display tour cards, collect booking requests, manage dated departures and seat inventory, record adult/child counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
 
 == Installation ==
 
@@ -26,6 +26,9 @@ Publish tours, organize destinations, display tour cards, collect booking reques
 = Does it process payments? =
 No. Version 0.1.0 collects booking requests only.
 
+= What traveller details are captured? =
+Booking requests capture adults, children and rooms required. The estimated total uses the departure's per-traveller price for each adult and child. Room count is recorded but does not affect the price. Infant-specific prices and child discounts are not included yet.
+
 = How do departures and seats work? =
 Administrators create dated departures with a capacity. Customers select a departure when submitting a request. Requests reserve seats only after an administrator confirms them; cancelling a confirmed request releases its seats.
 
@@ -39,6 +42,9 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.4.0 =
+* Capture adult/child counts and rooms; save a booking-time price snapshot.
 
 = 0.3.0 =
 * Add departure management, departure selection on booking forms and atomic seat reservation/release when confirming or cancelling requests.
