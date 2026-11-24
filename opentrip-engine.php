@@ -821,6 +821,7 @@ final class OpenTrip_Engine {
 						'ID'           => $post_id,
 						'post_title'   => __( 'Anonymized review', 'opentrip-engine' ),
 						'post_content' => '',
+						'post_status'  => 'draft',
 					) );
 				}
 				$removed++;
