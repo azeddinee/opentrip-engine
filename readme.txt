@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.9.0
+Stable tag: 1.0.0-beta.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -61,7 +61,7 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 = Are pending requests holding seats? =
 No. Seats are reserved only when a request is confirmed.
 
-== Changelog ==
+== Testing ==\n\nRun `php tests/departures-smoke.php` to execute the lightweight departure inventory smoke tests. GitHub Actions checks PHP syntax and runs these tests on PHP 7.4–8.3. The tests use a fake database adapter and are not a substitute for WordPress integration tests or real MySQL concurrency testing. This beta should not be treated as a fully verified stable production release.\n\n== Changelog ==\n\n= 1.0.0-beta.1 =\n* Add PHP 7.4–8.3 syntax-check matrix and departure inventory smoke tests.\n* Document test scope and remaining integration-test requirements.\n
 
 = 0.9.0 =
 * Send customer booking receipt and status-change emails.
