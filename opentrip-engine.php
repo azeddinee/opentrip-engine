@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.4.0' );
+define( 'OTE_VERSION', '0.5.0' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -29,6 +29,9 @@ final class OpenTrip_Engine {
 	private function __construct() {
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_tour_meta_box' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_itinerary_meta_box' ) );
+		add_action( 'save_post_ote_tour', array( $this, 'save_itinerary' ) );
+		add_shortcode( 'opentrip_itinerary', array( $this, 'itinerary_shortcode' ) );
 		add_action( 'save_post_ote_tour', array( $this, 'save_tour_meta' ) );
 		add_shortcode( 'opentrip_tours', array( $this, 'tours_shortcode' ) );
 		add_shortcode( 'opentrip_booking_form', array( $this, 'booking_shortcode' ) );
@@ -117,6 +120,102 @@ final class OpenTrip_Engine {
 		<p><label for="ote_capacity"><?php esc_html_e( 'Capacity (informational only; 0 = unspecified)', 'opentrip-engine' ); ?></label><br>
 		<input id="ote_capacity" name="ote_capacity" type="number" min="0" step="1" value="<?php echo esc_attr( $fields['capacity'] ); ?>"></p>
 		<?php
+	}
+
+	public function add_itinerary_meta_box() {
+		add_meta_box( 'ote_itinerary', __( 'Day-by-Day Itinerary', 'opentrip-engine' ), array( $this, 'render_itinerary_meta_box' ), 'ote_tour', 'normal', 'default' );
+	}
+
+	public function render_itinerary_meta_box( $post ) {
+		wp_nonce_field( 'ote_save_itinerary', 'ote_itinerary_nonce' );
+		$itinerary = get_post_meta( $post->ID, '_ote_itinerary', true );
+		if ( ! is_array( $itinerary ) ) {
+			$itinerary = array();
+		}
+		$example = array(
+			array(
+				'day' => 1,
+				'title' => 'Arrival and city tour',
+				'city' => 'Marrakech',
+				'activities' => 'Airport pickup; guided medina walk',
+				'overnight' => 'Hotel in Marrakech',
+				'meals' => 'Dinner',
+				'transport' => 'Private vehicle',
+			),
+		);
+		$value = $itinerary ? $itinerary : $example;
+		?>
+		<p><?php esc_html_e( 'Enter the itinerary as a JSON array. Each day supports: day, title, city, activities, overnight, meals and transport.', 'opentrip-engine' ); ?></p>
+		<textarea name="ote_itinerary_json" rows="14" class="large-text code"><?php echo esc_textarea( wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Leave the example in place or replace it with your tour schedule. Use a valid JSON array.', 'opentrip-engine' ); ?></p>
+		<?php
+	}
+
+	public function save_itinerary( $post_id ) {
+		if ( ! isset( $_POST['ote_itinerary_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_itinerary_nonce'] ) ), 'ote_save_itinerary' ) ) {
+			return;
+		}
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$json = isset( $_POST['ote_itinerary_json'] ) ? wp_unslash( $_POST['ote_itinerary_json'] ) : '';
+		$data = json_decode( $json, true );
+		if ( '' === trim( $json ) ) {
+			delete_post_meta( $post_id, '_ote_itinerary' );
+			return;
+		}
+		if ( ! is_array( $data ) || isset( $data['day'] ) ) {
+			return;
+		}
+		$clean = array();
+		$fields = array( 'title', 'city', 'activities', 'overnight', 'meals', 'transport' );
+		foreach ( array_slice( $data, 0, 60 ) as $index => $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$day = isset( $item['day'] ) ? absint( $item['day'] ) : $index + 1;
+			if ( ! $day ) {
+				$day = $index + 1;
+			}
+			$row = array( 'day' => $day );
+			foreach ( $fields as $field ) {
+				$row[ $field ] = isset( $item[ $field ] ) ? sanitize_textarea_field( $item[ $field ] ) : '';
+			}
+			if ( $row['title'] || $row['activities'] || $row['city'] ) {
+				$clean[] = $row;
+			}
+		}
+		update_post_meta( $post_id, '_ote_itinerary', $clean );
+	}
+
+	public function itinerary_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'tour_id' => 0 ), $atts, 'opentrip_itinerary' );
+		$tour_id = absint( $atts['tour_id'] );
+		if ( ! $tour_id && is_singular( 'ote_tour' ) ) {
+			$tour_id = get_the_ID();
+		}
+		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) ) {
+			return '';
+		}
+		$itinerary = get_post_meta( $tour_id, '_ote_itinerary', true );
+		if ( ! is_array( $itinerary ) || empty( $itinerary ) ) {
+			return '';
+		}
+		ob_start();
+		echo '<section class="ote-itinerary"><h2>' . esc_html__( 'Day-by-Day Itinerary', 'opentrip-engine' ) . '</h2>';
+		foreach ( $itinerary as $item ) {
+			$day = isset( $item['day'] ) ? absint( $item['day'] ) : 0;
+			$title = isset( $item['title'] ) ? $item['title'] : '';
+			echo '<article class="ote-itinerary-day"><h3>' . esc_html( sprintf( __( 'Day %d: %s', 'opentrip-engine' ), $day, $title ) ) . '</h3>';
+			foreach ( array( 'city' => __( 'Location', 'opentrip-engine' ), 'activities' => __( 'Activities', 'opentrip-engine' ), 'overnight' => __( 'Overnight', 'opentrip-engine' ), 'meals' => __( 'Meals', 'opentrip-engine' ), 'transport' => __( 'Transportation', 'opentrip-engine' ) ) as $key => $label ) {
+				if ( ! empty( $item[ $key ] ) ) {
+					echo '<p><strong>' . esc_html( $label ) . ':</strong> ' . nl2br( esc_html( $item[ $key ] ) ) . '</p>';
+				}
+			}
+			echo '</article>';
+		}
+		echo '</section>';
+		return ob_get_clean();
 	}
 
 	public function save_tour_meta( $post_id ) {
