@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.9.0 — customer booking receipts and status-update emails.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 1.0.0-beta.1 — release-candidate testing and compatibility checks.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -37,7 +37,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
 - Nonce verification, capability checks, input sanitization and output escaping.
 
-## Requirements
+## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. GitHub Actions runs PHP syntax checks and these smoke tests across PHP 7.4–8.3. The tests use a fake database adapter: they check the SQL update contract and input guards, but they are not WordPress integration tests and do not prove concurrent booking behaviour against MySQL. A real WordPress test environment is still required before calling this a stable production release.\n\n## Requirements
 - WordPress 6.2+
 - PHP 7.4+
 
