@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.5.0
+ * Version: 0.6.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.5.0' );
+define( 'OTE_VERSION', '0.6.0' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -30,6 +30,9 @@ final class OpenTrip_Engine {
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_tour_meta_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_itinerary_meta_box' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_inclusions_meta_box' ) );
+		add_action( 'save_post_ote_tour', array( $this, 'save_inclusions' ) );
+		add_shortcode( 'opentrip_inclusions', array( $this, 'inclusions_shortcode' ) );
 		add_action( 'save_post_ote_tour', array( $this, 'save_itinerary' ) );
 		add_shortcode( 'opentrip_itinerary', array( $this, 'itinerary_shortcode' ) );
 		add_action( 'save_post_ote_tour', array( $this, 'save_tour_meta' ) );
@@ -215,6 +218,90 @@ final class OpenTrip_Engine {
 			echo '</article>';
 		}
 		echo '</section>';
+		return ob_get_clean();
+	}
+
+	public function add_inclusions_meta_box() {
+		add_meta_box( 'ote_inclusions', __( 'Tour Inclusions & Exclusions', 'opentrip-engine' ), array( $this, 'render_inclusions_meta_box' ), 'ote_tour', 'normal', 'default' );
+	}
+
+	public function render_inclusions_meta_box( $post ) {
+		wp_nonce_field( 'ote_save_inclusions', 'ote_inclusions_nonce' );
+		$included = get_post_meta( $post->ID, '_ote_inclusions', true );
+		$excluded = get_post_meta( $post->ID, '_ote_exclusions', true );
+		$included_text = is_array( $included ) ? implode( "\n", $included ) : '';
+		$excluded_text = is_array( $excluded ) ? implode( "\n", $excluded ) : '';
+		?>
+		<div class="ote-inclusions-editor">
+			<p><?php esc_html_e( 'Add one item per line. Leave a box empty if it does not apply.', 'opentrip-engine' ); ?></p>
+			<p><label for="ote_inclusions"><strong><?php esc_html_e( 'What is included in the price', 'opentrip-engine' ); ?></strong></label><br>
+			<textarea id="ote_inclusions" name="ote_inclusions" rows="8" class="large-text" placeholder="Accommodation\nDaily breakfast\nAirport transfers"><?php echo esc_textarea( $included_text ); ?></textarea></p>
+			<p><label for="ote_exclusions"><strong><?php esc_html_e( 'What is not included in the price', 'opentrip-engine' ); ?></strong></label><br>
+			<textarea id="ote_exclusions" name="ote_exclusions" rows="8" class="large-text" placeholder="International flights\nTravel insurance\nPersonal expenses"><?php echo esc_textarea( $excluded_text ); ?></textarea></p>
+		</div>
+		<?php
+	}
+
+	public function save_inclusions( $post_id ) {
+		if ( ! isset( $_POST['ote_inclusions_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_inclusions_nonce'] ) ), 'ote_save_inclusions' ) ) {
+			return;
+		}
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		foreach ( array( 'inclusions', 'exclusions' ) as $type ) {
+			$field = 'ote_' . $type;
+			$meta_key = '_ote_' . $type;
+			$raw = isset( $_POST[ $field ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $field ] ) ) : '';
+			$items = preg_split( '/\\r\\n|\\r|\\n/', $raw );
+			$clean = array();
+			foreach ( $items as $item ) {
+				$item = trim( sanitize_text_field( $item ) );
+				if ( '' !== $item && ! in_array( $item, $clean, true ) && count( $clean ) < 100 ) {
+					$clean[] = $item;
+				}
+			}
+			if ( $clean ) {
+				update_post_meta( $post_id, $meta_key, $clean );
+			} else {
+				delete_post_meta( $post_id, $meta_key );
+			}
+		}
+	}
+
+	public function inclusions_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'tour_id' => 0 ), $atts, 'opentrip_inclusions' );
+		$tour_id = absint( $atts['tour_id'] );
+		if ( ! $tour_id && is_singular( 'ote_tour' ) ) {
+			$tour_id = get_the_ID();
+		}
+		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) ) {
+			return '';
+		}
+		$included = get_post_meta( $tour_id, '_ote_inclusions', true );
+		$excluded = get_post_meta( $tour_id, '_ote_exclusions', true );
+		$included = is_array( $included ) ? $included : array();
+		$excluded = is_array( $excluded ) ? $excluded : array();
+		if ( empty( $included ) && empty( $excluded ) ) {
+			return '';
+		}
+		ob_start();
+		?>
+		<section class="ote-inclusions">
+			<?php if ( $included ) : ?>
+			<div class="ote-inclusions-column ote-included">
+				<h3><?php esc_html_e( 'What is included', 'opentrip-engine' ); ?></h3>
+				<ul><?php foreach ( $included as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul>
+			</div>
+			<?php endif; ?>
+			<?php if ( $excluded ) : ?>
+			<div class="ote-inclusions-column ote-excluded">
+				<h3><?php esc_html_e( 'What is not included', 'opentrip-engine' ); ?></h3>
+				<ul><?php foreach ( $excluded as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul>
+			</div>
+			<?php endif; ?>
+		</section>
+		<?php
 		return ob_get_clean();
 	}
 
