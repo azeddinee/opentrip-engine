@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.1.0' );
+define( 'OTE_VERSION', '0.2.0' );
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -33,6 +33,10 @@ final class OpenTrip_Engine {
 		add_shortcode( 'opentrip_booking_form', array( $this, 'booking_shortcode' ) );
 		add_action( 'init', array( $this, 'handle_booking' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_booking_meta_box' ) );
+		add_action( 'save_post_ote_booking', array( $this, 'save_booking_status' ) );
+		add_filter( 'manage_ote_booking_posts_columns', array( $this, 'booking_columns' ) );
+		add_action( 'manage_ote_booking_posts_custom_column', array( $this, 'booking_column_content' ), 10, 2 );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	public static function activate() {
@@ -42,6 +46,10 @@ final class OpenTrip_Engine {
 
 	public static function deactivate() {
 		flush_rewrite_rules();
+	}
+
+	public function enqueue_assets() {
+		wp_enqueue_style( 'opentrip-engine', plugin_dir_url( __FILE__ ) . 'assets/opentrip-engine.css', array(), OTE_VERSION );
 	}
 
 	public function register_types() {
@@ -232,6 +240,17 @@ final class OpenTrip_Engine {
 		update_post_meta( $booking_id, '_ote_travel_date', $date );
 		update_post_meta( $booking_id, '_ote_travellers', $travellers );
 		update_post_meta( $booking_id, '_ote_customer_message', $message );
+		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+
+		$admin_email = get_option( 'admin_email' );
+		if ( $admin_email && is_email( $admin_email ) ) {
+			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
+			$body = sprintf(
+				__( "A new booking request was received.\\n\\nTour: %1$s\\nName: %2$s\\nEmail: %3$s\\nTravel date: %4$s\\nTravellers: %5$d\\n\\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
+				get_the_title( $tour_id ), $name, $email, $date, $travellers
+			);
+			wp_mail( $admin_email, $subject, $body );
+		}
 
 		$referer = wp_get_referer();
 		$redirect = $referer ? $referer : get_permalink( $tour_id );
@@ -241,10 +260,13 @@ final class OpenTrip_Engine {
 
 	public function add_booking_meta_box() {
 		add_meta_box( 'ote_booking_details', __( 'Booking Details', 'opentrip-engine' ), array( $this, 'render_booking_meta_box' ), 'ote_booking', 'normal', 'high' );
+		add_meta_box( 'ote_booking_status', __( 'Request Status', 'opentrip-engine' ), array( $this, 'render_booking_status_box' ), 'ote_booking', 'side', 'high' );
 	}
 
 	public function render_booking_meta_box( $post ) {
+		$status = get_post_meta( $post->ID, '_ote_booking_status', true );
 		$fields = array(
+			__( 'Status', 'opentrip-engine' ) => $this->booking_status_label( $status ),
 			__( 'Tour', 'opentrip-engine' ) => get_the_title( (int) get_post_meta( $post->ID, '_ote_tour_id', true ) ),
 			__( 'Customer', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_customer_name', true ),
 			__( 'Email', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_customer_email', true ),
@@ -255,6 +277,79 @@ final class OpenTrip_Engine {
 		foreach ( $fields as $label => $value ) {
 			echo '<p><strong>' . esc_html( $label ) . ':</strong> ' . esc_html( $value ) . '</p>';
 		}
+	}
+
+	public function booking_status_label( $status ) {
+		$labels = array(
+			'pending' => __( 'Pending', 'opentrip-engine' ),
+			'confirmed' => __( 'Confirmed', 'opentrip-engine' ),
+			'cancelled' => __( 'Cancelled', 'opentrip-engine' ),
+		);
+		return isset( $labels[ $status ] ) ? $labels[ $status ] : $labels['pending'];
+	}
+
+	public function booking_columns( $columns ) {
+		return array(
+			'cb' => isset( $columns['cb'] ) ? $columns['cb'] : '',
+			'title' => __( 'Booking', 'opentrip-engine' ),
+			'ote_tour' => __( 'Tour', 'opentrip-engine' ),
+			'ote_customer' => __( 'Customer', 'opentrip-engine' ),
+			'ote_travel_date' => __( 'Travel date', 'opentrip-engine' ),
+			'ote_travellers' => __( 'Travellers', 'opentrip-engine' ),
+			'ote_status' => __( 'Status', 'opentrip-engine' ),
+			'date' => __( 'Submitted', 'opentrip-engine' ),
+		);
+	}
+
+	public function booking_column_content( $column, $post_id ) {
+		if ( 'ote_tour' === $column ) {
+			echo esc_html( get_the_title( (int) get_post_meta( $post_id, '_ote_tour_id', true ) ) );
+		} elseif ( 'ote_customer' === $column ) {
+			$name = get_post_meta( $post_id, '_ote_customer_name', true );
+			$email = get_post_meta( $post_id, '_ote_customer_email', true );
+			echo esc_html( $name );
+			if ( $email ) {
+				echo '<br><a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
+			}
+		} elseif ( 'ote_travel_date' === $column ) {
+			echo esc_html( get_post_meta( $post_id, '_ote_travel_date', true ) );
+		} elseif ( 'ote_travellers' === $column ) {
+			echo esc_html( get_post_meta( $post_id, '_ote_travellers', true ) );
+		} elseif ( 'ote_status' === $column ) {
+			$status = get_post_meta( $post_id, '_ote_booking_status', true );
+			echo esc_html( $this->booking_status_label( $status ) );
+		}
+	}
+
+	public function save_booking_status( $post_id ) {
+		if ( ! isset( $_POST['ote_booking_status_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_booking_status_nonce'] ) ), 'ote_save_booking_status' ) ) {
+			return;
+		}
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$status = isset( $_POST['ote_booking_status'] ) ? sanitize_key( wp_unslash( $_POST['ote_booking_status'] ) ) : 'pending';
+		$allowed = array( 'pending', 'confirmed', 'cancelled' );
+		if ( in_array( $status, $allowed, true ) ) {
+			update_post_meta( $post_id, '_ote_booking_status', $status );
+		}
+	}
+
+	public function render_booking_status_box( $post ) {
+		wp_nonce_field( 'ote_save_booking_status', 'ote_booking_status_nonce' );
+		$current = get_post_meta( $post->ID, '_ote_booking_status', true );
+		if ( ! $current ) {
+			$current = 'pending';
+		}
+		?>
+		<p><label for="ote_booking_status"><?php esc_html_e( 'Request status', 'opentrip-engine' ); ?></label></p>
+		<select name="ote_booking_status" id="ote_booking_status">
+			<option value="pending" <?php selected( $current, 'pending' ); ?>><?php esc_html_e( 'Pending', 'opentrip-engine' ); ?></option>
+			<option value="confirmed" <?php selected( $current, 'confirmed' ); ?>><?php esc_html_e( 'Confirmed', 'opentrip-engine' ); ?></option>
+			<option value="cancelled" <?php selected( $current, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'opentrip-engine' ); ?></option>
+		</select>
+		<p class="description"><?php esc_html_e( 'This is an internal request status. It does not take payment or guarantee availability.', 'opentrip-engine' ); ?></p>
+		<?php
 	}
 }
 
