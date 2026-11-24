@@ -61,7 +61,20 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 = Are pending requests holding seats? =
 No. Seats are reserved only when a request is confirmed.
 
-== Testing ==\n\nRun `php tests/departures-smoke.php` to execute the lightweight departure inventory smoke tests. GitHub Actions checks PHP syntax and runs these tests on PHP 7.4–8.3. The tests use a fake database adapter and are not a substitute for WordPress integration tests or real MySQL concurrency testing. This beta should not be treated as a fully verified stable production release.\n\n== Changelog ==\n\n= 1.0.0-beta.1 =\n* Add PHP 7.4–8.3 syntax-check matrix and departure inventory smoke tests.\n* Document test scope and remaining integration-test requirements.\n
+== Testing ==
+
+Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The current suite does not simulate concurrent booking requests or cover every form, email and status-transition path.
+
+== Changelog ==
+
+= 1.0.0-beta.2 =
+* Add initial WordPress integration tests backed by MySQL.
+* Run WordPress integration tests in GitHub Actions.
+
+= 1.0.0-beta.1 =
+* Add PHP 7.4–8.3 syntax-check matrix and departure inventory smoke tests.
+* Document test scope and remaining integration-test requirements.
+
 
 = 0.9.0 =
 * Send customer booking receipt and status-change emails.
