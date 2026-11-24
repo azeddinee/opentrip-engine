@@ -55,6 +55,7 @@ final class OpenTrip_Engine {
 		add_action( 'init', array( OTE_Departures::instance(), 'maybe_install' ) );
 		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_privacy_exporter' ) );
 		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_privacy_eraser' ) );
+		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
 	}
 
 	public static function activate() {
@@ -707,6 +708,15 @@ final class OpenTrip_Engine {
 		}
 	}
 
+	public function add_privacy_policy_content() {
+		if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+			return;
+		}
+		$content  = '<p>' . esc_html__( 'OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations.', 'opentrip-engine' ) . '</p>';
+		$content .= '<p>' . esc_html__( 'The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details and removes review author details and review text; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved.', 'opentrip-engine' ) . '</p>';
+		wp_add_privacy_policy_content( __( 'OpenTrip Engine', 'opentrip-engine' ), $content );
+	}
+
 	public function register_privacy_exporter( $exporters ) {
 		$exporters['opentrip-engine'] = array(
 			'exporter_friendly_name' => __( 'OpenTrip Engine bookings and reviews', 'opentrip-engine' ),
@@ -750,14 +760,17 @@ final class OpenTrip_Engine {
 					$items = array(
 						'Booking reference' => get_post_meta( $post_id, '_ote_booking_reference', true ),
 						'Tour'              => get_the_title( (int) get_post_meta( $post_id, '_ote_tour_id', true ) ),
-					'Customer name'      => get_post_meta( $post_id, '_ote_customer_name', true ),
-					'Email address'      => get_post_meta( $post_id, '_ote_customer_email', true ),
-					'Travel date'        => get_post_meta( $post_id, '_ote_travel_date', true ),
-					'Adults'             => get_post_meta( $post_id, '_ote_adults', true ),
-					'Children'           => get_post_meta( $post_id, '_ote_children', true ),
-					'Rooms'              => get_post_meta( $post_id, '_ote_rooms', true ),
-					'Customer message'   => get_post_meta( $post_id, '_ote_customer_message', true ),
-				);
+						'Customer name'     => get_post_meta( $post_id, '_ote_customer_name', true ),
+						'Email address'     => get_post_meta( $post_id, '_ote_customer_email', true ),
+						'Travel date'       => get_post_meta( $post_id, '_ote_travel_date', true ),
+						'Adults'            => get_post_meta( $post_id, '_ote_adults', true ),
+						'Children'          => get_post_meta( $post_id, '_ote_children', true ),
+						'Rooms'             => get_post_meta( $post_id, '_ote_rooms', true ),
+						'Request status'    => get_post_meta( $post_id, '_ote_booking_status', true ),
+						'Estimated total'   => get_post_meta( $post_id, '_ote_total_price', true ),
+						'Currency'          => get_post_meta( $post_id, '_ote_currency', true ),
+						'Customer message'  => get_post_meta( $post_id, '_ote_customer_message', true ),
+					);
 					$group_id = 'opentrip-bookings';
 					$group_label = __( 'OpenTrip Engine booking requests', 'opentrip-engine' );
 				} else {
