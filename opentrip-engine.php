@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.9.0
+ * Version: 1.0.0-beta.1
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
