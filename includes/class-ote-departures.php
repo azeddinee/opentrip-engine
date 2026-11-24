@@ -158,8 +158,8 @@ final class OTE_Departures {
 			return false;
 		}
 		$changed = $wpdb->query( $wpdb->prepare(
-			"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND reserved + %d <= capacity",
-			$seats, $departure_id, $tour_id, $seats
+			"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved + %d <= capacity",
+			$seats, $departure_id, $tour_id, wp_date( 'Y-m-d' ), $seats
 		) );
 		return 1 === $changed;
 	}
