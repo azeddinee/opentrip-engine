@@ -791,7 +791,7 @@ final class OpenTrip_Engine {
 		$reviews = new WP_Query( array(
 			'post_type' => 'ote_review',
 			'post_status' => 'publish',
-			'posts_per_page' => min( 50, max( 1, absint( $atts['limit'] ) ) ),
+			'posts_per_page' => -1,
 			'no_found_rows' => true,
 			'meta_query' => array( array( 'key' => '_ote_review_tour_id', 'value' => $tour_id, 'compare' => '=' ) ),
 		) );
@@ -803,12 +803,13 @@ final class OpenTrip_Engine {
 			$ratings[] = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) );
 		}
 		$average = array_sum( $ratings ) / count( $ratings );
+		$display_reviews = array_slice( $reviews->posts, 0, min( 50, max( 1, absint( $atts['limit'] ) ) ) );
 		ob_start();
 		?>
 		<section class="ote-reviews">
 			<h2><?php esc_html_e( 'Guest reviews', 'opentrip-engine' ); ?></h2>
 			<p class="ote-review-summary"><strong><?php echo esc_html( number_format_i18n( $average, 1 ) ); ?>/5</strong> — <?php echo esc_html( sprintf( _n( '%d approved review', '%d approved reviews', count( $ratings ), 'opentrip-engine' ), count( $ratings ) ) ); ?></p>
-			<?php foreach ( $reviews->posts as $review ) : $rating = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) ); ?>
+			<?php foreach ( $display_reviews as $review ) : $rating = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) ); ?>
 				<article class="ote-review">
 					<p class="ote-review-stars" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></p>
 					<h3><?php echo esc_html( get_post_meta( $review->ID, '_ote_review_name', true ) ); ?></h3>
