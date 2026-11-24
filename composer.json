@@ -1,0 +1,13 @@
+{
+  "name": "azeddinee/opentrip-engine",
+  "description": "Development dependencies for OpenTrip Engine tests.",
+  "type": "project",
+  "license": "GPL-2.0-or-later",
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
+  "config": {
+    "allow-plugins": {},
+    "sort-packages": true
+  }
+}
