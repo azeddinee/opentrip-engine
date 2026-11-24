@@ -143,4 +143,42 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		unset( $_POST['ote_booking_status_nonce'], $_POST['ote_booking_status'] );
 	}
 
+	public function test_privacy_exporter_and_eraser_cover_booking_and_review_data() {
+		$email = 'privacy-test@example.com';
+		$booking_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_booking',
+				'post_status' => 'private',
+				'post_title'  => 'Privacy Test Customer',
+			)
+		);
+		update_post_meta( $booking_id, '_ote_customer_email', $email );
+		update_post_meta( $booking_id, '_ote_customer_name', 'Privacy Test Customer' );
+		update_post_meta( $booking_id, '_ote_customer_message', 'Please call me.' );
+
+		$review_id = self::factory()->post->create(
+			array(
+				'post_type'    => 'ote_review',
+				'post_status'  => 'pending',
+				'post_title'   => 'Review by Privacy Test Customer',
+				'post_content' => 'A personal review.',
+			)
+		);
+		update_post_meta( $review_id, '_ote_review_email', $email );
+		update_post_meta( $review_id, '_ote_review_name', 'Privacy Test Customer' );
+
+		$engine = OpenTrip_Engine::instance();
+		$export = $engine->export_personal_data( $email, 1 );
+		$this->assertCount( 2, $export['data'] );
+		$this->assertTrue( $export['done'] );
+
+		$erase = $engine->erase_personal_data( $email, 1 );
+		$this->assertSame( 2, $erase['items_removed'] );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_email', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_message', true ) );
+		$this->assertSame( 'Anonymized customer', get_post_meta( $booking_id, '_ote_customer_name', true ) );
+		$this->assertSame( '', get_post_meta( $review_id, '_ote_review_email', true ) );
+		$this->assertSame( '', get_post_field( 'post_content', $review_id ) );
+	}
+
 }
