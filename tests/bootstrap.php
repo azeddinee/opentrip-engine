@@ -12,6 +12,8 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 	exit( 1 );
 }
 
+require_once dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php';
+
 require_once $_tests_dir . '/includes/functions.php';
 
 function ote_manually_load_plugin() {
