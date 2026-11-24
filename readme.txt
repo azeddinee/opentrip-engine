@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
 
 == Installation ==
 
@@ -28,6 +28,10 @@ Edit a tour and use the Day-by-Day Itinerary panel. Enter a JSON array with one 
 == Tour Inclusions & Exclusions ==
 
 Edit a tour and enter one item per line in the Tour Inclusions & Exclusions panel. Add [opentrip_inclusions] to the tour template or page to display the two lists, or use [opentrip_inclusions tour_id="123"] for a specific tour. Empty lists are hidden.
+
+== Tour Photo Gallery ==
+
+Edit a tour and select images in the Tour Photo Gallery panel. Display the gallery with [opentrip_gallery], or use [opentrip_gallery tour_id="123" columns="4"]. Up to 40 images are supported. Drag-and-drop ordering and a lightbox are not included yet.
 
 == Frequently Asked Questions ==
 
@@ -50,6 +54,9 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.7.0 =
+* Add Media Library gallery picker and frontend gallery shortcode.
 
 = 0.6.0 =
 * Add per-tour inclusions and exclusions editor and frontend shortcode.
