@@ -71,7 +71,7 @@ Requests start as Pending. An administrator can confirm a request; confirmation 
 ## Important limitations
 This MVP does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat reservation update is atomic at the database level, but the plugin still needs integration tests and broader production hardening.
 
-Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration and automated tests are planned before a stable production release.
+Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration is available; automated coverage is included for booking and review export/erasure. Site owners remain responsible for reviewing legal retention obligations and configuring their privacy policy.
 
 ## Roadmap
 - [x] Customer booking receipt, reference number and status update emails
@@ -80,7 +80,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Initial WordPress integration tests (content types, shortcode output and MySQL inventory)
 - [x] Departure dates and atomic seat inventory reservation
 - [ ] Email notification settings and customer confirmations
-- [ ] WordPress privacy exporter/eraser integration
+- [x] WordPress privacy exporter/eraser integration
 - [ ] Permission-checked REST API
 - [ ] Pricing rules and multi-currency formatting
 - [ ] Optional payment gateway adapters
