@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.2
+Stable tag: 1.0.0-beta.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,6 +66,12 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The current suite does not simulate concurrent booking requests or cover every form, email and status-transition path.
 
 == Changelog ==
+
+= 1.0.0-beta.3 =
+* Add WordPress personal data export and erasure support for bookings and reviews.
+* Preserve booking status when seat release fails and reject confirmation for past departures.
+* Add a booking-form honeypot and bounded customer input validation.
+* Add PHPUnit Polyfills and expand WordPress integration tests.
 
 = 1.0.0-beta.2 =
 * Add initial WordPress integration tests backed by MySQL.
