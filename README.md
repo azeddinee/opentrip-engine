@@ -12,7 +12,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - `[opentrip_tours destination="morocco" limit="6"]` filters by destination slug.
 - `[opentrip_booking_form]` displays a request form for the current tour.
 - `[opentrip_booking_form tour_id="123"]` displays a form for a specified published tour.
-- Booking requests are stored privately in the WordPress dashboard.
+- Booking requests and review moderation records are restricted to site administrators in the WordPress dashboard.
 - Internal request statuses: Pending, Confirmed and Cancelled.
 - Admin booking table with tour, customer, travel date, traveller count and status.
 - New-request notification sent to the WordPress admin email using `wp_mail()`.
