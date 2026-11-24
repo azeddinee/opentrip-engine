@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.7.0 — itinerary, inclusions/exclusions and tour gallery MVP.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 0.8.0 — tour gallery, itinerary, inclusions/exclusions, and moderated reviews MVP.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -25,6 +25,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Per-tour inclusions and exclusions editor with one item per line, saved as sanitized tour metadata.
 - `[opentrip_inclusions]` displays included and excluded items for the current tour; `[opentrip_inclusions tour_id="123"]` displays a selected tour's lists.
 - Media Library gallery picker for each tour, supporting up to 40 images.
+- Visitor review form with 1–5 star ratings; submissions are saved as Pending and require administrator approval.
+- `[opentrip_reviews]` displays approved reviews and their average rating; `[opentrip_review_form]` displays the review form for the current tour.
+- Review author email is stored privately in review metadata and is not displayed publicly; a basic honeypot field helps deter automated spam.
 - `[opentrip_gallery]` renders the current tour gallery; `[opentrip_gallery tour_id="123" columns="4"]` renders a selected tour gallery.
 - Itinerary data is stored as structured tour metadata and sanitized on save.
 - The estimated total and unit price are saved as a booking-time price snapshot.
@@ -47,6 +50,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 ## Itinerary workflow in 0.5.0
 Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
 
+## Reviews workflow in 0.8.0
+Add `[opentrip_reviews]` and `[opentrip_review_form]` to a tour template or page. Optional `tour_id` can target a specific tour; `[opentrip_reviews limit="5"]` controls the number displayed (1–50). New reviews are held for moderation under **Tours → Tour Reviews** and appear publicly only after an administrator publishes them. The review form requires a name, email, 1–5 rating and review text. Email addresses are not shown on the frontend. This MVP does not verify that a reviewer booked or completed the tour, and the honeypot is only a basic spam measure.
+
 ## Tour gallery workflow in 0.7.0
 Edit a tour and use the **Tour Photo Gallery** panel to select images from the WordPress Media Library. The selected images are saved in their selected order (up to 40). Add `[opentrip_gallery]` to the tour template or page. Optional attributes: `tour_id` and `columns` (1–6). The gallery uses the attachment links so visitors can open the full image. Drag-and-drop reordering and a lightbox are not included yet.
 
@@ -62,6 +68,7 @@ This MVP does not process payments, calculate taxes, or provide customer account
 Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration and automated tests are planned before a stable production release.
 
 ## Roadmap
+- [x] Basic moderated tour reviews and star ratings
 - [x] Basic PHP syntax check workflow (GitHub Actions)
 - [ ] Automated WordPress integration tests
 - [x] Departure dates and atomic seat inventory reservation
