@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.8.0 — tour gallery, itinerary, inclusions/exclusions, and moderated reviews MVP.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 0.9.0 — customer booking receipts and status-update emails.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -16,6 +16,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Internal request statuses: Pending, Confirmed and Cancelled.
 - Admin booking table with tour, customer, travel date, traveller count and status.
 - New-request notification sent to the WordPress admin email using `wp_mail()`.
+- Customer email receipt with a unique booking reference after request submission.
+- Customer email notifications when an administrator changes a request to Confirmed or Cancelled.
+- Booking reference displayed in the post-submission confirmation message and in the admin booking details.
 - Responsive frontend CSS for tour cards and booking forms.
 - Admin departure manager with dates, capacity, price and currency.
 - Booking form selects a real departure and displays remaining seats.
@@ -50,6 +53,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 ## Itinerary workflow in 0.5.0
 Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
 
+## Customer booking communications in 0.9.0
+After a request is saved, the customer receives an email receipt with a reference such as `OTE-000123` and a summary of the tour, departure, traveller count and estimated total. The on-page success message also displays the reference. The receipt clearly states that the request is not confirmed and that no payment has been taken. When an administrator changes the request status to Confirmed or Cancelled, a corresponding email is sent to the customer. These messages use WordPress `wp_mail()`; reliable delivery depends on the site's mail configuration. This release does not add customer login, self-service booking lookup, payment processing or automated invoices.
+
 ## Reviews workflow in 0.8.0
 Add `[opentrip_reviews]` and `[opentrip_review_form]` to a tour template or page. Optional `tour_id` can target a specific tour; `[opentrip_reviews limit="5"]` controls the number displayed (1–50). New reviews are held for moderation under **Tours → Tour Reviews** and appear publicly only after an administrator publishes them. The review form requires a name, email, 1–5 rating and review text. Email addresses are not shown on the frontend. This MVP does not verify that a reviewer booked or completed the tour, and the honeypot is only a basic spam measure.
 
@@ -68,6 +74,7 @@ This MVP does not process payments, calculate taxes, or provide customer account
 Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration and automated tests are planned before a stable production release.
 
 ## Roadmap
+- [x] Customer booking receipt, reference number and status update emails
 - [x] Basic moderated tour reviews and star ratings
 - [x] Basic PHP syntax check workflow (GitHub Actions)
 - [ ] Automated WordPress integration tests
