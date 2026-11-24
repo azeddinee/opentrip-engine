@@ -44,7 +44,7 @@ When a customer submits a request, the plugin emails a receipt with a reference 
 == Frequently Asked Questions ==
 
 = Does it process payments? =
-No. Version 0.1.0 collects booking requests only.
+No. OpenTrip Engine collects booking requests but does not process payments.
 
 = What traveller details are captured? =
 Booking requests capture adults, children and rooms required. The estimated total uses the departure's per-traveller price for each adult and child. Room count is recorded but does not affect the price. Infant-specific prices and child discounts are not included yet.
@@ -54,9 +54,6 @@ Administrators create dated departures with a capacity. Customers select a depar
 
 = Can I track booking request status? =
 Yes. Administrators can mark requests Pending, Confirmed or Cancelled. These are internal statuses only.
-
-= Does it process payments? =
-No. Version 0.3.0 manages departure seat inventory but does not collect payments.
 
 = Are pending requests holding seats? =
 No. Seats are reserved only when a request is confirmed.
