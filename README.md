@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 0.6.0 — itinerary and tour inclusions/exclusions MVP.** This release collects booking requests; it is not a complete reservation or payment system.
+**Current status: 0.7.0 — itinerary, inclusions/exclusions and tour gallery MVP.** This release collects booking requests; it is not a complete reservation or payment system.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -24,6 +24,8 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - `[opentrip_itinerary]` renders the current tour's itinerary; `[opentrip_itinerary tour_id="123"]` renders a selected tour's itinerary.
 - Per-tour inclusions and exclusions editor with one item per line, saved as sanitized tour metadata.
 - `[opentrip_inclusions]` displays included and excluded items for the current tour; `[opentrip_inclusions tour_id="123"]` displays a selected tour's lists.
+- Media Library gallery picker for each tour, supporting up to 40 images.
+- `[opentrip_gallery]` renders the current tour gallery; `[opentrip_gallery tour_id="123" columns="4"]` renders a selected tour gallery.
 - Itinerary data is stored as structured tour metadata and sanitized on save.
 - The estimated total and unit price are saved as a booking-time price snapshot.
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
@@ -44,6 +46,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 
 ## Itinerary workflow in 0.5.0
 Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
+
+## Tour gallery workflow in 0.7.0
+Edit a tour and use the **Tour Photo Gallery** panel to select images from the WordPress Media Library. The selected images are saved in their selected order (up to 40). Add `[opentrip_gallery]` to the tour template or page. Optional attributes: `tour_id` and `columns` (1–6). The gallery uses the attachment links so visitors can open the full image. Drag-and-drop reordering and a lightbox are not included yet.
 
 ## Inclusions and exclusions workflow in 0.6.0
 Edit a tour and use the **Tour Inclusions & Exclusions** panel. Enter one item per line in each box. The frontend shortcode `[opentrip_inclusions]` displays the two lists on the current tour; use `[opentrip_inclusions tour_id="123"]` for a specific tour. Empty lists are hidden, and each list is limited to 100 unique items.
