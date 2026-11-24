@@ -37,7 +37,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Atomic seat reservation when an administrator confirms a request; cancellation releases reserved seats.
 - Nonce verification, capability checks, input sanitization and output escaping.
 
-## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. GitHub Actions runs PHP syntax checks and these smoke tests across PHP 7.4–8.3. The tests use a fake database adapter: they check the SQL update contract and input guards, but they are not WordPress integration tests and do not prove concurrent booking behaviour against MySQL. A real WordPress test environment is still required before calling this a stable production release.\n\n## Requirements
+## Testing\n\nRun the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow also installs WordPress and MySQL 8.0, then runs PHPUnit integration tests for custom post types, shortcode output/escaping, and real database seat reservation/release. The PHP syntax and smoke-test job runs across PHP 7.4–8.3. These tests are a starting point, not proof of production readiness: the suite does not yet simulate concurrent booking requests or cover every form, email and status-transition path. Review the Actions results before treating a commit as verified.\n\n## Requirements
 - WordPress 6.2+
 - PHP 7.4+
 
@@ -77,7 +77,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Customer booking receipt, reference number and status update emails
 - [x] Basic moderated tour reviews and star ratings
 - [x] Basic PHP syntax check workflow (GitHub Actions)
-- [ ] Automated WordPress integration tests
+- [x] Initial WordPress integration tests (content types, shortcode output and MySQL inventory)
 - [x] Departure dates and atomic seat inventory reservation
 - [ ] Email notification settings and customer confirmations
 - [ ] WordPress privacy exporter/eraser integration
