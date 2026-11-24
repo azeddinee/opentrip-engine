@@ -262,7 +262,7 @@ final class OpenTrip_Engine {
 			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
 			$body = sprintf(
 				__( "A new booking request was received.\n\nTour: %1$s\nName: %2$s\nEmail: %3$s\nTravel date: %4$s\nTravellers: %5$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
-				get_the_title( $tour_id ), $name, $email, $date, $travellers
+				get_the_title( $tour_id ), $name, $email, $departure->start_date, $travellers
 			);
 			wp_mail( $admin_email, $subject, $body );
 		}
