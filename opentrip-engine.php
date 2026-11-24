@@ -512,6 +512,7 @@ final class OpenTrip_Engine {
 			<input type="hidden" name="ote_action" value="submit_booking">
 			<input type="hidden" name="ote_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
+			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
 			<p><label><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_name" autocomplete="name"></label></p>
 			<p><label><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?><br><input required type="email" name="ote_email" autocomplete="email"></label></p>
 			<?php $available_departures = OTE_Departures::instance()->get_available( $tour_id ); ?>
@@ -544,6 +545,9 @@ final class OpenTrip_Engine {
 		if ( ! isset( $_POST['ote_booking_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_booking_nonce'] ) ), 'ote_submit_booking' ) ) {
 			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
 		}
+		if ( ! empty( $_POST['ote_website'] ) ) {
+			wp_die( esc_html__( 'Your booking request could not be submitted.', 'opentrip-engine' ), 400 );
+		}
 		$tour_id = isset( $_POST['ote_tour_id'] ) ? absint( $_POST['ote_tour_id'] ) : 0;
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
 			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), 400 );
@@ -557,7 +561,7 @@ final class OpenTrip_Engine {
 		$travellers = $adults + $children;
 		$message = isset( $_POST['ote_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_message'] ) ) : '';
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
-		if ( ! $name || ! is_email( $email ) || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
+		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
 		}
 		$booking_id = wp_insert_post( array(
