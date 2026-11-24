@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.6.0
+ * Version: 0.7.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.6.0' );
+define( 'OTE_VERSION', '0.7.0' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -31,6 +31,10 @@ final class OpenTrip_Engine {
 		add_action( 'add_meta_boxes', array( $this, 'add_tour_meta_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_itinerary_meta_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_inclusions_meta_box' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_gallery_meta_box' ) );
+		add_action( 'save_post_ote_tour', array( $this, 'save_gallery' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_gallery_admin' ) );
+		add_shortcode( 'opentrip_gallery', array( $this, 'gallery_shortcode' ) );
 		add_action( 'save_post_ote_tour', array( $this, 'save_inclusions' ) );
 		add_shortcode( 'opentrip_inclusions', array( $this, 'inclusions_shortcode' ) );
 		add_action( 'save_post_ote_tour', array( $this, 'save_itinerary' ) );
@@ -301,6 +305,107 @@ final class OpenTrip_Engine {
 			</div>
 			<?php endif; ?>
 		</section>
+		<?php
+		return ob_get_clean();
+	}
+
+	public function add_gallery_meta_box() {
+		add_meta_box( 'ote_gallery', __( 'Tour Photo Gallery', 'opentrip-engine' ), array( $this, 'render_gallery_meta_box' ), 'ote_tour', 'normal', 'default' );
+	}
+
+	public function enqueue_gallery_admin( $hook ) {
+		if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || 'ote_tour' !== $screen->post_type ) {
+			return;
+		}
+		wp_enqueue_media();
+		wp_add_inline_script( 'jquery', "
+		jQuery(function($){
+			var frame;
+			$('#ote_gallery_select').on('click', function(e){
+				e.preventDefault();
+				if(frame){frame.open();return;}
+				frame=wp.media({title:'Select tour photos',button:{text:'Use selected photos'},multiple:true,library:{type:'image'}});
+				frame.on('open',function(){
+					var ids=$('#ote_gallery_ids').val().split(',').filter(Boolean);
+					var selection=frame.state().get('selection'); selection.reset();
+					ids.forEach(function(id){var attachment=wp.media.attachment(id);attachment.fetch();selection.add(attachment);});
+				});
+				frame.on('select',function(){
+					var selection=frame.state().get('selection'), ids=[], html='';
+					selection.each(function(attachment){var a=attachment.toJSON();ids.push(a.id);html+='<span class=\"ote-gallery-admin-thumb\"><img src=\"'+(a.sizes&&a.sizes.thumbnail?a.sizes.thumbnail.url:a.url)+'\" alt=\"\"></span>';});
+					$('#ote_gallery_ids').val(ids.join(','));
+					$('#ote_gallery_preview').html(html);
+				});
+				frame.open();
+			});
+			$('#ote_gallery_clear').on('click',function(e){e.preventDefault();$('#ote_gallery_ids').val('');$('#ote_gallery_preview').empty();});
+		});
+		" );
+	}
+
+	public function render_gallery_meta_box( $post ) {
+		wp_nonce_field( 'ote_save_gallery', 'ote_gallery_nonce' );
+		$ids = get_post_meta( $post->ID, '_ote_gallery_ids', true );
+		$ids = is_array( $ids ) ? $ids : array();
+		?>
+		<p><?php esc_html_e( 'Choose multiple images from the Media Library. Dragging to reorder is not supported yet; selected order is retained.', 'opentrip-engine' ); ?></p>
+		<input type="hidden" id="ote_gallery_ids" name="ote_gallery_ids" value="<?php echo esc_attr( implode( ',', array_map( 'absint', $ids ) ) ); ?>">
+		<p><button type="button" class="button button-primary" id="ote_gallery_select"><?php esc_html_e( 'Select tour photos', 'opentrip-engine' ); ?></button>
+		<button type="button" class="button" id="ote_gallery_clear"><?php esc_html_e( 'Clear gallery', 'opentrip-engine' ); ?></button></p>
+		<div id="ote_gallery_preview" class="ote-gallery-admin-preview">
+			<?php foreach ( $ids as $id ) { echo '<span class="ote-gallery-admin-thumb">' . wp_get_attachment_image( absint( $id ), 'thumbnail' ) . '</span>'; } ?>
+		</div>
+		<?php
+	}
+
+	public function save_gallery( $post_id ) {
+		if ( ! isset( $_POST['ote_gallery_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_gallery_nonce'] ) ), 'ote_save_gallery' ) ) {
+			return;
+		}
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$raw = isset( $_POST['ote_gallery_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_gallery_ids'] ) ) : '';
+		$ids = array_filter( array_unique( array_map( 'absint', explode( ',', $raw ) ) ) );
+		$clean = array();
+		foreach ( array_slice( $ids, 0, 40 ) as $id ) {
+			if ( wp_attachment_is_image( $id ) ) {
+				$clean[] = $id;
+			}
+		}
+		if ( $clean ) {
+			update_post_meta( $post_id, '_ote_gallery_ids', $clean );
+		} else {
+			delete_post_meta( $post_id, '_ote_gallery_ids' );
+		}
+	}
+
+	public function gallery_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'tour_id' => 0, 'columns' => 3, 'size' => 'large' ), $atts, 'opentrip_gallery' );
+		$tour_id = absint( $atts['tour_id'] );
+		if ( ! $tour_id && is_singular( 'ote_tour' ) ) {
+			$tour_id = get_the_ID();
+		}
+		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) ) {
+			return '';
+		}
+		$ids = get_post_meta( $tour_id, '_ote_gallery_ids', true );
+		if ( ! is_array( $ids ) || empty( $ids ) ) {
+			return '';
+		}
+		$columns = min( 6, max( 1, absint( $atts['columns'] ) ) );
+		$size = in_array( $atts['size'], array( 'thumbnail', 'medium', 'large', 'full' ), true ) ? $atts['size'] : 'large';
+		ob_start();
+		?>
+		<div class="ote-gallery" style="--ote-gallery-columns:<?php echo esc_attr( $columns ); ?>">
+			<?php foreach ( $ids as $id ) : ?>
+			<figure class="ote-gallery-item"><?php echo wp_get_attachment_link( absint( $id ), $size, false, false, array( 'class' => 'ote-gallery-link' ) ); ?></figure>
+			<?php endforeach; ?>
+		</div>
 		<?php
 		return ob_get_clean();
 	}
