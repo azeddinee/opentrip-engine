@@ -1,15 +1,25 @@
-name: PHP syntax
+name: PHP quality checks
+
 on:
   push:
   pull_request:
+
 jobs:
-  php-lint:
+  php-lint-and-smoke:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+    name: PHP ${{ matrix.php-version }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-      - name: Lint plugin PHP
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+      - name: Check PHP syntax
         run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Run departure inventory smoke tests
+        run: php tests/departures-smoke.php
