@@ -53,6 +53,8 @@ final class OpenTrip_Engine {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_notices', array( $this, 'inventory_admin_notice' ) );
 		add_action( 'init', array( OTE_Departures::instance(), 'maybe_install' ) );
+		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_privacy_exporter' ) );
+		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_privacy_eraser' ) );
 	}
 
 	public static function activate() {
@@ -699,6 +701,125 @@ final class OpenTrip_Engine {
 		if ( $status !== $previous ) {
 			$this->send_customer_booking_email( $post_id, $status );
 		}
+	}
+
+	public function register_privacy_exporter( $exporters ) {
+		$exporters['opentrip-engine'] = array(
+			'exporter_friendly_name' => __( 'OpenTrip Engine bookings and reviews', 'opentrip-engine' ),
+			'callback'               => array( $this, 'export_personal_data' ),
+		);
+		return $exporters;
+	}
+
+	public function register_privacy_eraser( $erasers ) {
+		$erasers['opentrip-engine'] = array(
+			'eraser_friendly_name' => __( 'OpenTrip Engine bookings and reviews', 'opentrip-engine' ),
+			'callback'             => array( $this, 'erase_personal_data' ),
+		);
+		return $erasers;
+	}
+
+	public function export_personal_data( $email_address, $page = 1 ) {
+		$limit  = 100;
+		$offset = max( 0, ( absint( $page ) - 1 ) * $limit );
+		$data   = array();
+		$types  = array(
+			'ote_booking' => '_ote_customer_email',
+			'ote_review'  => '_ote_review_email',
+		);
+		foreach ( $types as $post_type => $email_meta ) {
+			$ids = get_posts( array(
+				'post_type'      => $post_type,
+				'post_status'    => 'any',
+				'posts_per_page' => $limit,
+				'offset'         => $offset,
+				'fields'         => 'ids',
+				'meta_key'       => $email_meta,
+				'meta_value'     => sanitize_email( $email_address ),
+			) );
+			foreach ( $ids as $post_id ) {
+				if ( 'ote_booking' === $post_type ) {
+					$items = array(
+						'Booking reference' => get_post_meta( $post_id, '_ote_booking_reference', true ),
+						'Tour'              => get_the_title( (int) get_post_meta( $post_id, '_ote_tour_id', true ) ),
+					'Customer name'      => get_post_meta( $post_id, '_ote_customer_name', true ),
+					'Email address'      => get_post_meta( $post_id, '_ote_customer_email', true ),
+					'Travel date'        => get_post_meta( $post_id, '_ote_travel_date', true ),
+					'Adults'             => get_post_meta( $post_id, '_ote_adults', true ),
+					'Children'           => get_post_meta( $post_id, '_ote_children', true ),
+					'Rooms'              => get_post_meta( $post_id, '_ote_rooms', true ),
+					'Customer message'   => get_post_meta( $post_id, '_ote_customer_message', true ),
+				);
+					$group_id = 'opentrip-bookings';
+					$group_label = __( 'OpenTrip Engine booking requests', 'opentrip-engine' );
+				} else {
+					$items = array(
+						'Tour'         => get_the_title( (int) get_post_meta( $post_id, '_ote_review_tour_id', true ) ),
+						'Author name'  => get_post_meta( $post_id, '_ote_review_name', true ),
+						'Email address'=> get_post_meta( $post_id, '_ote_review_email', true ),
+						'Rating'       => get_post_meta( $post_id, '_ote_review_rating', true ),
+						'Review text'  => get_post_field( 'post_content', $post_id ),
+					);
+					$group_id = 'opentrip-reviews';
+					$group_label = __( 'OpenTrip Engine reviews', 'opentrip-engine' );
+				}
+				$export_data = array();
+				foreach ( $items as $name => $value ) {
+					if ( '' !== (string) $value ) {
+						$export_data[] = array( 'name' => $name, 'value' => (string) $value );
+					}
+				}
+				$data[] = array(
+					'group_id'    => $group_id,
+					'group_label' => $group_label,
+					'item_id'     => $post_type . '-' . $post_id,
+					'data'        => $export_data,
+				);
+			}
+		}
+		return array( 'data' => $data, 'done' => count( $data ) < ( 2 * $limit ) );
+	}
+
+	public function erase_personal_data( $email_address, $page = 1 ) {
+		$limit = 100;
+		$removed = 0;
+		$types = array(
+			'ote_booking' => '_ote_customer_email',
+			'ote_review'  => '_ote_review_email',
+		);
+		foreach ( $types as $post_type => $email_meta ) {
+			$ids = get_posts( array(
+				'post_type'      => $post_type,
+				'post_status'    => 'any',
+				'posts_per_page' => $limit,
+				'fields'         => 'ids',
+				'meta_key'       => $email_meta,
+				'meta_value'     => sanitize_email( $email_address ),
+			) );
+			foreach ( $ids as $post_id ) {
+				if ( 'ote_booking' === $post_type ) {
+					update_post_meta( $post_id, '_ote_customer_name', __( 'Anonymized customer', 'opentrip-engine' ) );
+					update_post_meta( $post_id, '_ote_customer_email', '' );
+					update_post_meta( $post_id, '_ote_customer_message', '' );
+					wp_update_post( array( 'ID' => $post_id, 'post_title' => __( 'Anonymized booking request', 'opentrip-engine' ) ) );
+				} else {
+					update_post_meta( $post_id, '_ote_review_name', __( 'Anonymous', 'opentrip-engine' ) );
+					update_post_meta( $post_id, '_ote_review_email', '' );
+					wp_update_post( array(
+						'ID'           => $post_id,
+						'post_title'   => __( 'Anonymized review', 'opentrip-engine' ),
+						'post_content' => '',
+					) );
+				}
+				$removed++;
+			}
+		}
+		return array(
+			'items_removed'  => $removed,
+			'items_retained' => 0,
+			'messages'       => array(),
+			'done'           => $removed < ( 2 * $limit ),
+		);
 	}
 
 	public function inventory_admin_notice() {
