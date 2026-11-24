@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 0.8.0
+Stable tag: 0.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, collect moderated guest reviews and star ratings, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator without WooCommerce.
+Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, collect moderated guest reviews and star ratings, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator and customer without WooCommerce. Customers receive a unique request reference and email updates when the agency changes the request status.
 
 == Installation ==
 
@@ -37,6 +37,10 @@ Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Op
 
 Edit a tour and select images in the Tour Photo Gallery panel. Display the gallery with [opentrip_gallery], or use [opentrip_gallery tour_id="123" columns="4"]. Up to 40 images are supported. Drag-and-drop ordering and a lightbox are not included yet.
 
+== Customer Booking Emails ==
+
+When a customer submits a request, the plugin emails a receipt with a reference such as OTE-000123. The page confirmation also displays the reference. The receipt states that the request is pending and no payment has been taken. When an administrator changes the status to Confirmed or Cancelled, the customer receives an update email. Delivery depends on the WordPress site's wp_mail() configuration. This release does not provide customer accounts, self-service booking lookup, payments or invoices.
+
 == Frequently Asked Questions ==
 
 = Does it process payments? =
@@ -58,6 +62,10 @@ No. Version 0.3.0 manages departure seat inventory but does not collect payments
 No. Seats are reserved only when a request is confirmed.
 
 == Changelog ==
+
+= 0.9.0 =
+* Send customer booking receipt and status-change emails.
+* Generate and display a unique booking reference.
 
 = 0.8.0 =
 * Add visitor review submission, 1–5 star ratings and administrator moderation.
