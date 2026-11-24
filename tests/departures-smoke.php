@@ -9,6 +9,7 @@
 define( 'ABSPATH', __DIR__ . '/' );
 
 function add_action() {}
+function wp_date( $format ) { return '2026-11-25'; }
 function absint( $value ) {
 	return abs( (int) $value );
 }
@@ -48,6 +49,7 @@ $service = OTE_Departures::instance();
 
 ote_assert( true === $service->reserve( 7, 12, 3 ), 'reserve succeeds when one row is updated' );
 ote_assert( false !== strpos( end( $wpdb->queries ), 'reserved + 3 <= capacity' ), 'reserve query enforces capacity in SQL' );
+ote_assert( false !== strpos( end( $wpdb->queries ), "start_date >= '2026-11-25'" ), 'reserve query rejects past departures' );
 
 $wpdb->next_result = 0;
 ote_assert( false === $service->reserve( 7, 12, 3 ), 'reserve fails when no row can be updated' );
