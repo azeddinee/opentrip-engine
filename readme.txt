@@ -58,6 +58,9 @@ Yes. Administrators can mark requests Pending, Confirmed or Cancelled. These are
 = Are pending requests holding seats? =
 No. Seats are reserved only when a request is confirmed.
 
+= Does OpenTrip Engine support WordPress privacy requests? =
+Yes. It provides personal data export and erasure callbacks for booking and review data matched by email address. Erasure anonymizes booking contact details and removes review author contact details and review text. Booking records remain in anonymized form so inventory history is preserved. Site owners must still assess legal retention requirements and maintain their own privacy policy.
+
 == Testing ==
 
 Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The current suite does not simulate concurrent booking requests or cover every form, email and status-transition path.
