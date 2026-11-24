@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 0.8.0
+ * Version: 0.9.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '0.8.0' );
+define( 'OTE_VERSION', '0.9.0' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -500,7 +500,10 @@ final class OpenTrip_Engine {
 		}
 		ob_start();
 		if ( isset( $_GET['ote_booking'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_booking'] ) ) ) {
-			echo '<p role="status">' . esc_html__( 'Thank you. Your booking request was received.', 'opentrip-engine' ) . '</p>';
+			echo '<p class="ote-success" role="status">' . esc_html__( 'Thank you. Your booking request was received. It is not confirmed until the travel agency contacts you.', 'opentrip-engine' ) . '</p>';
+			if ( isset( $_GET['ote_ref'] ) ) {
+				echo '<p class="ote-booking-reference"><strong>' . esc_html__( 'Your request reference:', 'opentrip-engine' ) . '</strong> ' . esc_html( sanitize_text_field( wp_unslash( $_GET['ote_ref'] ) ) ) . '</p>';
+			}
 		}
 		?>
 		<form method="post" class="ote-booking-form">
@@ -577,20 +580,24 @@ final class OpenTrip_Engine {
 		update_post_meta( $booking_id, '_ote_total_price', round( $travellers * (float) $departure->price, 2 ) );
 		update_post_meta( $booking_id, '_ote_customer_message', $message );
 		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+		$reference = sprintf( 'OTE-%06d', $booking_id );
+		update_post_meta( $booking_id, '_ote_booking_reference', $reference );
 
 		$admin_email = get_option( 'admin_email' );
+		$this->send_customer_booking_email( $booking_id, 'pending' );
+
 		if ( $admin_email && is_email( $admin_email ) ) {
 			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
 			$body = sprintf(
-				__( "A new booking request was received.\n\nTour: %1$s\nName: %2$s\nEmail: %3$s\nTravel date: %4$s\nTravellers: %5$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
-				get_the_title( $tour_id ), $name, $email, $departure->start_date, $travellers
+				__( "A new booking request was received.\n\nReference: %1$s\nTour: %2$s\nName: %3$s\nEmail: %4$s\nTravel date: %5$s\nTravellers: %6$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
+				$reference, get_the_title( $tour_id ), $name, $email, $departure->start_date, $travellers
 			);
 			wp_mail( $admin_email, $subject, $body );
 		}
 
 		$referer = wp_get_referer();
 		$redirect = $referer ? $referer : get_permalink( $tour_id );
-		wp_safe_redirect( add_query_arg( 'ote_booking', 'received', $redirect ) );
+		wp_safe_redirect( add_query_arg( array( 'ote_booking' => 'received', 'ote_ref' => $reference ), $redirect ) );
 		exit;
 	}
 
@@ -602,6 +609,7 @@ final class OpenTrip_Engine {
 	public function render_booking_meta_box( $post ) {
 		$status = get_post_meta( $post->ID, '_ote_booking_status', true );
 		$fields = array(
+			__( 'Reference', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_booking_reference', true ),
 			__( 'Status', 'opentrip-engine' ) => $this->booking_status_label( $status ),
 			__( 'Tour', 'opentrip-engine' ) => get_the_title( (int) get_post_meta( $post->ID, '_ote_tour_id', true ) ),
 			__( 'Customer', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_customer_name', true ),
@@ -685,6 +693,9 @@ final class OpenTrip_Engine {
 			$inventory->release( $departure_id, $seats );
 		}
 		update_post_meta( $post_id, '_ote_booking_status', $status );
+		if ( $status !== $previous ) {
+			$this->send_customer_booking_email( $post_id, $status );
+		}
 	}
 
 	public function inventory_admin_notice() {
@@ -695,6 +706,48 @@ final class OpenTrip_Engine {
 			echo '<div class="notice notice-error"><p>' . esc_html( $message ) . '</p></div>';
 		}
 	}
+
+
+	/**
+	 * Send a customer-facing booking receipt or status update.
+	 *
+	 * @param int    $booking_id Booking post ID.
+	 * @param string $status     Current booking status.
+	 */
+	public function send_customer_booking_email( $booking_id, $status ) {
+		$email = sanitize_email( get_post_meta( $booking_id, '_ote_customer_email', true ) );
+		if ( ! is_email( $email ) ) {
+			return;
+		}
+		$tour_id = (int) get_post_meta( $booking_id, '_ote_tour_id', true );
+		$tour_name = get_the_title( $tour_id );
+		$reference = get_post_meta( $booking_id, '_ote_booking_reference', true );
+		$travel_date = get_post_meta( $booking_id, '_ote_travel_date', true );
+		$travellers = (int) get_post_meta( $booking_id, '_ote_travellers', true );
+		$total = number_format_i18n( (float) get_post_meta( $booking_id, '_ote_total_price', true ), 2 );
+		$currency = get_post_meta( $booking_id, '_ote_currency', true );
+		$name = get_post_meta( $booking_id, '_ote_customer_name', true );
+		$greeting = sprintf( __( 'Hello %s,', 'opentrip-engine' ), $name );
+		$details = sprintf(
+			__( "Request reference: %1$s\nTour: %2$s\nDeparture: %3$s\nTravellers: %4$d\nEstimated total: %5$s %6$s", 'opentrip-engine' ),
+			$reference, $tour_name, $travel_date, $travellers, $total, $currency
+		);
+		if ( 'pending' === $status ) {
+			$subject = sprintf( __( 'We received your booking request — %s', 'opentrip-engine' ), $reference );
+			$message = __( "Thank you for your interest. We have received your booking request. This is not a confirmed reservation and no payment has been taken. Our team will review availability and contact you.\n\n", 'opentrip-engine' );
+		} elseif ( 'confirmed' === $status ) {
+			$subject = sprintf( __( 'Your booking request is confirmed — %s', 'opentrip-engine' ), $reference );
+			$message = __( "Good news: the travel agency has marked your booking request as confirmed. Please contact the agency if you need payment or final travel documents.\n\n", 'opentrip-engine' );
+		} elseif ( 'cancelled' === $status ) {
+			$subject = sprintf( __( 'Booking request update — %s', 'opentrip-engine' ), $reference );
+			$message = __( "Your booking request has been marked as cancelled by the travel agency. Please contact the agency if you believe this is an error.\n\n", 'opentrip-engine' );
+		} else {
+			return;
+		}
+		$footer = sprintf( __( "\n\nRegards,\n%s", 'opentrip-engine' ), wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) );
+		wp_mail( $email, $subject, $greeting . "\n\n" . $message . $details . $footer );
+	}
+
 
 	public function render_booking_status_box( $post ) {
 		wp_nonce_field( 'ote_save_booking_status', 'ote_booking_status_nonce' );
