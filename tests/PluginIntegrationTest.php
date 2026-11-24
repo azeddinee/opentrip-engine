@@ -118,4 +118,29 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$wpdb->delete( $table, array( 'id' => $departure_id ), array( '%d' ) );
 	}
 
+	public function test_confirmed_booking_keeps_status_when_inventory_release_fails() {
+		$booking_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_booking',
+				'post_status' => 'private',
+				'post_title'  => 'Inventory release failure test',
+			)
+		);
+		update_post_meta( $booking_id, '_ote_booking_status', 'confirmed' );
+		update_post_meta( $booking_id, '_ote_departure_id', 999999 );
+		update_post_meta( $booking_id, '_ote_travellers', 2 );
+		update_post_meta( $booking_id, '_ote_tour_id', 123 );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+		$_POST['ote_booking_status_nonce'] = wp_create_nonce( 'ote_save_booking_status' );
+		$_POST['ote_booking_status'] = 'cancelled';
+
+		OpenTrip_Engine::instance()->save_booking_status( $booking_id );
+
+		$this->assertSame( 'confirmed', get_post_meta( $booking_id, '_ote_booking_status', true ) );
+		$this->assertNotFalse( get_transient( 'ote_inventory_error_' . $user_id ) );
+		unset( $_POST['ote_booking_status_nonce'], $_POST['ote_booking_status'] );
+	}
+
 }
