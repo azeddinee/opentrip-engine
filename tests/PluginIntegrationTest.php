@@ -164,6 +164,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_payment_status', 'paid' );
 		update_post_meta( $booking_id, '_ote_payment_amount', 100 );
 		update_post_meta( $booking_id, '_ote_payment_currency', 'USD' );
+		update_post_meta( $booking_id, '_ote_payment_paid_amount', 100 );
+		update_post_meta( $booking_id, '_ote_payment_paid_currency', 'USD' );
 		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_privacy' );
 		update_post_meta( $booking_id, '_ote_payment_url', 'https://checkout.stripe.com/c/pay/cs_test_privacy' );
 		update_post_meta( $booking_id, '_ote_payment_transaction_id', 'pi_privacy' );
@@ -187,6 +189,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Infant ages', wp_json_encode( $export['data'] ) );
 		$this->assertStringContainsString( 'Payment status', wp_json_encode( $export['data'] ) );
 		$this->assertStringContainsString( 'Payment amount', wp_json_encode( $export['data'] ) );
+		$this->assertStringContainsString( 'Payment received', wp_json_encode( $export['data'] ) );
 		$this->assertTrue( $export['done'] );
 
 		$erase = $engine->erase_personal_data( $email, 1 );
@@ -198,6 +201,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_infant_ages', true ) );
 		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
 		$this->assertSame( 100, (float) get_post_meta( $booking_id, '_ote_payment_amount', true ) );
+		$this->assertSame( 100, (float) get_post_meta( $booking_id, '_ote_payment_paid_amount', true ) );
+		$this->assertSame( 'USD', get_post_meta( $booking_id, '_ote_payment_paid_currency', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_session_id', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_url', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_transaction_id', true ) );
@@ -1091,7 +1096,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_option( 'ote_stripe_enabled', '1' );
 		update_option( 'ote_stripe_secret_key', 'sk_test_unittestkey123456789' );
 		update_option( 'ote_stripe_webhook_secret', 'whsec_unittestsecret' );
-		update_option( 'ote_stripe_deposit_percent', 50 );
+		update_option( 'ote_stripe_deposit_percent', 25 );
 		update_post_meta( $booking_id, '_ote_payment_status', 'pending' );
 		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_old123' );
 		update_post_meta( $booking_id, '_ote_payment_amount_minor', 6000 );
@@ -1111,6 +1116,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$event = $this->stripe_test_event( 'evt_old_session_paid', 'checkout.session.async_payment_succeeded', $booking_id, 'cs_test_old123', 'paid' );
 		$this->assertTrue( ( new OTE_Stripe_Gateway() )->handle_webhook( $event['payload'], $event['signature'] ) );
 		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		$this->assertSame( 30.0, (float) get_post_meta( $booking_id, '_ote_payment_amount', true ) );
+		$this->assertSame( 60.0, (float) get_post_meta( $booking_id, '_ote_payment_paid_amount', true ) );
 		delete_option( 'ote_stripe_event_' . hash( 'sha256', 'evt_old_session_paid' ) );
 	}
 }
