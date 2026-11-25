@@ -276,8 +276,11 @@ final class OTE_Departures {
 			return array( 'previous' => $previous, 'changed' => false );
 		}
 
+		// The booking status row above is the per-booking serialization lock.
+		// Do not lock a missing ledger row here: InnoDB gap locks on concurrent
+		// absent-key reads can deadlock otherwise independent booking inserts.
 		$reservation = $wpdb->get_row( $wpdb->prepare(
-			"SELECT departure_id, seats FROM {$this->reservations_table} WHERE booking_id = %d FOR UPDATE",
+			"SELECT departure_id, seats FROM {$this->reservations_table} WHERE booking_id = %d",
 			$booking_id
 		) );
 
