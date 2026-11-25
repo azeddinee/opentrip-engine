@@ -29,6 +29,8 @@ final class OpenTrip_Engine {
 
 	private function __construct() {
 		add_action( 'init', array( $this, 'register_types' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_menu', array( $this, 'add_settings_menu' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_tour_meta_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_itinerary_meta_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_inclusions_meta_box' ) );
@@ -69,6 +71,131 @@ final class OpenTrip_Engine {
 
 	public static function deactivate() {
 		flush_rewrite_rules();
+	}
+
+
+	public function register_settings() {
+		register_setting(
+			'ote_settings',
+			'ote_notification_email',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_notification_email' ),
+				'default'           => get_option( 'admin_email' ),
+			)
+		);
+		register_setting(
+			'ote_settings',
+			'ote_admin_notifications_enabled',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_boolean_setting' ),
+				'default'           => '1',
+			)
+		);
+		register_setting(
+			'ote_settings',
+			'ote_customer_notifications_enabled',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_boolean_setting' ),
+				'default'           => '1',
+			)
+		);
+
+		add_settings_section(
+			'ote_email_notifications',
+			__( 'Email notifications', 'opentrip-engine' ),
+			function() {
+				echo '<p>' . esc_html__( 'Choose where booking alerts are sent and whether customers receive booking receipts and status updates.', 'opentrip-engine' ) . '</p>';
+			},
+			'ote-settings'
+		);
+		add_settings_field(
+			'ote_notification_email',
+			__( 'Booking notification recipient', 'opentrip-engine' ),
+			array( $this, 'render_notification_email_field' ),
+			'ote-settings',
+			'ote_email_notifications'
+		);
+		add_settings_field(
+			'ote_admin_notifications_enabled',
+			__( 'Agency notifications', 'opentrip-engine' ),
+			array( $this, 'render_admin_notifications_field' ),
+			'ote-settings',
+			'ote_email_notifications'
+		);
+		add_settings_field(
+			'ote_customer_notifications_enabled',
+			__( 'Customer notifications', 'opentrip-engine' ),
+			array( $this, 'render_customer_notifications_field' ),
+			'ote-settings',
+			'ote_email_notifications'
+		);
+	}
+
+	public function sanitize_notification_email( $value ) {
+		$email = sanitize_email( $value );
+		if ( is_email( $email ) ) {
+			return $email;
+		}
+		add_settings_error(
+			'ote_notification_email',
+			'ote_invalid_notification_email',
+			__( 'Enter a valid notification email address. The previous address has been kept.', 'opentrip-engine' )
+		);
+		return get_option( 'ote_notification_email', get_option( 'admin_email' ) );
+	}
+
+	public function sanitize_boolean_setting( $value ) {
+		return empty( $value ) ? '0' : '1';
+	}
+
+	public function render_notification_email_field() {
+		$value = get_option( 'ote_notification_email', get_option( 'admin_email' ) );
+		echo '<input type="email" class="regular-text" name="ote_notification_email" value="' . esc_attr( $value ) . '" required>';
+	}
+
+	public function render_admin_notifications_field() {
+		$enabled = (string) get_option( 'ote_admin_notifications_enabled', '1' );
+		echo '<input type="hidden" name="ote_admin_notifications_enabled" value="0">';
+		echo '<label><input type="checkbox" name="ote_admin_notifications_enabled" value="1" ' . checked( $enabled, '1', false ) . '> ' . esc_html__( 'Email the agency when a new booking request is received.', 'opentrip-engine' ) . '</label>';
+	}
+
+	public function render_customer_notifications_field() {
+		$enabled = (string) get_option( 'ote_customer_notifications_enabled', '1' );
+		echo '<input type="hidden" name="ote_customer_notifications_enabled" value="0">';
+		echo '<label><input type="checkbox" name="ote_customer_notifications_enabled" value="1" ' . checked( $enabled, '1', false ) . '> ' . esc_html__( 'Email customers when requests are received, confirmed or cancelled.', 'opentrip-engine' ) . '</label>';
+	}
+
+	public function add_settings_menu() {
+		add_submenu_page(
+			'edit.php?post_type=ote_tour',
+			__( 'OpenTrip Settings', 'opentrip-engine' ),
+			__( 'Settings', 'opentrip-engine' ),
+			'manage_options',
+			'ote-settings',
+			array( $this, 'render_settings_page' )
+		);
+	}
+
+	public function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'OpenTrip Engine Settings', 'opentrip-engine' ); ?></h1>
+			<?php settings_errors(); ?>
+			<form method="post" action="options.php">
+				<?php
+				settings_fields( 'ote_settings' );
+				do_settings_sections( 'ote-settings' );
+				submit_button();
+				?>
+			</form>
+		</div>
+		<?php
 	}
 
 	public function enqueue_assets() {
@@ -638,10 +765,10 @@ final class OpenTrip_Engine {
 		$reference = sprintf( 'OTE-%06d', $booking_id );
 		update_post_meta( $booking_id, '_ote_booking_reference', $reference );
 
-		$admin_email = get_option( 'admin_email' );
+		$admin_email = get_option( 'ote_notification_email', get_option( 'admin_email' ) );
 		$this->send_customer_booking_email( $booking_id, 'pending' );
 
-		if ( $admin_email && is_email( $admin_email ) ) {
+		if ( '1' === (string) get_option( 'ote_admin_notifications_enabled', '1' ) && $admin_email && is_email( $admin_email ) ) {
 			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
 			$body = sprintf(
 				__( "A new booking request was received.\n\nReference: %1\$s\nTour: %2\$s\nName: %3\$s\nEmail: %4\$s\nTravel date: %5\$s\nTravellers: %6\$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
@@ -912,6 +1039,9 @@ final class OpenTrip_Engine {
 	 * @param string $status     Current booking status.
 	 */
 	public function send_customer_booking_email( $booking_id, $status ) {
+		if ( '1' !== (string) get_option( 'ote_customer_notifications_enabled', '1' ) ) {
+			return;
+		}
 		$email = sanitize_email( get_post_meta( $booking_id, '_ote_customer_email', true ) );
 		if ( ! is_email( $email ) ) {
 			return;
