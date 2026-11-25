@@ -15,12 +15,12 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Booking requests and review moderation records are restricted to site administrators in the WordPress dashboard.
 - Internal request statuses: Pending, Confirmed and Cancelled.
 - Admin booking table with tour, customer, travel date, traveller count and status.
-- New-request notification sent to the WordPress admin email using `wp_mail()`.
+- Configurable agency notification recipient and on/off controls for agency and customer emails under **Tours → Settings**.
 - Customer email receipt with a unique booking reference after request submission.
 - Customer email notifications when an administrator changes a request to Confirmed or Cancelled.
 - Booking reference displayed in the post-submission confirmation message and in the admin booking details.
 - Responsive frontend CSS for tour cards and booking forms.
-- Admin departure manager with dates, capacity, price and currency.
+- Admin departure manager with dates, capacity, price, currency and safe close/reopen controls.
 - Booking form selects a real departure and displays remaining seats.
 - Booking requests capture adult and child counts plus rooms required.
 - Day-by-day itinerary editor for up to 60 days, with city, activities, overnight stay, meals and transportation.
@@ -89,7 +89,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Atomic database-backed email-scoped public form rate limiting
 - [x] Transactional booking status and seat reservation ledger
 - [x] Booking form and customer email integration coverage
-- [ ] Configurable email notification settings
+- [x] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
 - [ ] Permission-checked REST API
 - [ ] Pricing rules and multi-currency formatting
