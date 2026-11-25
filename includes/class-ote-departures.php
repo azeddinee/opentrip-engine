@@ -247,7 +247,6 @@ final class OTE_Departures {
 	 */
 	public function transition_booking( $booking_id, $tour_id, $departure_id, $seats, $new_status ) {
 		global $wpdb;
-
 		$booking_id = absint( $booking_id );
 		$tour_id = absint( $tour_id );
 		$departure_id = absint( $departure_id );
@@ -276,8 +275,11 @@ final class OTE_Departures {
 			return array( 'previous' => $previous, 'changed' => false );
 		}
 
+		// The booking status row above is the per-booking serialization lock.
+		// Do not lock a missing ledger row here: InnoDB gap locks on concurrent
+		// absent-key reads can deadlock otherwise independent booking inserts.
 		$reservation = $wpdb->get_row( $wpdb->prepare(
-			"SELECT departure_id, seats FROM {$this->reservations_table} WHERE booking_id = %d FOR UPDATE",
+			"SELECT departure_id, seats FROM {$this->reservations_table} WHERE booking_id = %d",
 			$booking_id
 		) );
 
@@ -288,6 +290,17 @@ final class OTE_Departures {
 					return false;
 				}
 			} else {
+				// Lock and claim inventory before inserting the ledger row. This
+				// serializes competing bookings on the departure row and avoids
+				// concurrent inserts taking conflicting InnoDB gap locks.
+				$changed = $wpdb->query( $wpdb->prepare(
+					"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved + %d <= capacity",
+					$seats, $departure_id, $tour_id, wp_date( 'Y-m-d' ), $seats
+				) );
+				if ( 1 !== $changed ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
 				$inserted = $wpdb->insert(
 					$this->reservations_table,
 					array(
@@ -299,14 +312,6 @@ final class OTE_Departures {
 					array( '%d', '%d', '%d', '%s' )
 				);
 				if ( false === $inserted ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
-				$changed = $wpdb->query( $wpdb->prepare(
-					"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved + %d <= capacity",
-					$seats, $departure_id, $tour_id, wp_date( 'Y-m-d' ), $seats
-				) );
-				if ( 1 !== $changed ) {
 					$wpdb->query( 'ROLLBACK' );
 					return false;
 				}
