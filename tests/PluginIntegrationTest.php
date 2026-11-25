@@ -769,6 +769,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":6,"price":50},{"min_age":6,"max_age":11,"price":70}]' ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '{broken json' ) );
+		$gapped = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":5,"price":50},{"min_age":7,"max_age":11,"price":75}]' );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $gapped, 1, array( 6 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 2.5 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 1.5 ), 1 ) );
 		$outside = clone $departure;
@@ -782,6 +784,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertWPError( OTE_Pricing::parse_ages( '4', 2 ) );
 		$this->assertWPError( OTE_Pricing::parse_ages( '4, eighteen', 2 ) );
 		$this->assertWPError( OTE_Pricing::parse_ages( '18', 1 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( str_repeat( '1,', 60 ), 30 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( (object) array( 'price' => 100, 'currency' => 'USD' ), 1, array( 5.5 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::parse_ages( '4', 0 ) );
 	}
 
