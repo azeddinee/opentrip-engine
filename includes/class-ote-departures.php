@@ -48,6 +48,13 @@ final class OTE_Departures {
 			capacity int(10) unsigned NOT NULL,
 			reserved int(10) unsigned NOT NULL DEFAULT 0,
 			price decimal(12,2) NOT NULL DEFAULT 0.00,
+			adult_price decimal(12,2) NULL DEFAULT NULL,
+			child_price decimal(12,2) NULL DEFAULT NULL,
+			infant_price decimal(12,2) NOT NULL DEFAULT 0.00,
+			room_price decimal(12,2) NOT NULL DEFAULT 0.00,
+			infant_max_age int(10) unsigned NOT NULL DEFAULT 1,
+			child_min_age int(10) unsigned NOT NULL DEFAULT 2,
+			child_max_age int(10) unsigned NOT NULL DEFAULT 11,
 			currency char(3) NOT NULL DEFAULT 'USD',
 			status varchar(20) NOT NULL DEFAULT 'open',
 			created_at datetime NOT NULL,
@@ -65,11 +72,11 @@ final class OTE_Departures {
 			KEY departure_id (departure_id)
 		) {$charset} ENGINE=InnoDB;";
 		dbDelta( $reservations_sql );
-		update_option( 'ote_departures_db_version', '2' );
+		update_option( 'ote_departures_db_version', '3' );
 	}
 
 	public function maybe_install() {
-		if ( '2' !== get_option( 'ote_departures_db_version' ) ) {
+		if ( '3' !== get_option( 'ote_departures_db_version' ) ) {
 			self::install();
 		}
 	}
@@ -116,12 +123,19 @@ final class OTE_Departures {
 					<tr><th><label for="ote_end_date"><?php esc_html_e( 'End date', 'opentrip-engine' ); ?></label></th><td><input required type="date" name="end_date" id="ote_end_date"></td></tr>
 					<tr><th><label for="ote_capacity"><?php esc_html_e( 'Total seats', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="1" max="10000" name="capacity" id="ote_capacity" value="12"></td></tr>
 					<tr><th><label for="ote_departure_price"><?php esc_html_e( 'Price per traveller', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" step="0.01" name="price" id="ote_departure_price" value="0"></td></tr>
+					<tr><th><label for="ote_adult_price"><?php esc_html_e( 'Adult price (leave blank to use base price)', 'opentrip-engine' ); ?></label></th><td><input type="number" min="0" step="0.01" name="adult_price" id="ote_adult_price" placeholder="<?php esc_attr_e( 'Use base price', 'opentrip-engine' ); ?>"></td></tr>
+					<tr><th><label for="ote_child_price"><?php esc_html_e( 'Child price (leave blank to use adult price)', 'opentrip-engine' ); ?></label></th><td><input type="number" min="0" step="0.01" name="child_price" id="ote_child_price" placeholder="<?php esc_attr_e( 'Use adult price', 'opentrip-engine' ); ?>"></td></tr>
+					<tr><th><label for="ote_infant_price"><?php esc_html_e( 'Infant price (0 is free)', 'opentrip-engine' ); ?></label></th><td><input type="number" min="0" step="0.01" name="infant_price" id="ote_infant_price" value="0"></td></tr>
+					<tr><th><label for="ote_room_price"><?php esc_html_e( 'Extra charge per room (0 = no room charge)', 'opentrip-engine' ); ?></label></th><td><input type="number" min="0" step="0.01" name="room_price" id="ote_room_price" value="0"></td></tr>
+					<tr><th><label for="ote_infant_max_age"><?php esc_html_e( 'Maximum infant age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="infant_max_age" id="ote_infant_max_age" value="1"></td></tr>
+					<tr><th><label for="ote_child_min_age"><?php esc_html_e( 'Minimum child age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="child_min_age" id="ote_child_min_age" value="2"></td></tr>
+					<tr><th><label for="ote_child_max_age"><?php esc_html_e( 'Maximum child age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="child_max_age" id="ote_child_max_age" value="11"></td></tr>
 					<tr><th><label for="ote_departure_currency"><?php esc_html_e( 'Currency', 'opentrip-engine' ); ?></label></th><td><input required type="text" pattern="[A-Za-z]{3}" maxlength="3" name="currency" id="ote_departure_currency" value="USD"></td></tr>
 				</tbody></table>
 				<?php submit_button( __( 'Create departure', 'opentrip-engine' ) ); ?>
 			</form>
 			<hr><h2><?php esc_html_e( 'Existing departures', 'opentrip-engine' ); ?></h2>
-			<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Tour', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Dates', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Seats', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Price', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Status', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Actions', 'opentrip-engine' ); ?></th></tr></thead><tbody>
+			<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Tour', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Dates', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Seats', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Base price', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Status', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Actions', 'opentrip-engine' ); ?></th></tr></thead><tbody>
 			<?php if ( $departures ) : foreach ( $departures as $departure ) : ?>
 				<tr><td><?php echo esc_html( get_the_title( $departure->tour_id ) ); ?></td><td><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date ); ?></td><td><?php echo esc_html( max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' / ' . (int) $departure->capacity ); ?></td><td><?php echo esc_html( number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></td><td><?php echo esc_html( ucfirst( $departure->status ) ); ?></td><td><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ote_set_departure_status"><input type="hidden" name="departure_id" value="<?php echo esc_attr( $departure->id ); ?>"><input type="hidden" name="status" value="<?php echo esc_attr( 'open' === $departure->status ? 'closed' : 'open' ); ?>"><?php wp_nonce_field( 'ote_set_departure_status_' . $departure->id, 'ote_departure_status_nonce' ); ?><button type="submit" class="button button-small"><?php echo esc_html( 'open' === $departure->status ? __( 'Close', 'opentrip-engine' ) : __( 'Reopen', 'opentrip-engine' ) ); ?></button></form></td></tr>
 			<?php endforeach; else : ?><tr><td colspan="6"><?php esc_html_e( 'No departures created yet.', 'opentrip-engine' ); ?></td></tr><?php endif; ?>
@@ -142,10 +156,19 @@ final class OTE_Departures {
 		$end = sanitize_text_field( $this->posted_string( 'end_date' ) );
 		$capacity = absint( $this->posted_string( 'capacity' ) );
 		$price = (float) $this->posted_string( 'price' );
+		$adult_price_raw = $this->posted_string( 'adult_price' );
+		$child_price_raw = $this->posted_string( 'child_price' );
+		$adult_price = '' === $adult_price_raw ? null : (float) $adult_price_raw;
+		$child_price = '' === $child_price_raw ? null : (float) $child_price_raw;
+		$infant_price = (float) $this->posted_string( 'infant_price' );
+		$room_price = (float) $this->posted_string( 'room_price' );
+		$infant_max_age = absint( $this->posted_string( 'infant_max_age' ) );
+		$child_min_age = absint( $this->posted_string( 'child_min_age' ) );
+		$child_max_age = absint( $this->posted_string( 'child_max_age' ) );
 		$currency = strtoupper( sanitize_text_field( $this->posted_string( 'currency' ) ) );
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
-		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) || ( null !== $adult_price && ( ! is_finite( $adult_price ) || $adult_price < 0 || $adult_price > 9999999999.99 ) ) || ( null !== $child_price && ( ! is_finite( $child_price ) || $child_price < 0 || $child_price > 9999999999.99 ) ) || ! is_finite( $infant_price ) || $infant_price < 0 || $infant_price > 9999999999.99 || ! is_finite( $room_price ) || $room_price < 0 || $room_price > 9999999999.99 || $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age ) {
 			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		global $wpdb;
@@ -156,10 +179,17 @@ final class OTE_Departures {
 			'capacity' => $capacity,
 			'reserved' => 0,
 			'price' => $price,
+			'adult_price' => $adult_price,
+			'child_price' => $child_price,
+			'infant_price' => $infant_price,
+			'room_price' => $room_price,
+			'infant_max_age' => $infant_max_age,
+			'child_min_age' => $child_min_age,
+			'child_max_age' => $child_max_age,
 			'currency' => $currency,
 			'status' => 'open',
 			'created_at' => current_time( 'mysql', true ),
-		), array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' ) );
+		), array( '%d', '%s', '%s', '%d', '%d', '%f', '%f', '%f', '%f', '%f', '%d', '%d', '%d', '%s', '%s', '%s' ) );
 		$redirect = add_query_arg( array( 'post_type' => 'ote_tour', 'page' => 'ote-departures', 'created' => $wpdb->insert_id ? 1 : 0 ), admin_url( 'edit.php' ) );
 		wp_safe_redirect( $redirect );
 		exit;
@@ -219,7 +249,7 @@ final class OTE_Departures {
 	public function get_departure( $departure_id, $tour_id ) {
 		global $wpdb;
 		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT id,tour_id,start_date,end_date,capacity,reserved,price,currency FROM {$this->table} WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved < capacity",
+			"SELECT * FROM {$this->table} WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved < capacity",
 			$departure_id,
 			$tour_id,
 			wp_date( 'Y-m-d' )
@@ -229,7 +259,7 @@ final class OTE_Departures {
 	public function get_available( $tour_id ) {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare(
-			"SELECT id,start_date,end_date,capacity,reserved,price,currency FROM {$this->table} WHERE tour_id = %d AND status = 'open' AND start_date >= %s AND reserved < capacity ORDER BY start_date ASC",
+			"SELECT * FROM {$this->table} WHERE tour_id = %d AND status = 'open' AND start_date >= %s AND reserved < capacity ORDER BY start_date ASC",
 			$tour_id,
 			wp_date( 'Y-m-d' )
 		) );
