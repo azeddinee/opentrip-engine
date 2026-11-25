@@ -197,16 +197,40 @@ final class OTE_REST_API {
 
 		$items = array();
 		foreach ( $terms as $term ) {
+			$term_link = get_term_link( $term );
 			$items[] = array(
 				'id'          => (int) $term->term_id,
 				'name'        => (string) $term->name,
 				'slug'        => (string) $term->slug,
 				'description' => (string) $term->description,
 				'count'       => (int) $term->count,
-				'link'        => get_term_link( $term ),
+				'link'        => is_wp_error( $term_link ) ? '' : esc_url_raw( $term_link ),
 			);
 		}
 		return rest_ensure_response( $items );
+	}
+
+	/**
+	 * Sanitize a bounded list of public text values.
+	 *
+	 * @param mixed $values Candidate values.
+	 * @param int   $limit Maximum number of values.
+	 * @return array
+	 */
+	private static function clean_text_list( $values, $limit ) {
+		if ( ! is_array( $values ) ) {
+			return array();
+		}
+		$clean = array();
+		foreach ( array_slice( $values, 0, absint( $limit ) ) as $value ) {
+			if ( is_scalar( $value ) ) {
+				$text = sanitize_text_field( (string) $value );
+				if ( '' !== $text ) {
+					$clean[] = $text;
+				}
+			}
+		}
+		return $clean;
 	}
 
 	/**
@@ -254,8 +278,8 @@ final class OTE_REST_API {
 
 		$included = get_post_meta( $tour_id, '_ote_inclusions', true );
 		$excluded = get_post_meta( $tour_id, '_ote_exclusions', true );
-		$included = is_array( $included ) ? array_slice( array_map( 'sanitize_text_field', $included ), 0, 100 ) : array();
-		$excluded = is_array( $excluded ) ? array_slice( array_map( 'sanitize_text_field', $excluded ), 0, 100 ) : array();
+		$included = self::clean_text_list( $included, 100 );
+		$excluded = self::clean_text_list( $excluded, 100 );
 
 		$gallery_ids = get_post_meta( $tour_id, '_ote_gallery_ids', true );
 		$gallery     = array();
