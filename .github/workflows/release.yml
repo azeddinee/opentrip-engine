@@ -21,7 +21,7 @@ jobs:
           zip -qr "opentrip-engine-${GITHUB_REF_NAME}.zip" opentrip-engine
           unzip -l "opentrip-engine-${GITHUB_REF_NAME}.zip"
       - name: Attach ZIP to GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/opentrip-engine-${{ github.ref_name }}.zip
           generate_release_notes: true
