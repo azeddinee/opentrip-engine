@@ -310,6 +310,41 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 	}
 
 
+
+	public function test_departure_can_be_closed_and_reopened_only_when_seats_remain() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ote_departures';
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Departure Status Test Tour' )
+		);
+		$wpdb->insert(
+			$table,
+			array(
+				'tour_id' => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+15 days' ) ),
+				'end_date' => wp_date( 'Y-m-d', strtotime( '+16 days' ) ),
+				'capacity' => 2,
+				'reserved' => 0,
+				'price' => 100,
+				'currency' => 'USD',
+				'status' => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+		);
+		$departure_id = (int) $wpdb->insert_id;
+		$inventory = OTE_Departures::instance();
+
+		$this->assertTrue( $inventory->set_status( $departure_id, 'closed' ) );
+		$this->assertFalse( $inventory->reserve( $departure_id, $tour_id, 1 ) );
+		$this->assertTrue( $inventory->set_status( $departure_id, 'open' ) );
+		$this->assertTrue( $inventory->reserve( $departure_id, $tour_id, 2 ) );
+		$this->assertTrue( $inventory->set_status( $departure_id, 'closed' ) );
+		$this->assertFalse( $inventory->set_status( $departure_id, 'open' ) );
+		$this->assertTrue( $inventory->release( $departure_id, 2 ) );
+		$wpdb->delete( $table, array( 'id' => $departure_id ), array( '%d' ) );
+	}
+
 	public function test_booking_status_and_seat_reservation_are_idempotent_and_transactional() {
 		global $wpdb;
 		$departures_table = $wpdb->prefix . 'ote_departures';
