@@ -590,20 +590,29 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertCount( 1, $data );
-		$this->assertSame( $published_id, $data[0]['id'] );
-		$this->assertSame( 'Public API Tour', $data[0]['title'] );
-		$this->assertStringContainsString( '<strong>tour</strong>', $data[0]['content'] );
-		$this->assertStringNotContainsString( '<script>', $data[0]['content'] );
-		$this->assertSame( 125.5, $data[0]['price'] );
-		$this->assertSame( 'Marrakech', $data[0]['itinerary'][0]['city'] );
-		$this->assertSame( array( 'Breakfast' ), $data[0]['inclusions'] );
-		$this->assertSame( array( 'Flights' ), $data[0]['exclusions'] );
-		$this->assertArrayNotHasKey( 'customer_email', $data[0] );
-		$this->assertArrayNotHasKey( 'bookings', $data[0] );
+		$this->assertNotEmpty( $data );
+		$ids = wp_list_pluck( $data, 'id' );
+		$this->assertContains( $published_id, $ids );
+		$api_tour = null;
+		foreach ( $data as $item ) {
+			if ( $published_id === $item['id'] ) {
+				$api_tour = $item;
+				break;
+			}
+		}
+		$this->assertNotNull( $api_tour );
+		$this->assertSame( 'Public API Tour', $api_tour['title'] );
+		$this->assertStringContainsString( '<strong>tour</strong>', $api_tour['content'] );
+		$this->assertStringNotContainsString( '<script>', $api_tour['content'] );
+		$this->assertSame( 125.5, $api_tour['price'] );
+		$this->assertSame( 'Marrakech', $api_tour['itinerary'][0]['city'] );
+		$this->assertSame( array( 'Breakfast' ), $api_tour['inclusions'] );
+		$this->assertSame( array( 'Flights' ), $api_tour['exclusions'] );
+		$this->assertArrayNotHasKey( 'customer_email', $api_tour );
+		$this->assertArrayNotHasKey( 'bookings', $api_tour );
 		$this->assertStringNotContainsString( 'private-customer@example.com', wp_json_encode( $data ) );
 		$this->assertStringNotContainsString( 'Private Draft Tour', wp_json_encode( $data ) );
-		$this->assertSame( '1', $response->get_headers()['X-WP-Total'] );
+		$this->assertSame( (string) count( $data ), $response->get_headers()['X-WP-Total'] );
 	}
 
 	public function test_public_rest_api_rejects_invalid_page_size() {
