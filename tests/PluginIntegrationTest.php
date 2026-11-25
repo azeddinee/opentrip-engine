@@ -674,11 +674,19 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 					'capacity'   => $row['capacity'],
 					'reserved'   => $row['reserved'],
 					'price'      => 249.95,
+					'adult_price' => 199.99,
+					'child_price' => 99.50,
+					'infant_price' => 0,
+					'room_price' => 12.50,
+					'infant_max_age' => 1,
+					'child_min_age' => 2,
+					'child_max_age' => 11,
+					'child_age_bands' => '[{"min_age":2,"max_age":5,"price":80}]',
 					'currency'   => 'USD',
 					'status'     => $row['status'],
 					'created_at' => current_time( 'mysql', true ),
 				),
-				array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+				array( '%d', '%s', '%s', '%d', '%d', '%f', '%f', '%f', '%f', '%f', '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
 			);
 			$inserted_ids[] = (int) $wpdb->insert_id;
 		}
@@ -689,7 +697,11 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertCount( 1, $data );
 		$this->assertSame( 5, $data[0]['seats_remaining'] );
-		$this->assertSame( 249.95, $data[0]['price'] );
+		$this->assertSame( 199.99, $data[0]['price'] );
+		$this->assertSame( 99.5, $data[0]['child_price'] );
+		$this->assertSame( 0.0, $data[0]['infant_price'] );
+		$this->assertSame( 12.5, $data[0]['room_price'] );
+		$this->assertSame( array( array( 'min_age' => 2, 'max_age' => 5, 'price' => 80.0 ) ), $data[0]['child_age_bands'] );
 		$this->assertSame( 'USD', $data[0]['currency'] );
 
 		foreach ( $inserted_ids as $departure_id ) {
