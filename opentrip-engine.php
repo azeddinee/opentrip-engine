@@ -235,7 +235,7 @@ final class OpenTrip_Engine {
 			}
 			$row = array( 'day' => $day );
 			foreach ( $fields as $field ) {
-				$row[ $field ] = isset( $item[ $field ] ) ? sanitize_textarea_field( $item[ $field ] ) : '';
+				$row[ $field ] = isset( $item[ $field ] ) && is_scalar( $item[ $field ] ) ? sanitize_textarea_field( (string) $item[ $field ] ) : '';
 			}
 			if ( $row['title'] || $row['activities'] || $row['city'] ) {
 				$clean[] = $row;
@@ -467,8 +467,11 @@ final class OpenTrip_Engine {
 			return;
 		}
 		$price = isset( $_POST['ote_price'] ) ? (float) wp_unslash( $_POST['ote_price'] ) : 0;
+		if ( ! is_finite( $price ) || $price > 9999999999.99 ) {
+			$price = 0;
+		}
 		$currency = isset( $_POST['ote_currency'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['ote_currency'] ) ) ) : 'USD';
-		$duration = isset( $_POST['ote_duration'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_duration'] ) ) : '';
+		$duration = isset( $_POST['ote_duration'] ) ? substr( sanitize_text_field( wp_unslash( $_POST['ote_duration'] ) ), 0, 80 ) : '';
 		$capacity = isset( $_POST['ote_capacity'] ) ? absint( $_POST['ote_capacity'] ) : 0;
 
 		update_post_meta( $post_id, '_ote_price', max( 0, $price ) );
@@ -596,7 +599,7 @@ final class OpenTrip_Engine {
 			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		$name = isset( $_POST['ote_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_name'] ) ) : '';
-		$email = isset( $_POST['ote_email'] ) ? sanitize_email( wp_unslash( $_POST['ote_email'] ) ) : '';
+		$email = isset( $_POST['ote_email'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['ote_email'] ) ) ) : '';
 		$departure_id = isset( $_POST['ote_departure_id'] ) ? absint( $_POST['ote_departure_id'] ) : 0;
 		$adults = isset( $_POST['ote_adults'] ) ? absint( $_POST['ote_adults'] ) : 0;
 		$children = isset( $_POST['ote_children'] ) ? absint( $_POST['ote_children'] ) : 0;
@@ -794,7 +797,7 @@ final class OpenTrip_Engine {
 				'offset'         => $offset,
 				'fields'         => 'ids',
 				'meta_key'       => $email_meta,
-				'meta_value'     => sanitize_email( $email_address ),
+				'meta_value'     => strtolower( sanitize_email( $email_address ) ),
 			) );
 			if ( count( $ids ) === $limit ) {
 				$has_more = true;
@@ -1001,7 +1004,7 @@ final class OpenTrip_Engine {
 		}
 		$tour_id = isset( $_POST['ote_review_tour_id'] ) ? absint( $_POST['ote_review_tour_id'] ) : 0;
 		$name = isset( $_POST['ote_review_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_review_name'] ) ) : '';
-		$email = isset( $_POST['ote_review_email'] ) ? sanitize_email( wp_unslash( $_POST['ote_review_email'] ) ) : '';
+		$email = isset( $_POST['ote_review_email'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['ote_review_email'] ) ) ) : '';
 		$rating = isset( $_POST['ote_review_rating'] ) ? absint( $_POST['ote_review_rating'] ) : 0;
 		$content = isset( $_POST['ote_review_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_review_content'] ) ) : '';
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
