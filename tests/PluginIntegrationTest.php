@@ -553,4 +553,136 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$wpdb->delete( $table, array( 'id' => $departure_id ), array( '%d' ) );
 	}
 
+
+	public function test_public_rest_api_lists_only_published_tours_and_public_fields() {
+		$published_id = self::factory()->post->create(
+			array(
+				'post_type'    => 'ote_tour',
+				'post_status'  => 'publish',
+				'post_title'   => 'Public API Tour',
+				'post_content' => 'A public tour description.',
+			)
+		);
+		$draft_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'draft',
+				'post_title'  => 'Private Draft Tour',
+			)
+		);
+		update_post_meta( $published_id, '_ote_price', '125.50' );
+		update_post_meta( $published_id, '_ote_currency', 'USD' );
+		update_post_meta( $published_id, '_ote_duration', '5 days' );
+		update_post_meta( $published_id, '_ote_itinerary', array(
+			array( 'day' => 1, 'title' => 'Arrival', 'city' => 'Marrakech', 'activities' => 'Old town walk' ),
+		) );
+		update_post_meta( $published_id, '_ote_inclusions', array( 'Breakfast' ) );
+		update_post_meta( $published_id, '_ote_exclusions', array( 'Flights' ) );
+
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Private Booking' )
+		);
+		update_post_meta( $booking_id, '_ote_customer_email', 'private-customer@example.com' );
+		update_post_meta( $booking_id, '_ote_customer_name', 'Private Customer' );
+
+		$request  = new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours' );
+		$response = rest_do_request( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertCount( 1, $data );
+		$this->assertSame( $published_id, $data[0]['id'] );
+		$this->assertSame( 'Public API Tour', $data[0]['title'] );
+		$this->assertSame( 125.5, $data[0]['price'] );
+		$this->assertSame( 'Marrakech', $data[0]['itinerary'][0]['city'] );
+		$this->assertSame( array( 'Breakfast' ), $data[0]['inclusions'] );
+		$this->assertSame( array( 'Flights' ), $data[0]['exclusions'] );
+		$this->assertArrayNotHasKey( 'customer_email', $data[0] );
+		$this->assertArrayNotHasKey( 'bookings', $data[0] );
+		$this->assertStringNotContainsString( 'private-customer@example.com', wp_json_encode( $data ) );
+		$this->assertStringNotContainsString( 'Private Draft Tour', wp_json_encode( $data ) );
+		$this->assertSame( '1', $response->get_headers()['X-WP-Total'] );
+	}
+
+	public function test_public_rest_api_returns_404_for_draft_and_password_protected_tours() {
+		$draft_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'draft', 'post_title' => 'Draft API Tour' )
+		);
+		$password_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Password API Tour', 'post_password' => 'secret' )
+		);
+
+		$draft_response = rest_do_request( new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours/' . $draft_id ) );
+		$password_response = rest_do_request( new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours/' . $password_id ) );
+
+		$this->assertSame( 404, $draft_response->get_status() );
+		$this->assertSame( 404, $password_response->get_status() );
+	}
+
+	public function test_public_rest_api_lists_only_current_open_departures() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ote_departures';
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Departure API Tour' )
+		);
+		$today = wp_date( 'Y-m-d' );
+		$rows = array(
+			array( 'start_date' => wp_date( 'Y-m-d', strtotime( '+12 days' ) ), 'status' => 'open', 'capacity' => 8, 'reserved' => 3 ),
+			array( 'start_date' => wp_date( 'Y-m-d', strtotime( '+20 days' ) ), 'status' => 'closed', 'capacity' => 8, 'reserved' => 0 ),
+			array( 'start_date' => wp_date( 'Y-m-d', strtotime( '-2 days' ) ), 'status' => 'open', 'capacity' => 8, 'reserved' => 0 ),
+		);
+		$inserted_ids = array();
+		foreach ( $rows as $row ) {
+			$wpdb->insert(
+				$table,
+				array(
+					'tour_id'    => $tour_id,
+					'start_date' => $row['start_date'],
+					'end_date'   => $row['start_date'],
+					'capacity'   => $row['capacity'],
+					'reserved'   => $row['reserved'],
+					'price'      => 249.95,
+					'currency'   => 'USD',
+					'status'     => $row['status'],
+					'created_at' => current_time( 'mysql', true ),
+				),
+				array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+			);
+			$inserted_ids[] = (int) $wpdb->insert_id;
+		}
+
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours/' . $tour_id . '/departures' ) );
+		$data = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertCount( 1, $data );
+		$this->assertSame( 5, $data[0]['seats_remaining'] );
+		$this->assertSame( 249.95, $data[0]['price'] );
+		$this->assertSame( 'USD', $data[0]['currency'] );
+
+		foreach ( $inserted_ids as $departure_id ) {
+			$wpdb->delete( $table, array( 'id' => $departure_id ), array( '%d' ) );
+		}
+	}
+
+	public function test_public_rest_api_filters_tours_by_destination_and_lists_destinations() {
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Morocco API Tour' )
+		);
+		$term = wp_insert_term( 'Morocco', 'ote_destination', array( 'slug' => 'morocco-api' ) );
+		$this->assertNotWPError( $term );
+		wp_set_object_terms( $tour_id, array( (int) $term['term_id'] ), 'ote_destination' );
+
+		$request = new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours' );
+		$request->set_param( 'destination', 'morocco-api' );
+		$filtered = rest_do_request( $request );
+		$destinations = rest_do_request( new WP_REST_Request( 'GET', '/opentrip-engine/v1/destinations' ) );
+
+		$this->assertSame( 200, $filtered->get_status() );
+		$this->assertCount( 1, $filtered->get_data() );
+		$this->assertSame( 'Morocco', $filtered->get_data()[0]['destinations'][0]['name'] );
+		$this->assertSame( 200, $destinations->get_status() );
+		$this->assertSame( 'morocco-api', $destinations->get_data()[0]['slug'] );
+	}
+
 }
