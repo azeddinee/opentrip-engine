@@ -92,6 +92,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Booking form and customer email integration coverage
 - [x] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
+- [ ] Multi-process inventory concurrency stress test
 - [ ] Permission-checked REST API
 - [ ] Pricing rules and multi-currency formatting
 - [ ] Optional payment gateway adapters
