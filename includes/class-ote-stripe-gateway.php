@@ -56,7 +56,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 			(float) $amount > 99999999 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
 			return new WP_Error( 'ote_invalid_payment_amount', __( 'The payment amount or currency is invalid for Stripe.', 'opentrip-engine' ) );
 		}
-		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
+		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
 		$whole_only_two_decimal = array( 'ISK', 'UGX' );
 		$factor = in_array( $currency, $zero_decimal, true ) ? 1 : 100;
 		if ( in_array( $currency, $whole_only_two_decimal, true ) ) {
@@ -87,7 +87,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		$currency = strtoupper( (string) $currency );
 		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
 		$amount = round( (float) $total * $deposit_percent / 100, 2, PHP_ROUND_HALF_UP );
-		if ( in_array( $currency, $zero_decimal, true ) || 'ISK' === $currency ) {
+		if ( in_array( $currency, $zero_decimal, true ) || in_array( $currency, array( 'ISK', 'UGX' ), true ) ) {
 			$amount = round( $amount, 0, PHP_ROUND_HALF_UP );
 		}
 		$minor = self::amount_to_minor_units( $amount, $currency );
@@ -281,7 +281,13 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		if ( false !== get_option( $event_key, false ) ) {
 			return true;
 		}
-		if ( ! add_option( $event_key, $booking_id, '', 'no' ) && false !== get_option( $event_key, false ) ) {
+		if ( ! add_option( $event_key, $booking_id, '', 'no' ) ) {
+			if ( false !== get_option( $event_key, false ) ) {
+				return true;
+			}
+			return new WP_Error( 'ote_stripe_event_ledger_failed', __( 'The payment event could not be recorded safely. Stripe can retry this delivery.', 'opentrip-engine' ), array( 'status' => 500 ) );
+		}
+		if ( 'checkout.session.completed' === $event_type && ( ! isset( $session['payment_status'] ) || 'paid' !== $session['payment_status'] ) ) {
 			return true;
 		}
 		$new_status = $statuses[ $event_type ];
