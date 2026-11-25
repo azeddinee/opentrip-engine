@@ -150,16 +150,70 @@ if ( $is_worker ) {
 }
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
-require_once __DIR__ . '/bootstrap.php';
 
 if ( $is_worker ) {
+	// Load the already-installed test site without invoking the test suite's
+	// installer or its destructive _delete_all_posts() reset in each worker.
+	$_tests_dir = getenv( 'WP_TESTS_DIR' );
+	if ( ! $_tests_dir ) {
+		$_tests_dir = '/tmp/wordpress-tests-lib';
+	}
+	$config_file = $_tests_dir . '/wp-tests-config.php';
+	if ( ! is_readable( $config_file ) ) {
+		fwrite( STDERR, "WordPress test config not found: " . $config_file . "\\n" );
+		exit( 4 );
+	}
+	require_once $config_file;
+	require_once $_tests_dir . '/includes/functions.php';
+	tests_reset__SERVER();
+	define( 'WP_TESTS_TABLE_PREFIX', $table_prefix );
+	define( 'DIR_TESTDATA', $_tests_dir . '/data' );
+	define( 'DIR_TESTROOT', realpath( dirname( $_tests_dir ) ) );
+	define( 'WP_LANG_DIR', realpath( DIR_TESTDATA . '/languages' ) );
+	define( 'DISABLE_WP_CRON', true );
+	define( 'WP_MEMORY_LIMIT', '-1' );
+	define( 'WP_MAX_MEMORY_LIMIT', '-1' );
+	define( 'REST_TESTS_IMPOSSIBLY_HIGH_NUMBER', 99999999 );
+	$PHP_SELF = '/index.php';
+	$GLOBALS['PHP_SELF'] = '/index.php';
+	$_SERVER['PHP_SELF'] = '/index.php';
+	if ( ! defined( 'WP_DEFAULT_THEME' ) ) {
+		define( 'WP_DEFAULT_THEME', 'default' );
+	}
+	$GLOBALS['wp_theme_directories'] = array();
+	if ( file_exists( DIR_TESTDATA . '/themedir1' ) ) {
+		$GLOBALS['wp_theme_directories'][] = DIR_TESTDATA . '/themedir1';
+	}
+	tests_add_filter( 'muplugins_loaded', 'ote_manually_load_plugin' );
+	require_once ABSPATH . 'wp-settings.php';
+
 	$result = OTE_Departures::instance()->transition_booking( $booking_id, $tour_id, $departure_id, $seats, 'confirmed' );
+	$success = false !== $result;
+	if ( ! $success ) {
+		global $wpdb;
+		$departure_table = $wpdb->prefix . 'ote_departures';
+		$departure = $wpdb->get_row( $wpdb->prepare(
+			"SELECT reserved, capacity, status, start_date FROM {$departure_table} WHERE id = %d AND tour_id = %d",
+			$departure_id,
+			$tour_id
+		) );
+		$expected_capacity_rejection = $departure
+			&& ( 'open' !== $departure->status
+				|| $departure->start_date < wp_date( 'Y-m-d' )
+				|| (int) $departure->reserved + $seats > (int) $departure->capacity );
+		if ( ! $expected_capacity_rejection || '' !== $wpdb->last_error ) {
+			fwrite( STDERR, 'Unexpected booking transition failure: ' . $wpdb->last_error . "\\n" );
+			exit( 5 );
+		}
+	}
 	echo wp_json_encode( array(
-		'success' => false !== $result,
-		'changed' => false !== $result && ! empty( $result['changed'] ),
+		'success' => $success,
+		'changed' => $success && ! empty( $result['changed'] ),
 	) );
-	exit( false === $result ? 1 : 0 );
+	exit( 0 );
 }
+
+require_once __DIR__ . '/bootstrap.php';
 
 global $wpdb;
 OTE_Departures::install();
@@ -213,7 +267,7 @@ try {
 	}
 	echo "PASS: 10 processes confirmed the same booking; exactly one inventory reservation was recorded.\n";
 	echo "All multi-process inventory stress tests passed.\n";
-} catch ( Exception $exception ) {
+} catch ( Throwable $exception ) {
 	$failure = $exception->getMessage();
 } finally {
 	foreach ( $created_bookings as $booking_id ) {
