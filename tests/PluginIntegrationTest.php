@@ -403,6 +403,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Transactional Booking' )
 		);
 		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+		add_post_meta( $booking_id, '_ote_booking_status', 'pending', false );
 
 		$inventory = OTE_Departures::instance();
 		$first = $inventory->transition_booking( $booking_id, $tour_id, $departure_id, 2, 'confirmed' );
@@ -412,6 +413,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $first['changed'] );
 		$this->assertNotFalse( $second );
 		$this->assertFalse( $second['changed'] );
+		$this->assertSame( array( 'confirmed', 'confirmed' ), array_values( get_post_meta( $booking_id, '_ote_booking_status', false ) ) );
 		$this->assertSame( '2', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$departures_table} WHERE id = %d", $departure_id ) ) );
 		$this->assertSame( '1', (string) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$reservations_table} WHERE booking_id = %d", $booking_id ) ) );
 
