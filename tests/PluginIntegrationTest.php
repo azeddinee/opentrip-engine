@@ -273,6 +273,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$html = OpenTrip_Engine::instance()->booking_shortcode( array( 'tour_id' => $tour_id ) );
 
 		$this->assertStringContainsString( 'name="ote_website"', $html );
+		$this->assertStringContainsString( 'name="ote_return_url"', $html );
 		$this->assertStringContainsString( 'name="ote_name"', $html );
 		$this->assertStringContainsString( 'name="ote_email"', $html );
 		$this->assertStringContainsString( 'name="ote_message"', $html );
