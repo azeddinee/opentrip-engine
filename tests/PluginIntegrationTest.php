@@ -156,6 +156,10 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_customer_email', $email );
 		update_post_meta( $booking_id, '_ote_customer_name', 'Privacy Test Customer' );
 		update_post_meta( $booking_id, '_ote_customer_message', 'Please call me.' );
+		update_post_meta( $booking_id, '_ote_child_ages', array( 7 ) );
+		update_post_meta( $booking_id, '_ote_infants', 1 );
+		update_post_meta( $booking_id, '_ote_infant_ages', array( 1 ) );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'currency' => 'USD', 'children' => array( 'ages' => array( 7 ), 'items' => array( array( 'age' => 7, 'unit_price' => 50 ) ), 'subtotal' => 50 ), 'infants' => array( 'ages' => array( 1 ), 'subtotal' => 0 ), 'adults' => array( 'subtotal' => 100 ), 'rooms' => array( 'subtotal' => 0 ) ) );
 
 		$review_id = self::factory()->post->create(
 			array(
@@ -172,6 +176,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$engine->is_submission_rate_limited( 'booking', $email );
 		$export = $engine->export_personal_data( $email, 1 );
 		$this->assertCount( 2, $export['data'] );
+		$this->assertStringContainsString( 'Child ages', wp_json_encode( $export['data'] ) );
+		$this->assertStringContainsString( 'Infant ages', wp_json_encode( $export['data'] ) );
 		$this->assertTrue( $export['done'] );
 
 		$erase = $engine->erase_personal_data( $email, 1 );
@@ -179,6 +185,12 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_email', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_message', true ) );
 		$this->assertSame( 'Anonymized customer', get_post_meta( $booking_id, '_ote_customer_name', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_child_ages', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_infant_ages', true ) );
+		$redacted_quote = get_post_meta( $booking_id, '_ote_quote_snapshot', true );
+		$this->assertSame( array(), $redacted_quote['children']['ages'] );
+		$this->assertSame( array(), $redacted_quote['infants']['ages'] );
+		$this->assertArrayNotHasKey( 'age', $redacted_quote['children']['items'][0] ?? array() );
 		$this->assertSame( '', get_post_meta( $review_id, '_ote_review_email', true ) );
 		$this->assertSame( '', get_post_field( 'post_content', $review_id ) );
 		$this->assertSame( 'draft', get_post_status( $review_id ) );
