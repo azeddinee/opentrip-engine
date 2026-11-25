@@ -160,6 +160,13 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_infants', 1 );
 		update_post_meta( $booking_id, '_ote_infant_ages', array( 1 ) );
 		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'currency' => 'USD', 'children' => array( 'ages' => array( 7 ), 'items' => array( array( 'age' => 7, 'unit_price' => 50 ) ), 'subtotal' => 50 ), 'infants' => array( 'ages' => array( 1 ), 'subtotal' => 0 ), 'adults' => array( 'subtotal' => 100 ), 'rooms' => array( 'subtotal' => 0 ) ) );
+		update_post_meta( $booking_id, '_ote_payment_provider', 'stripe' );
+		update_post_meta( $booking_id, '_ote_payment_status', 'paid' );
+		update_post_meta( $booking_id, '_ote_payment_amount', 100 );
+		update_post_meta( $booking_id, '_ote_payment_currency', 'USD' );
+		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_privacy' );
+		update_post_meta( $booking_id, '_ote_payment_url', 'https://checkout.stripe.com/c/pay/cs_test_privacy' );
+		update_post_meta( $booking_id, '_ote_payment_transaction_id', 'pi_privacy' );
 
 		$review_id = self::factory()->post->create(
 			array(
@@ -178,6 +185,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertCount( 2, $export['data'] );
 		$this->assertStringContainsString( 'Child ages', wp_json_encode( $export['data'] ) );
 		$this->assertStringContainsString( 'Infant ages', wp_json_encode( $export['data'] ) );
+		$this->assertStringContainsString( 'Payment status', wp_json_encode( $export['data'] ) );
+		$this->assertStringContainsString( 'Payment amount', wp_json_encode( $export['data'] ) );
 		$this->assertTrue( $export['done'] );
 
 		$erase = $engine->erase_personal_data( $email, 1 );
@@ -187,6 +196,11 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Anonymized customer', get_post_meta( $booking_id, '_ote_customer_name', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_child_ages', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_infant_ages', true ) );
+		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		$this->assertSame( 100, (float) get_post_meta( $booking_id, '_ote_payment_amount', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_session_id', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_url', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_payment_transaction_id', true ) );
 		$redacted_quote = get_post_meta( $booking_id, '_ote_quote_snapshot', true );
 		$this->assertSame( array(), $redacted_quote['children']['ages'] );
 		$this->assertSame( array(), $redacted_quote['infants']['ages'] );
@@ -906,5 +920,147 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$departure->child_price = 250;
 		$this->assertSame( 300.0, (float) get_post_meta( $booking_id, '_ote_total_price', true ) );
 		$this->assertSame( $snapshot, get_post_meta( $booking_id, '_ote_quote_snapshot', true ) );
+	}
+
+	public function test_stripe_amount_conversion_respects_currency_minor_units() {
+		$this->assertSame( 1234, OTE_Stripe_Gateway::amount_to_minor_units( 12.34, 'USD' ) );
+		$this->assertSame( 500, OTE_Stripe_Gateway::amount_to_minor_units( 500, 'JPY' ) );
+		$this->assertSame( 500, OTE_Stripe_Gateway::amount_to_minor_units( 5, 'ISK' ) );
+		$this->assertSame( 500, OTE_Stripe_Gateway::amount_to_minor_units( 5, 'UGX' ) );
+		$this->assertWPError( OTE_Stripe_Gateway::amount_to_minor_units( 5.25, 'JPY' ) );
+		$this->assertWPError( OTE_Stripe_Gateway::amount_to_minor_units( 5.25, 'UGX' ) );
+		$this->assertWPError( OTE_Stripe_Gateway::amount_to_minor_units( 10.001, 'USD' ) );
+		$this->assertWPError( OTE_Stripe_Gateway::amount_to_minor_units( 10, 'US' ) );
+		$deposit = OTE_Stripe_Gateway::calculate_payment_amount( 123.45, 'USD', 25 );
+		$this->assertSame( 30.86, $deposit['amount'] );
+		$this->assertSame( 3086, $deposit['amount_minor'] );
+		$yen_deposit = OTE_Stripe_Gateway::calculate_payment_amount( 101, 'JPY', 50 );
+		$this->assertSame( 51.0, $yen_deposit['amount'] );
+		$this->assertSame( 51, $yen_deposit['amount_minor'] );
+		$this->assertWPError( OTE_Stripe_Gateway::calculate_payment_amount( 10.5, 'JPY', 100 ) );
+	}
+
+	public function test_stripe_webhook_signature_requires_valid_hmac_and_fresh_timestamp() {
+		$secret = 'whsec_unit_test_secret';
+		$payload = '{"id":"evt_signature_test","type":"ignored.event"}';
+		$timestamp = 1700000000;
+		$digest = hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
+		$header = 't=' . $timestamp . ',v1=' . $digest;
+		$this->assertTrue( OTE_Stripe_Gateway::verify_signature( $payload, $header, $secret, $timestamp ) );
+		$this->assertFalse( OTE_Stripe_Gateway::verify_signature( $payload . ' ', $header, $secret, $timestamp ) );
+		$this->assertFalse( OTE_Stripe_Gateway::verify_signature( $payload, $header, $secret, $timestamp + 301 ) );
+		$this->assertFalse( OTE_Stripe_Gateway::verify_signature( $payload, 't=bad,v1=bad', $secret, $timestamp ) );
+		$this->assertFalse( OTE_Stripe_Gateway::verify_signature( str_repeat( 'x', 1048577 ), $header, $secret, $timestamp ) );
+	}
+
+	public function test_stripe_checkout_is_opt_in_and_requires_confirmed_booking() {
+		$booking_id = $this->create_stripe_test_booking( 'pending' );
+		$gateway = new OTE_Stripe_Gateway();
+		delete_option( 'ote_stripe_enabled' );
+		$this->assertWPError( $gateway->create_checkout_session( $booking_id ) );
+		update_option( 'ote_stripe_enabled', '1' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		$this->assertWPError( $gateway->create_checkout_session( $booking_id ) );
+	}
+
+	public function test_stripe_checkout_uses_saved_quote_and_reuses_pending_session() {
+		$booking_id = $this->create_stripe_test_booking( 'confirmed' );
+		update_option( 'ote_stripe_enabled', '1' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_deposit_percent', 50 );
+		$calls = array();
+		$mock = function( $preempt, $args, $url ) use ( &$calls ) {
+			if ( OTE_Stripe_Gateway::API_URL !== $url ) { return $preempt; }
+			$calls[] = $args;
+			return array( 'headers' => array(), 'body' => wp_json_encode( array( 'id' => 'cs_test_unit123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_unit123', 'expires_at' => time() + HOUR_IN_SECONDS ) ), 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
+		};
+		add_filter( 'pre_http_request', $mock, 10, 3 );
+		$gateway = new OTE_Stripe_Gateway();
+		$session = $gateway->create_checkout_session( $booking_id );
+		remove_filter( 'pre_http_request', $mock, 10 );
+		$this->assertNotWPError( $session );
+		$this->assertSame( 6000, $session['amount_minor'] );
+		$this->assertSame( 'USD', $session['currency'] );
+		$this->assertCount( 1, $calls );
+		$this->assertSame( 6000, $calls[0]['body']['line_items'][0]['price_data']['unit_amount'] );
+		$this->assertSame( 'OTE-PAY-TEST', $calls[0]['body']['client_reference_id'] );
+		$this->assertSame( 'Bearer sk_test_unit_test_key_123456789', $calls[0]['headers']['Authorization'] );
+		$reused = $gateway->create_checkout_session( $booking_id );
+		$this->assertNotWPError( $reused );
+		$this->assertTrue( $reused['reused'] );
+		$this->assertCount( 1, $calls );
+	}
+
+	public function test_stripe_webhook_updates_payment_idempotently_without_confirming_booking() {
+		$booking_id = $this->create_stripe_test_booking( 'confirmed' );
+		update_post_meta( $booking_id, '_ote_payment_provider', 'stripe' );
+		update_post_meta( $booking_id, '_ote_payment_status', 'pending' );
+		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_webhook123' );
+		update_post_meta( $booking_id, '_ote_payment_amount_minor', 6000 );
+		update_post_meta( $booking_id, '_ote_payment_currency', 'USD' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		$gateway = new OTE_Stripe_Gateway();
+		$unpaid = $this->stripe_test_event( 'evt_unpaid_completed', 'checkout.session.completed', $booking_id, 'cs_test_webhook123', 'unpaid' );
+		$this->assertTrue( $gateway->handle_webhook( $unpaid['payload'], $unpaid['signature'] ) );
+		$this->assertSame( 'pending', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		$paid = $this->stripe_test_event( 'evt_paid_async', 'checkout.session.async_payment_succeeded', $booking_id, 'cs_test_webhook123', 'paid' );
+		$this->assertTrue( $gateway->handle_webhook( $paid['payload'], $paid['signature'] ) );
+		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		$this->assertSame( 'confirmed', get_post_meta( $booking_id, '_ote_booking_status', true ) );
+		$this->assertTrue( $gateway->handle_webhook( $paid['payload'], $paid['signature'] ) );
+		$failed = $this->stripe_test_event( 'evt_failed_after_paid', 'checkout.session.async_payment_failed', $booking_id, 'cs_test_webhook123', 'unpaid' );
+		$this->assertTrue( $gateway->handle_webhook( $failed['payload'], $failed['signature'] ) );
+		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		$this->assertWPError( $gateway->handle_webhook( $paid['payload'], 't=1,v1=invalid' ) );
+		delete_option( 'ote_stripe_event_' . hash( 'sha256', 'evt_paid_async' ) );
+		delete_option( 'ote_stripe_event_' . hash( 'sha256', 'evt_failed_after_paid' ) );
+	}
+
+	public function test_stripe_webhook_route_and_secret_field_are_safe() {
+		do_action( 'rest_api_init' );
+		$routes = rest_get_server()->get_routes();
+		$this->assertArrayHasKey( '/opentrip-engine/v1/payments/stripe/webhook', $routes );
+		update_option( 'ote_stripe_secret_key', 'sk_test_do_not_render_this_value_123' );
+		ob_start();
+		OpenTrip_Engine::instance()->render_stripe_secret_key_field();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'type="password"', $html );
+		$this->assertStringNotContainsString( 'sk_test_do_not_render_this_value_123', $html );
+	}
+
+	private function create_stripe_test_booking( $status ) {
+		$tour_id = self::factory()->post->create( array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Stripe Test Tour' ) );
+		$booking_id = self::factory()->post->create( array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Stripe Test Booking' ) );
+		update_post_meta( $booking_id, '_ote_booking_status', $status );
+		update_post_meta( $booking_id, '_ote_booking_reference', 'OTE-PAY-TEST' );
+		update_post_meta( $booking_id, '_ote_tour_id', $tour_id );
+		update_post_meta( $booking_id, '_ote_customer_email', 'stripe-customer@example.com' );
+		update_post_meta( $booking_id, '_ote_customer_name', 'Stripe Test Customer' );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'total' => 120.00, 'currency' => 'USD' ) );
+		return $booking_id;
+	}
+
+	private function stripe_test_event( $event_id, $event_type, $booking_id, $session_id, $payment_status ) {
+		$reference = (string) get_post_meta( $booking_id, '_ote_booking_reference', true );
+		$event = array(
+			'id' => $event_id,
+			'type' => $event_type,
+			'data' => array( 'object' => array(
+				'id' => $session_id,
+				'client_reference_id' => $reference,
+				'metadata' => array( 'booking_id' => (string) $booking_id, 'booking_reference' => $reference ),
+				'currency' => 'usd',
+				'amount_total' => 6000,
+				'payment_status' => $payment_status,
+				'payment_intent' => 'pi_test_transaction',
+			) ),
+		);
+		$payload = wp_json_encode( $event );
+		$timestamp = time();
+		$secret = 'whsec_unit_test_secret';
+		$signature = 't=' . $timestamp . ',v1=' . hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
+		return array( 'payload' => $payload, 'signature' => $signature );
 	}
 }
