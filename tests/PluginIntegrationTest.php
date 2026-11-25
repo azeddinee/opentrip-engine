@@ -317,6 +317,42 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'class="ote-booking-form"', $html );
 	}
 
+
+	public function test_agency_booking_notification_uses_configured_recipient_and_toggle() {
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Agency Email Test' )
+		);
+		update_post_meta( $booking_id, '_ote_tour_id', 123 );
+		update_post_meta( $booking_id, '_ote_booking_reference', 'OTE-ADMIN-1' );
+		update_post_meta( $booking_id, '_ote_customer_name', 'Agency Test Customer' );
+		update_post_meta( $booking_id, '_ote_customer_email', 'customer@example.com' );
+		update_post_meta( $booking_id, '_ote_travel_date', '2027-08-10' );
+		update_post_meta( $booking_id, '_ote_travellers', 3 );
+
+		update_option( 'ote_notification_email', 'agency@example.com' );
+		update_option( 'ote_admin_notifications_enabled', '1' );
+		$sent = array();
+		$capture = function( $short_circuit, $atts ) use ( &$sent ) {
+			$sent[] = $atts;
+			return true;
+		};
+		add_filter( 'pre_wp_mail', $capture, 10, 2 );
+
+		$engine = OpenTrip_Engine::instance();
+		$this->assertTrue( $engine->send_admin_booking_email( $booking_id ) );
+		update_option( 'ote_admin_notifications_enabled', '0' );
+		$this->assertFalse( $engine->send_admin_booking_email( $booking_id ) );
+
+		remove_filter( 'pre_wp_mail', $capture, 10 );
+		delete_option( 'ote_notification_email' );
+		delete_option( 'ote_admin_notifications_enabled' );
+		$this->assertCount( 1, $sent );
+		$this->assertSame( 'agency@example.com', $sent[0]['to'] );
+		$this->assertStringContainsString( 'OTE-ADMIN-1', $sent[0]['message'] );
+		$this->assertStringContainsString( 'customer@example.com', $sent[0]['message'] );
+		$this->assertStringContainsString( 'Travellers: 3', $sent[0]['message'] );
+	}
+
 	public function test_customer_booking_emails_are_sent_for_supported_statuses() {
 		$booking_id = self::factory()->post->create(
 			array(
