@@ -526,13 +526,17 @@ final class OpenTrip_Engine {
 			return;
 		}
 		wp_enqueue_media();
+		wp_localize_script( 'jquery', 'oteGalleryStrings', array(
+			'title' => __( 'Select tour photos', 'opentrip-engine' ),
+			'use'   => __( 'Use selected photos', 'opentrip-engine' ),
+		) );
 		wp_add_inline_script( 'jquery', "
 		jQuery(function($){
 			var frame;
 			$('#ote_gallery_select').on('click', function(e){
 				e.preventDefault();
 				if(frame){frame.open();return;}
-				frame=wp.media({title:'Select tour photos',button:{text:'Use selected photos'},multiple:true,library:{type:'image'}});
+				frame=wp.media({title:oteGalleryStrings.title,button:{text:oteGalleryStrings.use},multiple:true,library:{type:'image'}});
 				frame.on('open',function(){
 					var ids=$('#ote_gallery_ids').val().split(',').filter(Boolean);
 					var selection=frame.state().get('selection'); selection.reset();
@@ -613,8 +617,8 @@ final class OpenTrip_Engine {
 		ob_start();
 		?>
 		<div class="ote-gallery" style="--ote-gallery-columns:<?php echo esc_attr( $columns ); ?>">
-			<?php foreach ( $ids as $id ) : ?>
-			<figure class="ote-gallery-item"><?php echo wp_get_attachment_link( absint( $id ), $size, false, false, array( 'class' => 'ote-gallery-link' ) ); ?></figure>
+			<?php foreach ( $ids as $index => $id ) : $attachment_id = absint( $id ); $alt = trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ); if ( '' === $alt ) { $alt = sprintf( __( 'Tour photo %1$d for %2$s', 'opentrip-engine' ), $index + 1, get_the_title( $tour_id ) ); } ?>
+			<figure class="ote-gallery-item"><?php echo wp_get_attachment_link( $attachment_id, $size, false, false, false, array( 'class' => 'ote-gallery-image', 'alt' => $alt ) ); ?></figure>
 			<?php endforeach; ?>
 		</div>
 		<?php
@@ -673,7 +677,7 @@ final class OpenTrip_Engine {
 			$duration = get_post_meta( $id, '_ote_duration', true );
 			echo '<article class="ote-tour-card">';
 			if ( has_post_thumbnail() ) {
-				echo '<a href="' . esc_url( get_permalink() ) . '">' . get_the_post_thumbnail( $id, 'large' ) . '</a>';
+				echo '<a href="' . esc_url( get_permalink() ) . '">' . get_the_post_thumbnail( $id, 'large', array( 'alt' => ( get_post_meta( get_post_thumbnail_id( $id ), '_wp_attachment_image_alt', true ) ? get_post_meta( get_post_thumbnail_id( $id ), '_wp_attachment_image_alt', true ) : get_the_title( $id ) ) ) ) . '</a>';
 			}
 			echo '<h3><a href="' . esc_url( get_permalink() ) . '">' . esc_html( get_the_title() ) . '</a></h3>';
 			if ( $duration ) {
@@ -711,28 +715,29 @@ final class OpenTrip_Engine {
 			return ob_get_clean();
 		}
 		?>
+		<h2 class="ote-booking-form-title"><?php esc_html_e( 'Booking request', 'opentrip-engine' ); ?></h2>
 		<form method="post" class="ote-booking-form">
 			<input type="hidden" name="ote_action" value="submit_booking">
 			<input type="hidden" name="ote_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
 			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
-			<p><label><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_name" autocomplete="name"></label></p>
-			<p><label><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?><br><input required type="email" name="ote_email" autocomplete="email"></label></p>
-		<p><label><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?><br>
-		<select required name="ote_departure_id">
+			<p><label for="ote_name"><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?></label><br><input id="ote_name" required type="text" name="ote_name" autocomplete="name"></label></p>
+			<p><label for="ote_email"><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?></label><br><input id="ote_email" required type="email" name="ote_email" autocomplete="email"></label></p>
+		<p><label for="ote_departure_id"><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?></label><br>
+		<select id="ote_departure_id" required name="ote_departure_id">
 			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
 			<?php foreach ( $available_departures as $departure ) : ?>
 			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
 			<?php endforeach; ?>
 		</select></label></p>
-			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
-			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
-			<p><label><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_child_ages" placeholder="e.g. 5, 9" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
-			<p><label><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_infant_ages" placeholder="e.g. 0, 1" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?><br><input required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
-			<p class="ote-price-note"><?php esc_html_e( 'Enter an age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
-			<p><label><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?><br><textarea name="ote_message" rows="4"></textarea></label></p>
+			<p><label for="ote_adults"><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?></label><br><input id="ote_adults" required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
+			<p><label for="ote_children"><?php esc_html_e( 'Children', 'opentrip-engine' ); ?></label><br><input id="ote_children" required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
+			<p><label for="ote_child_ages"><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="ote_child_ages" type="text" name="ote_child_ages" placeholder="<?php esc_attr_e( 'e.g. 5, 9', 'opentrip-engine' ); ?>" aria-describedby="ote-booking-age-help" autocomplete="off"></p>
+			<p><label for="ote_infants"><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?></label><br><input id="ote_infants" required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
+			<p><label for="ote_infant_ages"><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="ote_infant_ages" type="text" name="ote_infant_ages" placeholder="<?php esc_attr_e( 'e.g. 0, 1', 'opentrip-engine' ); ?>" aria-describedby="ote-booking-age-help" autocomplete="off"></p>
+			<p><label for="ote_rooms"><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?></label><br><input id="ote_rooms" required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
+			<p id="ote-booking-age-help" class="ote-price-note"><?php esc_html_e( 'Enter one whole-number age for every child and infant, separated by commas. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
+			<p><label for="ote_message"><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?></label><br><textarea id="ote_message" name="ote_message" rows="4"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
@@ -1223,15 +1228,16 @@ final class OpenTrip_Engine {
 			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
 		}
 		?>
+		<h2 class="ote-review-form-title"><?php esc_html_e( 'Leave a review', 'opentrip-engine' ); ?></h2>
 		<form method="post" class="ote-review-form">
 			<input type="hidden" name="ote_review_action" value="submit_review">
 			<input type="hidden" name="ote_review_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_review', 'ote_review_nonce' ); ?>
 			<p class="ote-review-trap" aria-hidden="true"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></label></p>
-			<p><label><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?><br><input required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></label></p>
-			<p><label><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?><br><select required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></label></p>
-			<p><label><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?><br><textarea required name="ote_review_content" rows="5" maxlength="5000"></textarea></label></p>
+			<p><label for="ote_review_name"><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?></label><br><input id="ote_review_name" required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></label></p>
+			<p><label for="ote_review_email"><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?></label><br><input id="ote_review_email" required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></label></p>
+			<p><label for="ote_review_rating"><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?></label><br><select id="ote_review_rating" required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></label></p>
+			<p><label for="ote_review_content"><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?></label><br><textarea id="ote_review_content" required name="ote_review_content" rows="5" maxlength="5000"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Submit review', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
@@ -1310,7 +1316,7 @@ final class OpenTrip_Engine {
 			<p class="ote-review-summary"><strong><?php echo esc_html( number_format_i18n( $average, 1 ) ); ?>/5</strong> — <?php echo esc_html( sprintf( _n( '%d approved review', '%d approved reviews', count( $ratings ), 'opentrip-engine' ), count( $ratings ) ) ); ?></p>
 			<?php foreach ( $display_reviews as $review ) : $rating = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) ); ?>
 				<article class="ote-review">
-					<p class="ote-review-stars" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></p>
+					<p class="ote-review-stars"><span role="img" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></span></p>
 					<h3><?php echo esc_html( get_post_meta( $review->ID, '_ote_review_name', true ) ); ?></h3>
 					<div class="ote-review-content"><?php echo wpautop( esc_html( $review->post_content ) ); ?></div>
 					<small><?php echo esc_html( get_the_date( '', $review ) ); ?></small>
