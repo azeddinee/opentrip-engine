@@ -12,7 +12,7 @@ Install the i18n command once:
 
 Generate the template from the current PHP source:
 
-    sh scripts/make-pot.sh
+    composer i18n:pot
 
 This writes languages/opentrip-engine.pot. Run it after changing user-facing strings, then commit the updated template.
 
