@@ -206,9 +206,7 @@ try {
 	echo "PASS: 10 processes confirmed the same booking; exactly one inventory reservation was recorded.\n";
 	echo "All multi-process inventory stress tests passed.\n";
 } catch ( Exception $exception ) {
-	fwrite( STDERR, 'FAIL: ' . $exception->getMessage() . "\n" );
-	exit_code:
-	exit( 1 );
+	$failure = $exception->getMessage();
 } finally {
 	foreach ( $created_bookings as $booking_id ) {
 		$wpdb->delete( $reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
