@@ -31,7 +31,7 @@ Edit a tour and enter one item per line in the Tour Inclusions & Exclusions pane
 
 == Tour Reviews & Ratings ==
 
-Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings. Public forms include a honeypot and an atomic database-backed limit of five submissions per email address per form type in a rolling 15-minute window; the limiter stores a salted hash, not the raw email, and is not a replacement for host or WAF protection. Booking and review records are restricted to users with site-administrator permissions.
+Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings. Public forms include a honeypot and an atomic database-backed limit of five submissions per email address per form type in a rolling 15-minute window; the limiter stores a salted hash, not the raw email, and is not a replacement for host or WAF protection. Booking and review records are restricted to users with site-administrator permissions. Booking records cannot be deleted from the dashboard so seat history is not accidentally lost; cancel a booking to release seats.
 
 == Tour Photo Gallery ==
 
@@ -70,6 +70,8 @@ Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after instal
 = 1.0.0-beta.4 =
 * Use a transactional reservation ledger to prevent duplicate seat increments when booking statuses are updated repeatedly.
 * Replace transient submission counts with atomic database-backed email-hash limits.
+* Add configurable agency and customer email notification settings.
+* Add safe departure close and reopen controls.
 * Add privacy-preserving, email-scoped best-effort rate limits to booking and review submissions.
 * Expand integration coverage for booking form output, customer emails and inventory capacity boundaries.
 
