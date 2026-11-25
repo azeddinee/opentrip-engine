@@ -91,7 +91,7 @@ jobs:
           chmod +x /usr/local/bin/wp
           wp package install wp-cli/i18n-command
       - name: Generate translation template
-        run: composer make-pot
+        run: composer i18n:pot
       - name: Upload translation template
         uses: actions/upload-artifact@v4
         with:
