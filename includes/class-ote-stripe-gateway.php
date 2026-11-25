@@ -79,6 +79,12 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 	 * @param int    $deposit_percent Deposit percentage, 1–100.
 	 * @return array|WP_Error
 	 */
+	public static function currency_decimals( $currency ) {
+		$currency = strtoupper( (string) $currency );
+		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF', 'ISK', 'UGX' );
+		return in_array( $currency, $zero_decimal, true ) ? 0 : 2;
+	}
+
 	public static function calculate_payment_amount( $total, $currency, $deposit_percent ) {
 		$deposit_percent = (int) $deposit_percent;
 		if ( $deposit_percent < 1 || $deposit_percent > 100 || ! is_numeric( $total ) || (float) $total <= 0 ) {
