@@ -58,7 +58,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		}
 		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
 		$whole_only_two_decimal = array( 'ISK', 'UGX' );
-		$factor = in_array( $currency, $zero_decimal, true ) ? 1 : 100;
+		$factor = self::minor_unit_factor( $currency );
 		if ( in_array( $currency, $whole_only_two_decimal, true ) ) {
 			if ( abs( (float) $amount - round( (float) $amount ) ) > 0.00001 ) {
 				return new WP_Error( 'ote_fractional_stripe_currency', __( 'This Stripe currency only accepts whole-unit amounts.', 'opentrip-engine' ) );
@@ -79,6 +79,12 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 	 * @param int    $deposit_percent Deposit percentage, 1–100.
 	 * @return array|WP_Error
 	 */
+	public static function minor_unit_factor( $currency ) {
+		$currency = strtoupper( (string) $currency );
+		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
+		return in_array( $currency, $zero_decimal, true ) ? 1 : 100;
+	}
+
 	public static function currency_decimals( $currency ) {
 		$currency = strtoupper( (string) $currency );
 		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF', 'ISK', 'UGX' );
@@ -341,6 +347,9 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		update_post_meta( $booking_id, '_ote_payment_last_event_type', $event_type );
 		update_post_meta( $booking_id, '_ote_payment_updated_at', current_time( 'mysql', true ) );
 		if ( 'paid' === $new_status ) {
+			update_post_meta( $booking_id, '_ote_payment_paid_amount_minor', $expected_amount );
+			update_post_meta( $booking_id, '_ote_payment_paid_amount', $expected_amount / self::minor_unit_factor( strtoupper( $expected_currency ) ) );
+			update_post_meta( $booking_id, '_ote_payment_paid_currency', strtoupper( $expected_currency ) );
 			update_post_meta( $booking_id, '_ote_payment_transaction_id', isset( $session['payment_intent'] ) && is_string( $session['payment_intent'] ) ? sanitize_text_field( $session['payment_intent'] ) : '' );
 		}
 		return true;
