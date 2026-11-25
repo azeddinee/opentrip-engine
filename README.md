@@ -20,6 +20,8 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Customer email notifications when an administrator changes a request to Confirmed or Cancelled.
 - Booking reference displayed in the post-submission confirmation message and in the admin booking details.
 - Responsive frontend CSS for tour cards and booking forms.
+- Accessible booking and review forms with explicit labels, traveller fieldsets, announced errors/statuses, visible keyboard focus, reduced-motion support and meaningful image alternatives.
+- Translation-ready PHP strings under the opentrip-engine text domain, with a WP-CLI POT generator and CI translation-template artifact.
 - Admin departure manager with dates, capacity, price, currency and safe close/reopen controls.
 - Booking form selects a real departure and displays remaining seats.
 - Booking requests capture adult, child and infant counts, ages and rooms required.
@@ -46,6 +48,12 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 ## Testing
 
 Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. The WordPress integration matrix covers content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, privacy export/erasure, traveller pricing and age boundaries, immutable quote snapshots, and the public REST API. The CI workflow also runs a multi-process MySQL stress suite on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Pricing unit/integration coverage includes inclusive age-band boundaries, gaps and overlaps, missing/default rates, free infants, room charges, rounding, currency preservation and immutable quote snapshots. Full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
+
+## Accessibility and translations
+
+See the [accessibility audit](docs/ACCESSIBILITY.md) for implemented semantics, keyboard/focus behavior, contrast notes, known limitations and reproducible manual screen-reader checks.
+
+The plugin uses the opentrip-engine text domain. Install WP-CLI and its i18n command once with `wp package install wp-cli/i18n-command`, then run `composer make-pot` to generate `languages/opentrip-engine.pot`. See [languages/README.md](languages/README.md) for creating PO/MO files. CI also generates and publishes the POT template as an Actions artifact.
 
 ## Requirements
 - WordPress 6.2+
