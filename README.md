@@ -47,7 +47,7 @@ Run the lightweight departure inventory smoke tests with `php tests/departures-s
 - PHP 7.4+
 
 ## Install
-1. Download this repository as a ZIP.
+1. Download the packaged plugin ZIP from [GitHub Releases](https://github.com/azeddinee/opentrip-engine/releases).
 2. In WordPress, go to **Plugins → Add New Plugin → Upload Plugin**.
 3. Upload the ZIP and activate it.
 4. Create tours under **Tours → Add New**.
