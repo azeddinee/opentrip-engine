@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.3
+Stable tag: 1.0.0-beta.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,7 +31,7 @@ Edit a tour and enter one item per line in the Tour Inclusions & Exclusions pane
 
 == Tour Reviews & Ratings ==
 
-Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings and includes only a basic honeypot spam check. Booking and review records are restricted to users with site-administrator permissions.
+Add [opentrip_reviews] and [opentrip_review_form] to a tour page or template. Optional tour_id attributes target a specific tour; the reviews shortcode accepts limit="5" (1–50). Submissions are saved as Pending under Tours > Tour Reviews and must be published by an administrator before appearing publicly. Reviews require a name, email, 1–5 star rating and text. Email addresses are not displayed publicly. The MVP does not verify bookings. Public forms include a honeypot and a best-effort limit of five submissions per email address per form type in a rolling 15-minute window; this is not a replacement for host or WAF protection. Booking and review records are restricted to users with site-administrator permissions.
 
 == Tour Photo Gallery ==
 
@@ -63,9 +63,13 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 
 == Testing ==
 
-Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The current suite does not simulate concurrent booking requests or cover every form, email and status-transition path.
+Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The suite also checks booking form output, customer email content, email-scoped submission limits and repeated inventory capacity boundaries. It does not simulate simultaneous administrator confirmations or cover every live form-submission and status-transition path.
 
 == Changelog ==
+
+= 1.0.0-beta.4 =
+* Add privacy-preserving, email-scoped best-effort rate limits to booking and review submissions.
+* Expand integration coverage for booking form output, customer emails and inventory capacity boundaries.
 
 = 1.0.0-beta.3 =
 * Add WordPress personal data export and erasure support for bookings and reviews.
