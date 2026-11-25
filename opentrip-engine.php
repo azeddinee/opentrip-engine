@@ -715,7 +715,6 @@ final class OpenTrip_Engine {
 			return ob_get_clean();
 		}
 		?>
-		<h2 class="ote-booking-form-title"><?php esc_html_e( 'Booking request', 'opentrip-engine' ); ?></h2>
 		<?php $form_id = wp_unique_id( 'ote-booking-' ); ?>
 		<form method="post" class="ote-booking-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
 			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Request a booking', 'opentrip-engine' ); ?></h2>
@@ -1228,12 +1227,13 @@ final class OpenTrip_Engine {
 		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
 			return '';
 		}
+		$form_id = wp_unique_id( 'ote-review-' );
 		ob_start();
 		if ( isset( $_GET['ote_review'] ) && is_string( $_GET['ote_review'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_review'] ) ) ) {
 			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
 		}
 		?>
-		<h2 class="ote-review-form-title"><?php esc_html_e( 'Leave a review', 'opentrip-engine' ); ?></h2>
+		<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>" class="ote-review-form-title"><?php esc_html_e( 'Leave a review', 'opentrip-engine' ); ?></h2>
 		<?php $form_id = wp_unique_id( 'ote-review-' ); ?>
 		<form method="post" class="ote-review-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
 			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Write a guest review', 'opentrip-engine' ); ?></h2>
