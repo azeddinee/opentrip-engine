@@ -7,8 +7,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class OTE_Submission_Limiter {
-	private static $table;
-
 	public static function table_name() {
 		global $wpdb;
 		return $wpdb->prefix . 'ote_submission_limits';
@@ -47,13 +45,13 @@ final class OTE_Submission_Limiter {
 	public static function is_limited( $type, $email ) {
 		global $wpdb;
 
-		$type = sanitize_key( $type );
-		$email = strtolower( sanitize_email( $email ) );
+		$type = is_scalar( $type ) ? sanitize_key( (string) $type ) : '';
+		$email = is_scalar( $email ) ? strtolower( sanitize_email( (string) $email ) ) : '';
 		if ( ! in_array( $type, array( 'booking', 'review' ), true ) || ! is_email( $email ) ) {
 			return true;
 		}
 
-		$limit = (int) apply_filters( 'ote_submission_rate_limit', 5, $type, $email );
+		$limit = (int) apply_filters( 'ote_submission_rate_limit', 5, $type );
 		$limit = max( 1, min( 50, $limit ) );
 		$hash = hash_hmac( 'sha256', $email, wp_salt( 'auth' ) );
 		$now = current_time( 'mysql', true );
@@ -77,11 +75,15 @@ final class OTE_Submission_Limiter {
 			return true;
 		}
 
-		$count = (int) $wpdb->get_var( $wpdb->prepare(
+		$count_value = $wpdb->get_var( $wpdb->prepare(
 			"SELECT attempts FROM {$table} WHERE email_hash = %s AND form_type = %s",
 			$hash,
 			$type
 		) );
+		if ( null === $count_value ) {
+			return true;
+		}
+		$count = (int) $count_value;
 
 		// Opportunistic cleanup: hashes are retained for no longer than one day.
 		if ( false === get_transient( 'ote_submission_limits_cleanup' ) ) {
