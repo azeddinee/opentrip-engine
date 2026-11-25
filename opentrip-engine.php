@@ -1234,8 +1234,6 @@ final class OpenTrip_Engine {
 			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
 		}
 		?>
-		<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>" class="ote-review-form-title"><?php esc_html_e( 'Leave a review', 'opentrip-engine' ); ?></h2>
-		<?php $form_id = wp_unique_id( 'ote-review-' ); ?>
 		<form method="post" class="ote-review-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
 			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Write a guest review', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_review_action" value="submit_review">
