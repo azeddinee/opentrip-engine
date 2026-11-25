@@ -966,6 +966,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 
 	public function test_stripe_checkout_uses_saved_quote_and_reuses_pending_session() {
 		$booking_id = $this->create_stripe_test_booking( 'confirmed' );
+		update_option( 'home', 'https://example.org' );
+		update_option( 'siteurl', 'https://example.org' );
 		update_option( 'ote_stripe_enabled', '1' );
 		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
 		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
@@ -1063,5 +1065,52 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$secret = 'whsec_unit_test_secret';
 		$signature = 't=' . $timestamp . ',v1=' . hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
 		return array( 'payload' => $payload, 'signature' => $signature );
+	}
+
+	public function test_stripe_settings_preserve_secrets_and_disable_autoload() {
+		$engine = OpenTrip_Engine::instance();
+		update_option( 'ote_stripe_secret_key', 'sk_test_previous_key_123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_previous_secret_123456789' );
+		$this->assertSame( 'sk_test_previous_key_123456789', $engine->sanitize_stripe_secret_key( 'not-a-secret' ) );
+		$this->assertSame( 'sk_test_new_key_123456789', $engine->sanitize_stripe_secret_key( 'sk_test_new_key_123456789' ) );
+		$this->assertSame( 'sk_test_new_key_123456789', $engine->sanitize_stripe_secret_key( '' ) );
+		$this->assertSame( 'whsec_previous_secret_123456789', $engine->sanitize_stripe_webhook_secret( 'invalid' ) );
+		$this->assertSame( 'whsec_new_secret_123456789', $engine->sanitize_stripe_webhook_secret( 'whsec_new_secret_123456789' ) );
+		$this->assertSame( 100, $engine->sanitize_stripe_deposit_percent( '100' ) );
+		$this->assertSame( 100, $engine->sanitize_stripe_deposit_percent( '0' ) );
+		$engine->ensure_payment_secrets_are_not_autoloaded();
+		$all_options = wp_load_alloptions();
+		$this->assertArrayNotHasKey( 'ote_stripe_secret_key', $all_options );
+		$this->assertArrayNotHasKey( 'ote_stripe_webhook_secret', $all_options );
+	}
+
+	public function test_stripe_reissued_session_keeps_old_session_webhooks_valid() {
+		$booking_id = $this->create_stripe_test_booking( 'confirmed' );
+		update_option( 'home', 'https://example.org' );
+		update_option( 'siteurl', 'https://example.org' );
+		update_option( 'ote_stripe_enabled', '1' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_deposit_percent', 50 );
+		update_post_meta( $booking_id, '_ote_payment_status', 'pending' );
+		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_old123' );
+		update_post_meta( $booking_id, '_ote_payment_amount_minor', 6000 );
+		update_post_meta( $booking_id, '_ote_payment_currency', 'USD' );
+		update_post_meta( $booking_id, '_ote_payment_expires_at', time() - 30 );
+		update_post_meta( $booking_id, '_ote_payment_url', 'https://checkout.stripe.com/c/pay/cs_test_old123' );
+		$mock = function( $preempt, $args, $url ) {
+			if ( OTE_Stripe_Gateway::API_URL !== $url ) { return $preempt; }
+			return array( 'headers' => array(), 'body' => wp_json_encode( array( 'id' => 'cs_test_new123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_new123', 'expires_at' => time() + HOUR_IN_SECONDS, 'livemode' => false ) ), 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
+		};
+		add_filter( 'pre_http_request', $mock, 10, 3 );
+		$session = ( new OTE_Stripe_Gateway() )->create_checkout_session( $booking_id );
+		remove_filter( 'pre_http_request', $mock, 10 );
+		$this->assertNotWPError( $session );
+		$history = get_post_meta( $booking_id, '_ote_payment_session_history', true );
+		$this->assertSame( 'cs_test_old123', $history[0]['id'] );
+		$event = $this->stripe_test_event( 'evt_old_session_paid', 'checkout.session.async_payment_succeeded', $booking_id, 'cs_test_old123', 'paid' );
+		$this->assertTrue( ( new OTE_Stripe_Gateway() )->handle_webhook( $event['payload'], $event['signature'] ) );
+		$this->assertSame( 'paid', get_post_meta( $booking_id, '_ote_payment_status', true ) );
+		delete_option( 'ote_stripe_event_' . hash( 'sha256', 'evt_old_session_paid' ) );
 	}
 }
