@@ -1069,13 +1069,13 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 
 	public function test_stripe_settings_preserve_secrets_and_disable_autoload() {
 		$engine = OpenTrip_Engine::instance();
-		update_option( 'ote_stripe_secret_key', 'sk_test_previous_key_123456789' );
-		update_option( 'ote_stripe_webhook_secret', 'whsec_previous_secret_123456789' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_previouskey123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_previoussecret123456789' );
 		$this->assertSame( 'sk_test_previous_key_123456789', $engine->sanitize_stripe_secret_key( 'not-a-secret' ) );
-		$this->assertSame( 'sk_test_new_key_123456789', $engine->sanitize_stripe_secret_key( 'sk_test_new_key_123456789' ) );
+		$this->assertSame( 'sk_test_newkey123456789', $engine->sanitize_stripe_secret_key( 'sk_test_new_key_123456789' ) );
 		$this->assertSame( 'sk_test_new_key_123456789', $engine->sanitize_stripe_secret_key( '' ) );
 		$this->assertSame( 'whsec_previous_secret_123456789', $engine->sanitize_stripe_webhook_secret( 'invalid' ) );
-		$this->assertSame( 'whsec_new_secret_123456789', $engine->sanitize_stripe_webhook_secret( 'whsec_new_secret_123456789' ) );
+		$this->assertSame( 'whsec_newsecret123456789', $engine->sanitize_stripe_webhook_secret( 'whsec_new_secret_123456789' ) );
 		$this->assertSame( 100, $engine->sanitize_stripe_deposit_percent( '100' ) );
 		$this->assertSame( 100, $engine->sanitize_stripe_deposit_percent( '0' ) );
 		$engine->ensure_payment_secrets_are_not_autoloaded();
