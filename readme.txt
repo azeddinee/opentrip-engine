@@ -84,11 +84,6 @@ A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. En
 * Include quote breakdowns in admin booking details and customer receipts.
 
 
-= 1.0.0-beta.6 =
-* Add configurable adult, child, infant and room pricing to departures.
-* Validate child and infant ages and preserve immutable booking quote snapshots.
-* Show the saved quote breakdown in booking administration and customer receipts.
-
 = 1.0.0-beta.5 =
 * Add transactional booking status and per-booking seat reservation ledger.
 * Add atomic database-backed submission limits and erase limiter hashes through privacy requests.
