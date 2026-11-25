@@ -171,7 +171,13 @@ final class OTE_Departures {
 		$currency = strtoupper( sanitize_text_field( $this->posted_string( 'currency' ) ) );
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
-		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) || ( null !== $adult_price && ( ! is_finite( $adult_price ) || $adult_price < 0 || $adult_price > 9999999999.99 ) ) || ( null !== $child_price && ( ! is_finite( $child_price ) || $child_price < 0 || $child_price > 9999999999.99 ) ) || ! is_finite( $infant_price ) || $infant_price < 0 || $infant_price > 9999999999.99 || ! is_finite( $room_price ) || $room_price < 0 || $room_price > 9999999999.99 || $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age || is_wp_error( $child_bands ) ) {
+		$child_infant_overlap = false;
+		if ( ! is_wp_error( $child_bands ) ) {
+			foreach ( $child_bands as $band ) {
+				if ( $band['min_age'] <= $infant_max_age ) { $child_infant_overlap = true; break; }
+			}
+		}
+		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) || ( null !== $adult_price && ( ! is_finite( $adult_price ) || $adult_price < 0 || $adult_price > 9999999999.99 ) ) || ( null !== $child_price && ( ! is_finite( $child_price ) || $child_price < 0 || $child_price > 9999999999.99 ) ) || ! is_finite( $infant_price ) || $infant_price < 0 || $infant_price > 9999999999.99 || ! is_finite( $room_price ) || $room_price < 0 || $room_price > 9999999999.99 || $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age || is_wp_error( $child_bands ) || $child_infant_overlap ) {
 			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		global $wpdb;
