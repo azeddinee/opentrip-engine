@@ -98,7 +98,7 @@ final class OTE_Pricing {
 		}
 
 		foreach ( $child_ages as $age ) {
-			if ( ! is_numeric( $age ) || (int) $age != $age || (int) $age < 0 || (int) $age > 17 || ( empty( $child_bands ) && ( (int) $age < $child_min_age || (int) $age > $child_max_age ) ) ) {
+			if ( ! is_scalar( $age ) || ! is_numeric( $age ) || (int) $age != $age || (int) $age < $child_min_age || (int) $age > $child_max_age ) {
 				return new WP_Error(
 					'ote_child_age_outside_band',
 					sprintf(
@@ -111,7 +111,7 @@ final class OTE_Pricing {
 			}
 		}
 		foreach ( $infant_ages as $age ) {
-			if ( ! is_numeric( $age ) || (int) $age != $age || (int) $age < 0 || (int) $age > $infant_max_age ) {
+			if ( ! is_scalar( $age ) || ! is_numeric( $age ) || (int) $age != $age || (int) $age < 0 || (int) $age > $infant_max_age ) {
 				return new WP_Error(
 					'ote_infant_age_outside_band',
 					sprintf(
