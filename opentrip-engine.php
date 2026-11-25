@@ -1024,7 +1024,7 @@ final class OpenTrip_Engine {
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
 			'post_status' => 'pending',
-			'post_title' => sprintf( __( 'Review for %1\$2 by %2\$2', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
+			'post_title' => sprintf( __( 'Review for %1\$s by %2\$s', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $review_id ) ) {
