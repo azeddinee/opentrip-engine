@@ -159,6 +159,9 @@ if ( $is_worker ) {
 		$_tests_dir = '/tmp/wordpress-tests-lib';
 	}
 	$config_file = $_tests_dir . '/wp-tests-config.php';
+	if ( ! defined( 'OTE_CONCURRENCY_STRESS_TEST' ) ) {
+		define( 'OTE_CONCURRENCY_STRESS_TEST', true );
+	}
 	if ( ! is_readable( $config_file ) ) {
 		fwrite( STDERR, "WordPress test config not found: " . $config_file . "\\n" );
 		exit( 4 );
@@ -209,6 +212,7 @@ if ( $is_worker ) {
 		if ( ! $expected_capacity_rejection || '' !== $transition_error ) {
 			fwrite( STDERR, 'Unexpected booking transition failure: ' . wp_json_encode( array(
 				'db_error' => $transition_error,
+				'transition_failure' => isset( $GLOBALS['ote_transition_failure'] ) ? $GLOBALS['ote_transition_failure'] : '',
 				'prefix' => $wpdb->prefix,
 				'booking_id' => $booking_id,
 				'booking_status' => $booking_status,
