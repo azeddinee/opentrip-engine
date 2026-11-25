@@ -3,11 +3,11 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.6
+Stable tag: 1.0.0-beta.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A lightweight tour catalogue, departure inventory and booking-request engine for WordPress.
+A lightweight tour catalogue, departure inventory and accessible booking-request engine for WordPress. Includes keyboard-visible focus, screen-reader labels, reduced-motion support and a gettext translation template.
 
 == Description ==
 
@@ -65,7 +65,7 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 
 == Testing ==
 
-Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 28 tests and 191 assertions, including REST API public/private visibility, content sanitization, pagination, departure and destination filtering, traveller pricing and age-band boundaries, zero-priced infants, room charges, currency preservation, immutable quote snapshots, booking form output, customer/agency email content, email-scoped submission limits, inventory capacity boundaries, transactional booking confirmation/cancellation and privacy export/erasure. The CI workflow runs multi-process MySQL stress tests on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Full live browser-driven form-submission tests remain outstanding.
+Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 30 tests and 218 assertions, including REST API public/private visibility, content sanitization, pagination, departure and destination filtering, traveller pricing and age-band boundaries, zero-priced infants, room charges, currency preservation, immutable quote snapshots, booking form output, customer/agency email content, email-scoped submission limits, inventory capacity boundaries, transactional booking confirmation/cancellation and privacy export/erasure. The CI workflow runs multi-process MySQL stress tests on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Full live browser-driven form-submission tests remain outstanding.
 
 == Contributing ==
 
@@ -75,7 +75,18 @@ Bug reports and feature requests can be submitted using the GitHub issue templat
 
 A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. Endpoints list published tours, retrieve one published tour, list future open departures with remaining seats, and list non-empty destinations. The API never exposes booking/customer records or arbitrary private post metadata. Draft, private and password-protected tours return 404. See docs/REST-API.md in the source repository for request examples, pagination and privacy boundaries.
 
+== Accessibility and Translations ==
+
+Public booking and review forms use explicit labels and unique IDs, accessible headings and described age fields. Tour and gallery images have fallback alternative text when Media Library alt text is missing. Keyboard focus indicators and reduced-motion support are included. The gettext template is in languages/opentrip-engine.pot. Install WP-CLI's i18n command package and run composer i18n:pot to refresh it. See docs/ACCESSIBILITY-AND-TRANSLATIONS.md for the audit and translator workflow.
+
 == Changelog ==
+
+= 1.0.0-beta.7 =
+* Improve public booking/review form labels, unique IDs, headings and screen-reader descriptions.
+* Add accessible image alternatives and announce review ratings to assistive technology.
+* Add visible keyboard focus, reduced-motion styles and a 202-string gettext template.
+* Document the accessibility audit and repeatable translation workflow.
+
 
 = 1.0.0-beta.6 =
 * Add configurable adult, child and infant departure pricing.

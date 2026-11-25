@@ -1,0 +1,822 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OpenTrip Engine 1.0.0-beta.7\n"
+"Report-Msgid-Bugs-To: https://github.com/azeddinee/opentrip-engine/issues\n"
+"POT-Creation-Date: 2026-11-25 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: opentrip-engine\n"
+
+#: includes/class-ote-departures.php:88
+msgid "Departures"
+msgstr ""
+
+#: includes/class-ote-departures.php:105
+msgid "Tour Departures"
+msgstr ""
+
+#: includes/class-ote-departures.php:107
+msgid "Departure created successfully."
+msgstr ""
+
+#: includes/class-ote-departures.php:109
+msgid "The departure could not be created. Please review the details and try again."
+msgstr ""
+
+#: includes/class-ote-departures.php:112
+msgid "Departure status updated."
+msgstr ""
+
+#: includes/class-ote-departures.php:114
+msgid "The departure status could not be updated. It may be fully booked or already past."
+msgstr ""
+
+#: includes/class-ote-departures.php:116
+msgid "Create dated departures with seat inventory. Only confirmed booking requests consume seats."
+msgstr ""
+
+#: includes/class-ote-departures.php:117
+msgid "Add departure"
+msgstr ""
+
+#: includes/class-ote-departures.php:122
+msgid "Select a tour"
+msgstr ""
+
+#: includes/class-ote-departures.php:123
+msgid "Start date"
+msgstr ""
+
+#: includes/class-ote-departures.php:124
+msgid "End date"
+msgstr ""
+
+#: includes/class-ote-departures.php:125
+msgid "Total seats"
+msgstr ""
+
+#: includes/class-ote-departures.php:126
+msgid "Price per traveller"
+msgstr ""
+
+#: includes/class-ote-departures.php:127
+msgid "Adult price (leave blank to use base price)"
+msgstr ""
+
+#: includes/class-ote-departures.php:127
+msgid "Use base price"
+msgstr ""
+
+#: includes/class-ote-departures.php:128
+msgid "Child price (leave blank to use adult price)"
+msgstr ""
+
+#: includes/class-ote-departures.php:128
+msgid "Use adult price"
+msgstr ""
+
+#: includes/class-ote-departures.php:129
+msgid "Infant price (0 is free)"
+msgstr ""
+
+#: includes/class-ote-departures.php:130
+msgid "Extra charge per room (0 = no room charge)"
+msgstr ""
+
+#: includes/class-ote-departures.php:131
+msgid "Maximum infant age (inclusive)"
+msgstr ""
+
+#: includes/class-ote-departures.php:132
+msgid "Minimum child age (inclusive)"
+msgstr ""
+
+#: includes/class-ote-departures.php:133
+msgid "Maximum child age (inclusive)"
+msgstr ""
+
+#: includes/class-ote-departures.php:134
+msgid "Optional child age bands (JSON)"
+msgstr ""
+
+#: includes/class-ote-departures.php:134
+msgid "Optional. Each age boundary is inclusive. When supplied, every child age must match one band; prices are in the departure currency."
+msgstr ""
+
+#: includes/class-ote-departures.php:135
+msgid "Currency"
+msgstr ""
+
+#: includes/class-ote-departures.php:137
+msgid "Create departure"
+msgstr ""
+
+#: includes/class-ote-departures.php:139
+msgid "Existing departures"
+msgstr ""
+
+#: includes/class-ote-departures.php:140
+msgid "Dates"
+msgstr ""
+
+#: includes/class-ote-departures.php:140
+msgid "Seats"
+msgstr ""
+
+#: includes/class-ote-departures.php:140
+msgid "Base price"
+msgstr ""
+
+#: includes/class-ote-departures.php:140
+msgid "Actions"
+msgstr ""
+
+#: includes/class-ote-departures.php:142
+msgid "Close"
+msgstr ""
+
+#: includes/class-ote-departures.php:142
+msgid "Reopen"
+msgstr ""
+
+#: includes/class-ote-departures.php:143
+msgid "No departures created yet."
+msgstr ""
+
+#: includes/class-ote-departures.php:151
+msgid "You are not allowed to do this."
+msgstr ""
+
+#: includes/class-ote-departures.php:154
+msgid "Security check failed. Please try again."
+msgstr ""
+
+#: includes/class-ote-departures.php:190
+msgid "Please provide valid tour, dates, capacity and price details."
+msgstr ""
+
+#: includes/class-ote-pricing.php:21
+msgid "Enter valid traveller ages."
+msgstr ""
+
+#: includes/class-ote-pricing.php:26
+msgid "Enter no more than 30 traveller ages using whole numbers."
+msgstr ""
+
+#: includes/class-ote-pricing.php:31
+msgid "Remove ages when the traveller count is zero."
+msgstr ""
+
+#: includes/class-ote-pricing.php:34
+msgid "Enter an age for every child or infant."
+msgstr ""
+
+#: includes/class-ote-pricing.php:39
+msgid "The number of ages must match the traveller count."
+msgstr ""
+
+#: includes/class-ote-pricing.php:46
+msgid "Enter ages as whole numbers separated by commas."
+msgstr ""
+
+#: includes/class-ote-pricing.php:50
+msgid "Traveller ages must be between 0 and 17."
+msgstr ""
+
+#: includes/class-ote-pricing.php:73
+msgid "The booking quote could not be calculated."
+msgstr ""
+
+#: includes/class-ote-pricing.php:81
+msgid "Check the number of travellers and rooms."
+msgstr ""
+
+#: includes/class-ote-pricing.php:92
+msgid "The departure has overlapping or invalid age bands."
+msgstr ""
+
+#: includes/class-ote-pricing.php:96
+msgid "Configured child age bands must stay within the departure child age limits."
+msgstr ""
+
+#: includes/class-ote-pricing.php:106
+msgid "Child ages must be between %1$d and %2$d years."
+msgstr ""
+
+#: includes/class-ote-pricing.php:119
+msgid "Infant ages must be between 0 and %d years."
+msgstr ""
+
+#: includes/class-ote-pricing.php:133
+msgid "The departure contains an invalid price."
+msgstr ""
+
+#: includes/class-ote-pricing.php:139
+msgid "The departure currency must be a three-letter ISO code."
+msgstr ""
+
+#: includes/class-ote-pricing.php:157
+msgid "A child age does not match any configured child age band."
+msgstr ""
+
+#: includes/class-ote-pricing.php:196
+msgid "Child age bands must be a valid JSON array."
+msgstr ""
+
+#: includes/class-ote-pricing.php:197
+msgid "A maximum of ten child age bands is allowed."
+msgstr ""
+
+#: includes/class-ote-pricing.php:201
+msgid "Each child age band needs valid inclusive ages and a non-negative price."
+msgstr ""
+
+#: includes/class-ote-pricing.php:209
+msgid "Child age bands cannot overlap."
+msgstr ""
+
+#: includes/class-ote-pricing.php:212
+msgid "Child age bands must be contiguous; no ages can be left uncovered."
+msgstr ""
+
+#: includes/class-ote-rest-api.php:269
+msgid "Tour not found."
+msgstr ""
+
+#: opentrip-engine.php:127
+msgid "Email notifications"
+msgstr ""
+
+#: opentrip-engine.php:129
+msgid "Choose where booking alerts are sent and whether customers receive booking receipts and status updates."
+msgstr ""
+
+#: opentrip-engine.php:135
+msgid "Booking notification recipient"
+msgstr ""
+
+#: opentrip-engine.php:142
+msgid "Agency notifications"
+msgstr ""
+
+#: opentrip-engine.php:149
+msgid "Customer notifications"
+msgstr ""
+
+#: opentrip-engine.php:164
+msgid "Enter a valid notification email address. The previous address has been kept."
+msgstr ""
+
+#: opentrip-engine.php:181
+msgid "Email the agency when a new booking request is received."
+msgstr ""
+
+#: opentrip-engine.php:187
+msgid "Email customers when requests are received, confirmed or cancelled."
+msgstr ""
+
+#: opentrip-engine.php:193
+msgid "OpenTrip Settings"
+msgstr ""
+
+#: opentrip-engine.php:194
+msgid "Settings"
+msgstr ""
+
+#: opentrip-engine.php:207
+msgid "OpenTrip Engine Settings"
+msgstr ""
+
+#: opentrip-engine.php:236
+msgid "Tours"
+msgstr ""
+
+#: opentrip-engine.php:237
+msgid "Tour"
+msgstr ""
+
+#: opentrip-engine.php:238
+msgid "Add New Tour"
+msgstr ""
+
+#: opentrip-engine.php:250
+msgid "Destinations"
+msgstr ""
+
+#: opentrip-engine.php:251
+msgid "Destination"
+msgstr ""
+
+#: opentrip-engine.php:260
+msgid "Booking Requests"
+msgstr ""
+
+#: opentrip-engine.php:261
+msgid "Booking Request"
+msgstr ""
+
+#: opentrip-engine.php:286
+msgid "Tour Reviews"
+msgstr ""
+
+#: opentrip-engine.php:287
+msgid "Tour Review"
+msgstr ""
+
+#: opentrip-engine.php:288
+msgid "Moderate Tour Review"
+msgstr ""
+
+#: opentrip-engine.php:313
+msgid "Tour Details"
+msgstr ""
+
+#: opentrip-engine.php:325
+msgid "Price per person"
+msgstr ""
+
+#: opentrip-engine.php:327
+msgid "Currency (ISO code)"
+msgstr ""
+
+#: opentrip-engine.php:329
+msgid "Duration (e.g. 8 days)"
+msgstr ""
+
+#: opentrip-engine.php:331
+msgid "Capacity (informational only; 0 = unspecified)"
+msgstr ""
+
+#: opentrip-engine.php:337
+msgid "Day-by-Day Itinerary"
+msgstr ""
+
+#: opentrip-engine.php:359
+msgid "Enter the itinerary as a JSON array. Each day supports: day, title, city, activities, overnight, meals and transport."
+msgstr ""
+
+#: opentrip-engine.php:361
+msgid "Leave the example in place or replace it with your tour schedule. Use a valid JSON array."
+msgstr ""
+
+#: opentrip-engine.php:420
+msgid "Day %d: %s"
+msgstr ""
+
+#: opentrip-engine.php:421
+msgid "Location"
+msgstr ""
+
+#: opentrip-engine.php:421
+msgid "Activities"
+msgstr ""
+
+#: opentrip-engine.php:421
+msgid "Overnight"
+msgstr ""
+
+#: opentrip-engine.php:421
+msgid "Meals"
+msgstr ""
+
+#: opentrip-engine.php:421
+msgid "Transportation"
+msgstr ""
+
+#: opentrip-engine.php:433
+msgid "Tour Inclusions & Exclusions"
+msgstr ""
+
+#: opentrip-engine.php:444
+msgid "Add one item per line. Leave a box empty if it does not apply."
+msgstr ""
+
+#: opentrip-engine.php:445
+msgid "What is included in the price"
+msgstr ""
+
+#: opentrip-engine.php:447
+msgid "What is not included in the price"
+msgstr ""
+
+#: opentrip-engine.php:499
+msgid "Tour inclusions and exclusions"
+msgstr ""
+
+#: opentrip-engine.php:502
+msgid "What is included"
+msgstr ""
+
+#: opentrip-engine.php:508
+msgid "What is not included"
+msgstr ""
+
+#: opentrip-engine.php:518
+msgid "Tour Photo Gallery"
+msgstr ""
+
+#: opentrip-engine.php:531
+msgid "Select tour photos"
+msgstr ""
+
+#: opentrip-engine.php:532
+msgid "Use selected photos"
+msgstr ""
+
+#: opentrip-engine.php:571
+msgid "Choose multiple images from the Media Library. Dragging to reorder is not supported yet; selected order is retained."
+msgstr ""
+
+#: opentrip-engine.php:574
+msgid "Clear gallery"
+msgstr ""
+
+#: opentrip-engine.php:621
+msgid "Tour photo %1$d for %2$s"
+msgstr ""
+
+#: opentrip-engine.php:669
+msgid "No tours found."
+msgstr ""
+
+#: opentrip-engine.php:704
+msgid "Please select a published tour before booking."
+msgstr ""
+
+#: opentrip-engine.php:708
+msgid "Thank you. Your booking request was received. It is not confirmed until the travel agency contacts you."
+msgstr ""
+
+#: opentrip-engine.php:710
+msgid "Your request reference:"
+msgstr ""
+
+#: opentrip-engine.php:715
+msgid "No departures are currently available for this tour. Please contact us."
+msgstr ""
+
+#: opentrip-engine.php:721
+msgid "Request a booking"
+msgstr ""
+
+#: opentrip-engine.php:725
+msgid "Leave this field empty"
+msgstr ""
+
+#: opentrip-engine.php:726
+msgid "Full name"
+msgstr ""
+
+#: opentrip-engine.php:727
+msgid "Email address"
+msgstr ""
+
+#: opentrip-engine.php:728
+msgid "Departure date"
+msgstr ""
+
+#: opentrip-engine.php:730
+msgid "Choose a departure"
+msgstr ""
+
+#: opentrip-engine.php:732
+msgid "seats left"
+msgstr ""
+
+#: opentrip-engine.php:736
+msgid "Travellers"
+msgstr ""
+
+#: opentrip-engine.php:737
+msgid "Adults"
+msgstr ""
+
+#: opentrip-engine.php:738
+msgid "Children"
+msgstr ""
+
+#: opentrip-engine.php:739
+msgid "Child ages (comma-separated)"
+msgstr ""
+
+#: opentrip-engine.php:739
+msgid "For example: 5, 9"
+msgstr ""
+
+#: opentrip-engine.php:740
+msgid "Infants"
+msgstr ""
+
+#: opentrip-engine.php:741
+msgid "Infant ages (comma-separated)"
+msgstr ""
+
+#: opentrip-engine.php:741
+msgid "For example: 0, 1"
+msgstr ""
+
+#: opentrip-engine.php:743
+msgid "Enter one whole-number age for every child and infant. Infants do not use departure seats. Configured room charges are added per room."
+msgstr ""
+
+#: opentrip-engine.php:744
+msgid "Rooms required"
+msgstr ""
+
+#: opentrip-engine.php:745
+msgid "Message (optional)"
+msgstr ""
+
+#: opentrip-engine.php:746
+msgid "Send booking request"
+msgstr ""
+
+#: opentrip-engine.php:768
+msgid "Unable to submit your request"
+msgstr ""
+
+#: opentrip-engine.php:782
+msgid "Security check failed. Please go back and try again."
+msgstr ""
+
+#: opentrip-engine.php:785
+msgid "Your booking request could not be submitted."
+msgstr ""
+
+#: opentrip-engine.php:789
+msgid "The selected tour is unavailable."
+msgstr ""
+
+#: opentrip-engine.php:805
+msgid "Please check your name, email, travel date and traveller count."
+msgstr ""
+
+#: opentrip-engine.php:812
+msgid "Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again."
+msgstr ""
+
+#: opentrip-engine.php:820
+msgid "We could not save your request. Please try again later."
+msgstr ""
+
+#: opentrip-engine.php:854
+msgid "Booking Details"
+msgstr ""
+
+#: opentrip-engine.php:855
+msgid "Request Status"
+msgstr ""
+
+#: opentrip-engine.php:861
+msgid "Reference"
+msgstr ""
+
+#: opentrip-engine.php:862
+msgid "Status"
+msgstr ""
+
+#: opentrip-engine.php:864
+msgid "Customer"
+msgstr ""
+
+#: opentrip-engine.php:865
+msgid "Email"
+msgstr ""
+
+#: opentrip-engine.php:866
+msgid "Travel date"
+msgstr ""
+
+#: opentrip-engine.php:869
+msgid "Child ages"
+msgstr ""
+
+#: opentrip-engine.php:871
+msgid "Infant ages"
+msgstr ""
+
+#: opentrip-engine.php:872
+msgid "Rooms"
+msgstr ""
+
+#: opentrip-engine.php:873
+msgid "Total travellers"
+msgstr ""
+
+#: opentrip-engine.php:874
+msgid "Price breakdown"
+msgstr ""
+
+#: opentrip-engine.php:875
+msgid "Estimated total"
+msgstr ""
+
+#: opentrip-engine.php:876
+msgid "Message"
+msgstr ""
+
+#: opentrip-engine.php:891
+msgid "Legacy quote; no itemized breakdown was saved."
+msgstr ""
+
+#: opentrip-engine.php:903
+msgid "Pending"
+msgstr ""
+
+#: opentrip-engine.php:904
+msgid "Confirmed"
+msgstr ""
+
+#: opentrip-engine.php:905
+msgid "Cancelled"
+msgstr ""
+
+#: opentrip-engine.php:913
+msgid "Booking"
+msgstr ""
+
+#: opentrip-engine.php:919
+msgid "Submitted"
+msgstr ""
+
+#: opentrip-engine.php:964
+msgid "The booking could not be confirmed because seats are unavailable or the inventory could not be updated. The booking status was not changed."
+msgstr ""
+
+#: opentrip-engine.php:965
+msgid "The reserved seats could not be released. The booking status was not changed; please check the departure inventory."
+msgstr ""
+
+#: opentrip-engine.php:978
+msgid "OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations."
+msgstr ""
+
+#: opentrip-engine.php:979
+msgid "The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details, removes review author details and review text, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved."
+msgstr ""
+
+#: opentrip-engine.php:980
+msgid "For abuse prevention, the plugin stores a salted hash of email addresses submitted through booking and review forms, not the raw address in its rate-limit table. These records are opportunistically cleaned up after 24 hours and are also removed when the matching email is processed by the personal data eraser."
+msgstr ""
+
+#: opentrip-engine.php:981
+msgid "OpenTrip Engine"
+msgstr ""
+
+#: opentrip-engine.php:986
+msgid "OpenTrip Engine bookings and reviews"
+msgstr ""
+
+#: opentrip-engine.php:1043
+msgid "OpenTrip Engine booking requests"
+msgstr ""
+
+#: opentrip-engine.php:1053
+msgid "OpenTrip Engine reviews"
+msgstr ""
+
+#: opentrip-engine.php:1094
+msgid "Anonymized customer"
+msgstr ""
+
+#: opentrip-engine.php:1106
+msgid "Anonymized booking request"
+msgstr ""
+
+#: opentrip-engine.php:1108
+msgid "Anonymous"
+msgstr ""
+
+#: opentrip-engine.php:1112
+msgid "Anonymized review"
+msgstr ""
+
+#: opentrip-engine.php:1162
+msgid "New booking request: %s"
+msgstr ""
+
+#: opentrip-engine.php:1164
+msgid "A new booking request was received.\n\nReference: %1$s\nTour: %2$s\nName: %3$s\nEmail: %4$s\nTravel date: %5$s\nTravellers: %6$d\n\nReview it in your WordPress dashboard."
+msgstr ""
+
+#: opentrip-engine.php:1192
+msgid "Hello %s,"
+msgstr ""
+
+#: opentrip-engine.php:1194
+msgid "Request reference: %1$s\nTour: %2$s\nDeparture: %3$s\nTravellers: %4$d\nEstimated total: %5$s %6$s"
+msgstr ""
+
+#: opentrip-engine.php:1201
+msgid "We received your booking request — %s"
+msgstr ""
+
+#: opentrip-engine.php:1202
+msgid "Thank you for your interest. We have received your booking request. This is not a confirmed reservation and no payment has been taken. Our team will review availability and contact you.\n\n"
+msgstr ""
+
+#: opentrip-engine.php:1204
+msgid "Your booking request is confirmed — %s"
+msgstr ""
+
+#: opentrip-engine.php:1205
+msgid "Good news: the travel agency has marked your booking request as confirmed. Please contact the agency if you need payment or final travel documents.\n\n"
+msgstr ""
+
+#: opentrip-engine.php:1207
+msgid "Booking request update — %s"
+msgstr ""
+
+#: opentrip-engine.php:1208
+msgid "Your booking request has been marked as cancelled by the travel agency. Please contact the agency if you believe this is an error.\n\n"
+msgstr ""
+
+#: opentrip-engine.php:1212
+msgid "\n\nRegards,\n%s"
+msgstr ""
+
+#: opentrip-engine.php:1224
+msgid "Request status"
+msgstr ""
+
+#: opentrip-engine.php:1230
+msgid "This is an internal request status. It does not take payment or guarantee availability."
+msgstr ""
+
+#: opentrip-engine.php:1246
+msgid "Thank you. Your review was submitted and is awaiting moderation."
+msgstr ""
+
+#: opentrip-engine.php:1250
+msgid "Write a guest review"
+msgstr ""
+
+#: opentrip-engine.php:1255
+msgid "Your name"
+msgstr ""
+
+#: opentrip-engine.php:1256
+msgid "Email (not displayed publicly)"
+msgstr ""
+
+#: opentrip-engine.php:1257
+msgid "Rating"
+msgstr ""
+
+#: opentrip-engine.php:1257
+msgid "Choose a rating"
+msgstr ""
+
+#: opentrip-engine.php:1257
+msgid "%d star"
+msgid_plural "%d stars"
+msgstr[0] ""
+msgstr[1] ""
+
+#: opentrip-engine.php:1258
+msgid "Your review"
+msgstr ""
+
+#: opentrip-engine.php:1259
+msgid "Submit review"
+msgstr ""
+
+#: opentrip-engine.php:1273
+msgid "Your review could not be submitted."
+msgstr ""
+
+#: opentrip-engine.php:1281
+msgid "Please check your name, email, rating and review text."
+msgstr ""
+
+#: opentrip-engine.php:1284
+msgid "Too many reviews have been submitted for this email address. Please wait 15 minutes and try again."
+msgstr ""
+
+#: opentrip-engine.php:1289
+msgid "Review for %1\\$s by %2\\$s"
+msgstr ""
+
+#: opentrip-engine.php:1293
+msgid "We could not save your review. Please try again later."
+msgstr ""
+
+#: opentrip-engine.php:1322
+msgid "Guest reviews"
+msgstr ""
+
+#: opentrip-engine.php:1322
+msgid "No approved reviews yet."
+msgstr ""
+
+#: opentrip-engine.php:1334
+msgid "%d approved review"
+msgid_plural "%d approved reviews"
+msgstr[0] ""
+msgstr[1] ""
+
+#: opentrip-engine.php:1337
+msgid "%d out of 5 stars"
+msgstr ""
+

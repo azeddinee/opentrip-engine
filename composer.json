@@ -10,5 +10,8 @@
   "config": {
     "allow-plugins": {},
     "sort-packages": true
+  },
+  "scripts": {
+    "i18n:pot": "sh scripts/make-pot.sh"
   }
 }

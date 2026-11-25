@@ -282,6 +282,110 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 
 
 
+
+	public function test_public_forms_have_explicit_labels_grouping_and_accessible_instructions() {
+		$tour_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible Form Tour',
+			)
+		);
+		global $wpdb;
+		$wpdb->insert(
+			$wpdb->prefix . 'ote_departures',
+			array(
+				'tour_id' => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+10 days' ) ),
+				'end_date' => wp_date( 'Y-m-d', strtotime( '+11 days' ) ),
+				'capacity' => 8,
+				'reserved' => 0,
+				'price' => 120,
+				'currency' => 'USD',
+				'status' => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			)
+		);
+
+		$engine = OpenTrip_Engine::instance();
+		$booking_html = $engine->booking_shortcode( array( 'tour_id' => $tour_id ) );
+		$booking_html_second = $engine->booking_shortcode( array( 'tour_id' => $tour_id ) );
+		$review_html = $engine->review_form_shortcode( array( 'tour_id' => $tour_id ) );
+		$review_html_second = $engine->review_form_shortcode( array( 'tour_id' => $tour_id ) );
+
+		$this->assertStringContainsString( 'aria-labelledby=', $booking_html );
+		$this->assertStringContainsString( '<fieldset class="ote-traveller-fields">', $booking_html );
+		$this->assertStringContainsString( '<legend>Travellers</legend>', $booking_html );
+		$this->assertStringContainsString( 'aria-describedby=', $booking_html );
+		$this->assertSame( 1, preg_match( '/<label for="([^"]+-name)">Full name<\/label><br><input id="\\1"/', $booking_html ) );
+		$this->assertSame( 1, preg_match( '/<label for="([^"]+-email)">Email address<\/label><br><input id="\\1"/', $booking_html ) );
+		preg_match( '/id="(ote-booking-[^"]+-heading)"/', $booking_html, $first_heading );
+		preg_match( '/id="(ote-booking-[^"]+-heading)"/', $booking_html_second, $second_heading );
+		$this->assertNotEmpty( $first_heading[1] );
+		$this->assertNotEmpty( $second_heading[1] );
+		$this->assertNotSame( $first_heading[1], $second_heading[1], 'Repeated shortcodes must not create duplicate IDs.' );
+
+		$this->assertStringContainsString( 'aria-labelledby=', $review_html );
+		$this->assertSame( 1, preg_match( '/<label for="([^"]+-rating)">Rating<\/label><br><select id="\\1"/', $review_html ) );
+		preg_match( '/id="(ote-review-[^"]+-heading)"/', $review_html, $first_review_heading );
+		preg_match( '/id="(ote-review-[^"]+-heading)"/', $review_html_second, $second_review_heading );
+		$this->assertNotEmpty( $first_review_heading[1] );
+		$this->assertNotEmpty( $second_review_heading[1] );
+		$this->assertNotSame( $first_review_heading[1], $second_review_heading[1], 'Repeated review shortcodes must not create duplicate IDs.' );
+		$this->assertStringContainsString( 'name="ote_review_content"', $review_html );
+
+		$inclusions = $engine->inclusions_shortcode( array( 'tour_id' => $tour_id ) );
+		$this->assertSame( '', $inclusions );
+		$css = file_get_contents( dirname( __DIR__ ) . '/assets/opentrip-engine.css' );
+		$this->assertStringContainsString( ':focus-visible', $css );
+		$this->assertStringContainsString( 'prefers-reduced-motion: reduce', $css );
+		$this->assertNotFalse( has_action( 'init', array( $engine, 'load_textdomain' ) ) );
+		$pot = file_get_contents( dirname( __DIR__ ) . '/languages/opentrip-engine.pot' );
+		$this->assertStringContainsString( 'msgid "Guest reviews"', $pot );
+		$this->assertStringContainsString( 'msgid "For example: 5, 9"', $pot );
+	}
+
+
+
+	public function test_public_review_ratings_and_tour_images_have_accessible_alternatives() {
+		$tour_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible Image Tour',
+			)
+		);
+		$attachment_id = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/canola.jpg', $tour_id );
+		$this->assertNotWPError( $attachment_id );
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', '' );
+		set_post_thumbnail( $tour_id, $attachment_id );
+		update_post_meta( $tour_id, '_ote_gallery_ids', array( $attachment_id ) );
+
+		$review_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_review',
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible rating review',
+				'post_content' => 'A helpful guest review.',
+			)
+		);
+		update_post_meta( $review_id, '_ote_review_tour_id', $tour_id );
+		update_post_meta( $review_id, '_ote_review_name', 'Guest' );
+		update_post_meta( $review_id, '_ote_review_rating', 4 );
+
+		$engine = OpenTrip_Engine::instance();
+		$tours_html = $engine->tours_shortcode( array( 'limit' => 10 ) );
+		$gallery_html = $engine->gallery_shortcode( array( 'tour_id' => $tour_id ) );
+		$reviews_html = $engine->reviews_shortcode( array( 'tour_id' => $tour_id ) );
+
+		$this->assertStringContainsString( 'alt="Accessible Image Tour"', $tours_html );
+		$this->assertStringContainsString( 'alt="Tour photo 1 for Accessible Image Tour"', $gallery_html );
+		$this->assertStringContainsString( 'role="img" aria-label="4 out of 5 stars"', $reviews_html );
+		$this->assertFileExists( dirname( __DIR__ ) . '/scripts/make-pot.sh' );
+		$this->assertFileExists( dirname( __DIR__ ) . '/languages/README.md' );
+	}
+
+
 	public function test_public_form_handlers_ignore_array_shaped_action_values() {
 		$original_post = $_POST;
 		$_POST = array(

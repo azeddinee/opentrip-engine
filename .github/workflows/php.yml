@@ -81,6 +81,19 @@ jobs:
     name: Build and validate installable ZIP
     steps:
       - uses: actions/checkout@v5
+      - name: Validate checked-in translation template
+        run: |
+          sh -n scripts/make-pot.sh
+          test -s languages/opentrip-engine.pot
+          grep -q 'X-Domain: opentrip-engine' languages/opentrip-engine.pot
+          grep -q 'msgid "Guest reviews"' languages/opentrip-engine.pot
+          grep -q 'msgid "Request a booking"' languages/opentrip-engine.pot
+      - name: Upload translation template
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentrip-engine-translation-template
+          path: languages/opentrip-engine.pot
+          if-no-files-found: error
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:

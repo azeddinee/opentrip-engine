@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 1.0.0-beta.6
+ * Version: 1.0.0-beta.7
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '1.0.0-beta.6' );
+define( 'OTE_VERSION', '1.0.0-beta.7' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-rest-api.php';
@@ -496,6 +496,7 @@ final class OpenTrip_Engine {
 		ob_start();
 		?>
 		<section class="ote-inclusions">
+			<h2><?php esc_html_e( 'Tour inclusions and exclusions', 'opentrip-engine' ); ?></h2>
 			<?php if ( $included ) : ?>
 			<div class="ote-inclusions-column ote-included">
 				<h3><?php esc_html_e( 'What is included', 'opentrip-engine' ); ?></h3>
@@ -526,13 +527,17 @@ final class OpenTrip_Engine {
 			return;
 		}
 		wp_enqueue_media();
+		wp_localize_script( 'jquery', 'oteGalleryStrings', array(
+			'title' => __( 'Select tour photos', 'opentrip-engine' ),
+			'use'   => __( 'Use selected photos', 'opentrip-engine' ),
+		) );
 		wp_add_inline_script( 'jquery', "
 		jQuery(function($){
 			var frame;
 			$('#ote_gallery_select').on('click', function(e){
 				e.preventDefault();
 				if(frame){frame.open();return;}
-				frame=wp.media({title:'Select tour photos',button:{text:'Use selected photos'},multiple:true,library:{type:'image'}});
+				frame=wp.media({title:oteGalleryStrings.title,button:{text:oteGalleryStrings.use},multiple:true,library:{type:'image'}});
 				frame.on('open',function(){
 					var ids=$('#ote_gallery_ids').val().split(',').filter(Boolean);
 					var selection=frame.state().get('selection'); selection.reset();
@@ -613,8 +618,8 @@ final class OpenTrip_Engine {
 		ob_start();
 		?>
 		<div class="ote-gallery" style="--ote-gallery-columns:<?php echo esc_attr( $columns ); ?>">
-			<?php foreach ( $ids as $id ) : ?>
-			<figure class="ote-gallery-item"><?php echo wp_get_attachment_link( absint( $id ), $size, false, false, array( 'class' => 'ote-gallery-link' ) ); ?></figure>
+			<?php foreach ( $ids as $index => $id ) : $attachment_id = absint( $id ); $alt = trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ); if ( '' === $alt ) { $alt = sprintf( __( 'Tour photo %1$d for %2$s', 'opentrip-engine' ), $index + 1, get_the_title( $tour_id ) ); } ?>
+			<figure class="ote-gallery-item"><?php echo wp_get_attachment_link( $attachment_id, $size, false, false, false, array( 'class' => 'ote-gallery-image', 'alt' => $alt ) ); ?></figure>
 			<?php endforeach; ?>
 		</div>
 		<?php
@@ -673,7 +678,7 @@ final class OpenTrip_Engine {
 			$duration = get_post_meta( $id, '_ote_duration', true );
 			echo '<article class="ote-tour-card">';
 			if ( has_post_thumbnail() ) {
-				echo '<a href="' . esc_url( get_permalink() ) . '">' . get_the_post_thumbnail( $id, 'large' ) . '</a>';
+				echo '<a href="' . esc_url( get_permalink() ) . '">' . get_the_post_thumbnail( $id, 'large', array( 'alt' => ( get_post_meta( get_post_thumbnail_id( $id ), '_wp_attachment_image_alt', true ) ? get_post_meta( get_post_thumbnail_id( $id ), '_wp_attachment_image_alt', true ) : get_the_title( $id ) ) ) ) . '</a>';
 			}
 			echo '<h3><a href="' . esc_url( get_permalink() ) . '">' . esc_html( get_the_title() ) . '</a></h3>';
 			if ( $duration ) {
@@ -711,28 +716,33 @@ final class OpenTrip_Engine {
 			return ob_get_clean();
 		}
 		?>
-		<form method="post" class="ote-booking-form">
+		<?php $form_id = wp_unique_id( 'ote-booking-' ); ?>
+		<form method="post" class="ote-booking-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
+			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Request a booking', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_action" value="submit_booking">
 			<input type="hidden" name="ote_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
 			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
-			<p><label><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_name" autocomplete="name"></label></p>
-			<p><label><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?><br><input required type="email" name="ote_email" autocomplete="email"></label></p>
-		<p><label><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?><br>
-		<select required name="ote_departure_id">
-			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
-			<?php foreach ( $available_departures as $departure ) : ?>
-			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
-			<?php endforeach; ?>
-		</select></label></p>
-			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
-			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
-			<p><label><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_child_ages" placeholder="e.g. 5, 9" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
-			<p><label><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_infant_ages" placeholder="e.g. 0, 1" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?><br><input required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
-			<p class="ote-price-note"><?php esc_html_e( 'Enter an age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
-			<p><label><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?><br><textarea name="ote_message" rows="4"></textarea></label></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_name" autocomplete="name"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-email' ); ?>"><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-email' ); ?>" required type="email" name="ote_email" autocomplete="email"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-departure' ); ?>"><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?></label><br>
+			<select id="<?php echo esc_attr( $form_id . '-departure' ); ?>" required name="ote_departure_id">
+				<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
+				<?php foreach ( $available_departures as $departure ) : ?>
+				<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
+				<?php endforeach; ?>
+			</select></p>
+			<fieldset class="ote-traveller-fields">
+				<legend><?php esc_html_e( 'Travellers', 'opentrip-engine' ); ?></legend>
+				<p><label for="<?php echo esc_attr( $form_id . '-adults' ); ?>"><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-adults' ); ?>" required type="number" name="ote_adults" min="1" max="30" value="1"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-children' ); ?>"><?php esc_html_e( 'Children', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-children' ); ?>" required type="number" name="ote_children" min="0" max="29" value="0"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-child-ages' ); ?>"><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-child-ages' ); ?>" type="text" name="ote_child_ages" inputmode="numeric" placeholder="<?php esc_attr_e( 'For example: 5, 9', 'opentrip-engine' ); ?>" aria-describedby="<?php echo esc_attr( $form_id . '-age-help' ); ?>" autocomplete="off"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-infants' ); ?>"><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-infants' ); ?>" required type="number" name="ote_infants" min="0" max="30" value="0"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-infant-ages' ); ?>"><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-infant-ages' ); ?>" type="text" name="ote_infant_ages" inputmode="numeric" placeholder="<?php esc_attr_e( 'For example: 0, 1', 'opentrip-engine' ); ?>" aria-describedby="<?php echo esc_attr( $form_id . '-age-help' ); ?>" autocomplete="off"></p>
+			</fieldset>
+			<p id="<?php echo esc_attr( $form_id . '-age-help' ); ?>" class="ote-price-note"><?php esc_html_e( 'Enter one whole-number age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-rooms' ); ?>"><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-rooms' ); ?>" required type="number" name="ote_rooms" min="1" max="20" value="1"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-message' ); ?>"><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?></label><br><textarea id="<?php echo esc_attr( $form_id . '-message' ); ?>" name="ote_message" rows="4"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
@@ -748,6 +758,18 @@ final class OpenTrip_Engine {
 	 * @param string $email Validated customer email address.
 	 * @return bool Whether the submission limit has been reached.
 	 */
+	/**
+	 * Render a public submission error in an assistive-technology announcement region.
+	 *
+	 * @param string $message Translated, plain-text error message.
+	 * @param int    $status HTTP response status.
+	 */
+	private function public_form_error( $message, $status = 400 ) {
+		$title = __( 'Unable to submit your request', 'opentrip-engine' );
+		$alert = '<div role="alert" aria-live="assertive"><p>' . esc_html( $message ) . '</p></div>';
+		wp_die( $alert, esc_html( $title ), array( 'response' => absint( $status ) ) );
+	}
+
 	public function is_submission_rate_limited( $type, $email ) {
 		return OTE_Submission_Limiter::is_limited( $type, $email );
 	}
@@ -757,14 +779,14 @@ final class OpenTrip_Engine {
 			return;
 		}
 		if ( ! is_string( isset( $_POST['ote_booking_nonce'] ) ? $_POST['ote_booking_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_booking_nonce' ) ), 'ote_submit_booking' ) ) {
-			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+			$this->public_form_error( __( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
-			wp_die( esc_html__( 'Your booking request could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+			$this->public_form_error( __( 'Your booking request could not be submitted.', 'opentrip-engine' ), 400 );
 		}
 		$tour_id = absint( $this->posted_string( 'ote_tour_id' ) );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
-			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+			$this->public_form_error( __( 'The selected tour is unavailable.', 'opentrip-engine' ), 400 );
 		}
 		$name = sanitize_text_field( $this->posted_string( 'ote_name' ) );
 		$email = strtolower( sanitize_email( $this->posted_string( 'ote_email' ) ) );
@@ -780,14 +802,14 @@ final class OpenTrip_Engine {
 		$message = sanitize_textarea_field( $this->posted_string( 'ote_message' ) );
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
 		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children < 0 || $children > 29 || $infants < 0 || $infants > 30 || $travellers > 30 || $rooms < 1 || $rooms > 20 || is_wp_error( $child_ages ) || is_wp_error( $infant_ages ) || (int) $departure->capacity - (int) $departure->reserved < $seats ) {
-			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+			$this->public_form_error( __( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
 		}
 		$quote = OTE_Pricing::calculate_quote( $departure, $adults, $child_ages, $infant_ages, $rooms );
 		if ( is_wp_error( $quote ) ) {
-			wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 400 ) );
+			$this->public_form_error( $quote->get_error_message(), 400 );
 		}
 		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
-			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
+			$this->public_form_error( __( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
 		}
 		$booking_id = wp_insert_post( array(
 			'post_type' => 'ote_booking',
@@ -795,7 +817,7 @@ final class OpenTrip_Engine {
 			'post_title' => sprintf( '%s — %s', $name, get_the_title( $tour_id ) ),
 		), true );
 		if ( is_wp_error( $booking_id ) ) {
-			wp_die( esc_html__( 'We could not save your request. Please try again later.', 'opentrip-engine' ), '', array( 'response' => 500 ) );
+			$this->public_form_error( __( 'We could not save your request. Please try again later.', 'opentrip-engine' ), 500 );
 		}
 		update_post_meta( $booking_id, '_ote_tour_id', $tour_id );
 		update_post_meta( $booking_id, '_ote_customer_name', $name );
@@ -1218,20 +1240,22 @@ final class OpenTrip_Engine {
 		if ( ! $tour_id || 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
 			return '';
 		}
+		$form_id = wp_unique_id( 'ote-review-' );
 		ob_start();
 		if ( isset( $_GET['ote_review'] ) && is_string( $_GET['ote_review'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_review'] ) ) ) {
 			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
 		}
 		?>
-		<form method="post" class="ote-review-form">
+		<form method="post" class="ote-review-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
+			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Write a guest review', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_review_action" value="submit_review">
 			<input type="hidden" name="ote_review_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_review', 'ote_review_nonce' ); ?>
 			<p class="ote-review-trap" aria-hidden="true"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></label></p>
-			<p><label><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?><br><input required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></label></p>
-			<p><label><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?><br><select required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></label></p>
-			<p><label><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?><br><textarea required name="ote_review_content" rows="5" maxlength="5000"></textarea></label></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-email' ); ?>"><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-email' ); ?>" required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-rating' ); ?>"><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?></label><br><select id="<?php echo esc_attr( $form_id . '-rating' ); ?>" required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-content' ); ?>"><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?></label><br><textarea id="<?php echo esc_attr( $form_id . '-content' ); ?>" required name="ote_review_content" rows="5" maxlength="5000"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Submit review', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
@@ -1243,10 +1267,10 @@ final class OpenTrip_Engine {
 			return;
 		}
 		if ( ! is_string( isset( $_POST['ote_review_nonce'] ) ? $_POST['ote_review_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_review_nonce' ) ), 'ote_submit_review' ) ) {
-			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+			$this->public_form_error( __( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
-			wp_die( esc_html__( 'Your review could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+			$this->public_form_error( __( 'Your review could not be submitted.', 'opentrip-engine' ), 400 );
 		}
 		$tour_id = absint( $this->posted_string( 'ote_review_tour_id' ) );
 		$name = sanitize_text_field( $this->posted_string( 'ote_review_name' ) );
@@ -1254,10 +1278,10 @@ final class OpenTrip_Engine {
 		$rating = absint( $this->posted_string( 'ote_review_rating' ) );
 		$content = sanitize_textarea_field( $this->posted_string( 'ote_review_content' ) );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
-			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+			$this->public_form_error( __( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), 400 );
 		}
 		if ( $this->is_submission_rate_limited( 'review', $email ) ) {
-			wp_die( esc_html__( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
+			$this->public_form_error( __( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
 		}
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
@@ -1266,7 +1290,7 @@ final class OpenTrip_Engine {
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $review_id ) ) {
-			wp_die( esc_html__( 'We could not save your review. Please try again later.', 'opentrip-engine' ), '', array( 'response' => 500 ) );
+			$this->public_form_error( __( 'We could not save your review. Please try again later.', 'opentrip-engine' ), 500 );
 		}
 		update_post_meta( $review_id, '_ote_review_tour_id', $tour_id );
 		update_post_meta( $review_id, '_ote_review_name', $name );
@@ -1310,7 +1334,7 @@ final class OpenTrip_Engine {
 			<p class="ote-review-summary"><strong><?php echo esc_html( number_format_i18n( $average, 1 ) ); ?>/5</strong> — <?php echo esc_html( sprintf( _n( '%d approved review', '%d approved reviews', count( $ratings ), 'opentrip-engine' ), count( $ratings ) ) ); ?></p>
 			<?php foreach ( $display_reviews as $review ) : $rating = min( 5, max( 1, absint( get_post_meta( $review->ID, '_ote_review_rating', true ) ) ) ); ?>
 				<article class="ote-review">
-					<p class="ote-review-stars" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></p>
+					<p class="ote-review-stars"><span role="img" aria-label="<?php echo esc_attr( sprintf( __( '%d out of 5 stars', 'opentrip-engine' ), $rating ) ); ?>"><?php echo esc_html( str_repeat( '★', $rating ) . str_repeat( '☆', 5 - $rating ) ); ?></span></p>
 					<h3><?php echo esc_html( get_post_meta( $review->ID, '_ote_review_name', true ) ); ?></h3>
 					<div class="ote-review-content"><?php echo wpautop( esc_html( $review->post_content ) ); ?></div>
 					<small><?php echo esc_html( get_the_date( '', $review ) ); ?></small>
