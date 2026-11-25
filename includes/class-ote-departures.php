@@ -18,6 +18,14 @@ final class OTE_Departures {
 		return self::$instance;
 	}
 
+
+	private function posted_string( $key ) {
+		if ( ! isset( $_POST[ $key ] ) || ! is_scalar( $_POST[ $key ] ) ) {
+			return '';
+		}
+		return (string) wp_unslash( $_POST[ $key ] );
+	}
+
 	private function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . 'ote_departures';
@@ -126,13 +134,15 @@ final class OTE_Departures {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
-		check_admin_referer( 'ote_create_departure', 'ote_departure_nonce' );
-		$tour_id = isset( $_POST['tour_id'] ) ? absint( $_POST['tour_id'] ) : 0;
-		$start = isset( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : '';
-		$end = isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '';
-		$capacity = isset( $_POST['capacity'] ) ? absint( $_POST['capacity'] ) : 0;
-		$price = isset( $_POST['price'] ) ? (float) wp_unslash( $_POST['price'] ) : 0;
-		$currency = isset( $_POST['currency'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['currency'] ) ) ) : '';
+		if ( ! is_string( isset( $_POST['ote_departure_nonce'] ) ? $_POST['ote_departure_nonce'] : null ) || ! wp_verify_nonce( $this->posted_string( 'ote_departure_nonce' ), 'ote_create_departure' ) ) {
+			wp_die( esc_html__( 'Security check failed. Please try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+		}
+		$tour_id = absint( $this->posted_string( 'tour_id' ) );
+		$start = sanitize_text_field( $this->posted_string( 'start_date' ) );
+		$end = sanitize_text_field( $this->posted_string( 'end_date' ) );
+		$capacity = absint( $this->posted_string( 'capacity' ) );
+		$price = (float) $this->posted_string( 'price' );
+		$currency = strtoupper( sanitize_text_field( $this->posted_string( 'currency' ) ) );
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
@@ -188,9 +198,11 @@ final class OTE_Departures {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
-		$departure_id = isset( $_POST['departure_id'] ) ? absint( $_POST['departure_id'] ) : 0;
-		check_admin_referer( 'ote_set_departure_status_' . $departure_id, 'ote_departure_status_nonce' );
-		$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+		$departure_id = absint( $this->posted_string( 'departure_id' ) );
+		if ( ! is_string( isset( $_POST['ote_departure_status_nonce'] ) ? $_POST['ote_departure_status_nonce'] : null ) || ! wp_verify_nonce( $this->posted_string( 'ote_departure_status_nonce' ), 'ote_set_departure_status_' . $departure_id ) ) {
+			wp_die( esc_html__( 'Security check failed. Please try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+		}
+		$status = sanitize_key( $this->posted_string( 'status' ) );
 		$updated = $this->set_status( $departure_id, $status );
 		$redirect = add_query_arg(
 			array(
