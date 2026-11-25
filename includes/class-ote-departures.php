@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class OTE_Departures {
 	private static $instance = null;
 	private $table;
+	private $reservations_table;
 
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -20,6 +21,7 @@ final class OTE_Departures {
 	private function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . 'ote_departures';
+		$this->reservations_table = $wpdb->prefix . 'ote_booking_reservations';
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_post_ote_create_departure', array( $this, 'create_departure' ) );
 	}
@@ -44,11 +46,21 @@ final class OTE_Departures {
 			KEY tour_status_date (tour_id,status,start_date)
 		) {$charset};";
 		dbDelta( $sql );
-		update_option( 'ote_departures_db_version', '1' );
+		$reservations_table = $wpdb->prefix . 'ote_booking_reservations';
+		$reservations_sql = "CREATE TABLE {$reservations_table} (
+			booking_id bigint(20) unsigned NOT NULL,
+			departure_id bigint(20) unsigned NOT NULL,
+			seats int(10) unsigned NOT NULL,
+			reserved_at datetime NOT NULL,
+			PRIMARY KEY  (booking_id),
+			KEY departure_id (departure_id)
+		) {$charset} ENGINE=InnoDB;";
+		dbDelta( $reservations_sql );
+		update_option( 'ote_departures_db_version', '2' );
 	}
 
 	public function maybe_install() {
-		if ( '1' !== get_option( 'ote_departures_db_version' ) ) {
+		if ( '2' !== get_option( 'ote_departures_db_version' ) ) {
 			self::install();
 		}
 	}
@@ -149,6 +161,125 @@ final class OTE_Departures {
 			$tour_id,
 			wp_date( 'Y-m-d' )
 		) );
+	}
+
+
+	/**
+	 * Atomically transition a booking status and its seat reservation.
+	 *
+	 * The booking status row is locked first so two administrators cannot
+	 * reserve seats twice for the same booking. Inventory changes, reservation
+	 * ledger writes and the status update share one database transaction.
+	 *
+	 * @return array|false Previous status on success, false on failure.
+	 */
+	public function transition_booking( $booking_id, $tour_id, $departure_id, $seats, $new_status ) {
+		global $wpdb;
+
+		$booking_id = absint( $booking_id );
+		$tour_id = absint( $tour_id );
+		$departure_id = absint( $departure_id );
+		$seats = absint( $seats );
+		if ( ! $booking_id || ! $tour_id || ! $departure_id || ! $seats || ! in_array( $new_status, array( 'pending', 'confirmed', 'cancelled' ), true ) ) {
+			return false;
+		}
+
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
+			return false;
+		}
+
+		$status_row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id DESC LIMIT 1 FOR UPDATE",
+			$booking_id,
+			'_ote_booking_status'
+		) );
+		if ( ! $status_row ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
+		$previous = $status_row->meta_value ? $status_row->meta_value : 'pending';
+		if ( $previous === $new_status ) {
+			$wpdb->query( 'COMMIT' );
+			return array( 'previous' => $previous, 'changed' => false );
+		}
+
+		$reservation = $wpdb->get_row( $wpdb->prepare(
+			"SELECT departure_id, seats FROM {$this->reservations_table} WHERE booking_id = %d FOR UPDATE",
+			$booking_id
+		) );
+
+		if ( 'confirmed' === $new_status && 'confirmed' !== $previous ) {
+			if ( $reservation ) {
+				if ( (int) $reservation->departure_id !== $departure_id || (int) $reservation->seats !== $seats ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
+			} else {
+				$inserted = $wpdb->insert(
+					$this->reservations_table,
+					array(
+						'booking_id'   => $booking_id,
+						'departure_id' => $departure_id,
+						'seats'        => $seats,
+						'reserved_at'  => current_time( 'mysql', true ),
+					),
+					array( '%d', '%d', '%d', '%s' )
+				);
+				if ( false === $inserted ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
+				$changed = $wpdb->query( $wpdb->prepare(
+					"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved + %d <= capacity",
+					$seats, $departure_id, $tour_id, wp_date( 'Y-m-d' ), $seats
+				) );
+				if ( 1 !== $changed ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
+			}
+		} elseif ( in_array( $new_status, array( 'pending', 'cancelled' ), true ) && 'confirmed' === $previous ) {
+			if ( $reservation ) {
+				$release_departure = (int) $reservation->departure_id;
+				$release_seats = (int) $reservation->seats;
+				$changed = $wpdb->query( $wpdb->prepare(
+					"UPDATE {$this->table} SET reserved = reserved - %d WHERE id = %d AND reserved >= %d",
+					$release_seats, $release_departure, $release_seats
+				) );
+				if ( 1 !== $changed ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
+				$wpdb->delete( $this->reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
+			} else {
+				// Compatibility path for confirmed bookings created before the reservation ledger existed.
+				$changed = $wpdb->query( $wpdb->prepare(
+					"UPDATE {$this->table} SET reserved = reserved - %d WHERE id = %d AND reserved >= %d",
+					$seats, $departure_id, $seats
+				) );
+				if ( 1 !== $changed ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
+			}
+		}
+
+		$updated = $wpdb->update(
+			$wpdb->postmeta,
+			array( 'meta_value' => $new_status ),
+			array( 'meta_id' => (int) $status_row->meta_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+		if ( false === $updated ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
+		$wpdb->query( 'COMMIT' );
+		wp_cache_delete( $booking_id, 'post_meta' );
+		return array( 'previous' => $previous, 'changed' => true );
 	}
 
 	public function reserve( $departure_id, $tour_id, $seats ) {
