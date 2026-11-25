@@ -765,6 +765,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$departure = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":5,"price":50},{"min_age":6,"max_age":11,"price":75}]' );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 1 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 12 ), array(), 1 ) );
+		$overwide_band = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":17,"price":50}]' );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $overwide_band, 1, array( 12 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 2 ), 1 ) );
 		$this->assertNotWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":6,"price":50},{"min_age":6,"max_age":11,"price":70}]' ) );
