@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'OTE_VERSION', '1.0.0-beta.5' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-rest-api.php';
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -37,6 +38,7 @@ final class OpenTrip_Engine {
 
 	private function __construct() {
 		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
+		add_action( 'rest_api_init', array( 'OTE_REST_API', 'register_routes' ) );
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_menu' ) );

@@ -71,6 +71,10 @@ Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after instal
 
 Bug reports and feature requests can be submitted using the GitHub issue templates. Please include WordPress, PHP and database versions with bug reports, provide reproducible steps, and remove customer data or credentials from logs. Pull requests should be focused, include tests where practical, follow WordPress security practices, and update documentation for user-facing changes. See CONTRIBUTING.md and CODE_OF_CONDUCT.md in the source repository.
 
+== REST API ==
+
+A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. Endpoints list published tours, retrieve one published tour, list future open departures with remaining seats, and list non-empty destinations. The API never exposes booking/customer records or arbitrary private post metadata. Draft, private and password-protected tours return 404. See docs/REST-API.md in the source repository for request examples, pagination and privacy boundaries.
+
 == Changelog ==
 
 = 1.0.0-beta.5 =

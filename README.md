@@ -37,6 +37,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Transactional booking-status changes and per-booking seat reservation ledger; repeated confirmations do not increment inventory twice, and cancellation releases reserved seats.
 - Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
 - Booking and review data are available through WordPress privacy export and erasure tools.
+- Versioned, read-only REST API for public tours, destinations and available departures; see [REST API documentation](docs/REST-API.md).
 
 ## Testing
 
@@ -93,7 +94,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
 - [x] Multi-process inventory concurrency stress test (capacity race and duplicate-confirmation idempotency)
-- [ ] [Permission-checked REST API (#7)](https://github.com/azeddinee/opentrip-engine/issues/7)
+- [x] Public read-only REST API for tours, destinations and available departures (see [REST API docs](docs/REST-API.md))
 - [ ] [Adult, child and infant pricing rules (#8)](https://github.com/azeddinee/opentrip-engine/issues/8)
 - [ ] Optional payment gateway adapters
 - [ ] [Accessibility and translation readiness (#9)](https://github.com/azeddinee/opentrip-engine/issues/9)
