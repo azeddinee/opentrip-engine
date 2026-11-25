@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the documentation
+    url: https://github.com/azeddinee/opentrip-engine#readme
+    about: Check installation, supported workflows and known limitations before opening an issue.
+  - name: Read the contribution guide
+    url: https://github.com/azeddinee/opentrip-engine/blob/main/CONTRIBUTING.md
+    about: Learn how to report bugs and submit focused pull requests.
