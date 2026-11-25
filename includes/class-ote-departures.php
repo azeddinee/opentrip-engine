@@ -247,6 +247,13 @@ final class OTE_Departures {
 	 */
 	public function transition_booking( $booking_id, $tour_id, $departure_id, $seats, $new_status ) {
 		global $wpdb;
+		$failure = function( $reason ) use ( $wpdb ) {
+			if ( defined( 'OTE_CONCURRENCY_STRESS_TEST' ) ) {
+				$GLOBALS['ote_transition_failure'] = $reason . ' | DB: ' . $wpdb->last_error . ' | Query: ' . $wpdb->last_query;
+			}
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		};
 
 		$booking_id = absint( $booking_id );
 		$tour_id = absint( $tour_id );
@@ -257,6 +264,7 @@ final class OTE_Departures {
 		}
 
 		if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
+			if ( defined( 'OTE_CONCURRENCY_STRESS_TEST' ) ) { $GLOBALS['ote_transition_failure'] = 'START TRANSACTION failed | DB: ' . $wpdb->last_error . ' | Query: ' . $wpdb->last_query; }
 			return false;
 		}
 
@@ -265,10 +273,7 @@ final class OTE_Departures {
 			$booking_id,
 			'_ote_booking_status'
 		) );
-		if ( empty( $status_rows ) ) {
-			$wpdb->query( 'ROLLBACK' );
-			return false;
-		}
+		if ( empty( $status_rows ) ) { return $failure( 'No booking status meta row' ); }
 
 		$previous = $status_rows[0]->meta_value ? $status_rows[0]->meta_value : 'pending';
 		if ( $previous === $new_status ) {
@@ -286,10 +291,7 @@ final class OTE_Departures {
 
 		if ( 'confirmed' === $new_status && 'confirmed' !== $previous ) {
 			if ( $reservation ) {
-				if ( (int) $reservation->departure_id !== $departure_id || (int) $reservation->seats !== $seats ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
+				if ( (int) $reservation->departure_id !== $departure_id || (int) $reservation->seats !== $seats ) { return $failure( 'Existing reservation does not match request' ); }
 			} else {
 				// Lock and claim inventory before inserting the ledger row. This
 				// serializes competing bookings on the departure row and avoids
@@ -298,10 +300,7 @@ final class OTE_Departures {
 					"UPDATE {$this->table} SET reserved = reserved + %d WHERE id = %d AND tour_id = %d AND status = 'open' AND start_date >= %s AND reserved + %d <= capacity",
 					$seats, $departure_id, $tour_id, wp_date( 'Y-m-d' ), $seats
 				) );
-				if ( 1 !== $changed ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
+				if ( 1 !== $changed ) { return $failure( 'Departure inventory conditional update failed; changed=' . var_export( $changed, true ) ); }
 				$inserted = $wpdb->insert(
 					$this->reservations_table,
 					array(
@@ -312,10 +311,7 @@ final class OTE_Departures {
 					),
 					array( '%d', '%d', '%d', '%s' )
 				);
-				if ( false === $inserted ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
+				if ( false === $inserted ) { return $failure( 'Reservation ledger insert failed' ); }
 			}
 		} elseif ( in_array( $new_status, array( 'pending', 'cancelled' ), true ) && 'confirmed' === $previous ) {
 			if ( $reservation ) {
@@ -330,10 +326,7 @@ final class OTE_Departures {
 					return false;
 				}
 				$deleted = $wpdb->delete( $this->reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
-				if ( 1 !== $deleted ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
+				if ( 1 !== $deleted ) { return $failure( 'Reservation ledger delete failed' ); }
 			} else {
 				// Compatibility path for confirmed bookings created before the reservation ledger existed.
 				$changed = $wpdb->query( $wpdb->prepare(
@@ -357,10 +350,7 @@ final class OTE_Departures {
 			array( '%s' ),
 			array( '%d', '%s' )
 		);
-		if ( false === $updated ) {
-			$wpdb->query( 'ROLLBACK' );
-			return false;
-		}
+		if ( false === $updated ) { return $failure( 'Booking status update failed' ); }
 
 		$wpdb->query( 'COMMIT' );
 		wp_cache_delete( $booking_id, 'post_meta' );
