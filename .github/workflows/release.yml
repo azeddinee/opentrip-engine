@@ -16,7 +16,7 @@ jobs:
       - name: Build WordPress plugin ZIP
         run: |
           mkdir -p dist/opentrip-engine
-          cp -R opentrip-engine.php includes assets readme.txt LICENSE README.md SECURITY.md dist/opentrip-engine/
+          cp -R opentrip-engine.php includes assets languages readme.txt LICENSE README.md SECURITY.md dist/opentrip-engine/
           cd dist
           zip -qr "opentrip-engine-${GITHUB_REF_NAME}.zip" opentrip-engine
           unzip -l "opentrip-engine-${GITHUB_REF_NAME}.zip"
