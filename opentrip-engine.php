@@ -785,6 +785,14 @@ final class OpenTrip_Engine {
 			return '<p>' . esc_html__( 'Please select a published tour before booking.', 'opentrip-engine' ) . '</p>';
 		}
 		ob_start();
+		if ( isset( $_GET['ote_payment'] ) && is_string( $_GET['ote_payment'] ) ) {
+			$payment_return = sanitize_key( wp_unslash( $_GET['ote_payment'] ) );
+			if ( 'returned' === $payment_return ) {
+				echo '<p class="ote-success" role="status">' . esc_html__( 'You returned from Stripe Checkout. Payment is verified by a secure server notification; the agency will update your booking record separately.', 'opentrip-engine' ) . '</p>';
+			} elseif ( 'cancelled' === $payment_return ) {
+				echo '<p class="ote-info" role="status">' . esc_html__( 'Checkout was cancelled. Your booking status has not changed. Contact the agency if you need a new payment link.', 'opentrip-engine' ) . '</p>';
+			}
+		}
 		if ( isset( $_GET['ote_booking'] ) && is_string( $_GET['ote_booking'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_booking'] ) ) ) {
 			echo '<p class="ote-success" role="status">' . esc_html__( 'Thank you. Your booking request was received. It is not confirmed until the travel agency contacts you.', 'opentrip-engine' ) . '</p>';
 			if ( isset( $_GET['ote_ref'] ) && is_string( $_GET['ote_ref'] ) ) {
@@ -1165,7 +1173,7 @@ final class OpenTrip_Engine {
 			return;
 		}
 		$content  = '<p>' . esc_html__( 'OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations.', 'opentrip-engine' ) . '</p>';
-		$content .= '<p>' . esc_html__( 'The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details, removes review author details and review text, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved.', 'opentrip-engine' ) . '</p>';
+		$content .= '<p>' . esc_html__( 'The WordPress personal data exporter can export booking, review and payment-status information associated with an email address. If Stripe Checkout is enabled, the plugin sends the customer email, booking reference, payment amount and currency to Stripe to create a hosted payment session; card numbers and security codes are entered directly on Stripe and are not received or stored by this site. The personal data eraser anonymizes booking contact details, removes review author details and review text, removes local checkout URLs and provider transaction identifiers, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Payment status and amount/currency may remain on anonymized bookings for accounting and inventory audit purposes. Site owners must determine any additional retention obligations.', 'opentrip-engine' ) . '</p>';
 		$content .= '<p>' . esc_html__( 'For abuse prevention, the plugin stores a salted hash of email addresses submitted through booking and review forms, not the raw address in its rate-limit table. These records are opportunistically cleaned up after 24 hours and are also removed when the matching email is processed by the personal data eraser.', 'opentrip-engine' ) . '</p>';
 		wp_add_privacy_policy_content( __( 'OpenTrip Engine', 'opentrip-engine' ), $content );
 	}
@@ -1226,6 +1234,13 @@ final class OpenTrip_Engine {
 						'Price breakdown'   => $this->booking_quote_summary( get_post_meta( $post_id, '_ote_quote_snapshot', true ) ),
 						'Estimated total'   => get_post_meta( $post_id, '_ote_total_price', true ),
 						'Currency'          => get_post_meta( $post_id, '_ote_currency', true ),
+						'Payment provider'  => get_post_meta( $post_id, '_ote_payment_provider', true ),
+						'Payment status'    => get_post_meta( $post_id, '_ote_payment_status', true ),
+						'Payment amount'    => get_post_meta( $post_id, '_ote_payment_amount', true ),
+						'Payment currency'  => get_post_meta( $post_id, '_ote_payment_currency', true ),
+						'Payment transaction ID' => get_post_meta( $post_id, '_ote_payment_transaction_id', true ),
+						'Payment created'   => get_post_meta( $post_id, '_ote_payment_created_at', true ),
+						'Payment updated'   => get_post_meta( $post_id, '_ote_payment_updated_at', true ),
 						'Customer message'  => get_post_meta( $post_id, '_ote_customer_message', true ),
 					);
 					$group_id = 'opentrip-bookings';
@@ -1285,6 +1300,10 @@ final class OpenTrip_Engine {
 					update_post_meta( $post_id, '_ote_customer_message', '' );
 					delete_post_meta( $post_id, '_ote_child_ages' );
 					delete_post_meta( $post_id, '_ote_infant_ages' );
+					delete_post_meta( $post_id, '_ote_payment_url' );
+					delete_post_meta( $post_id, '_ote_payment_session_id' );
+					delete_post_meta( $post_id, '_ote_payment_transaction_id' );
+					delete_post_meta( $post_id, '_ote_payment_attention' );
 					$quote = get_post_meta( $post_id, '_ote_quote_snapshot', true );
 					if ( is_array( $quote ) ) {
 						if ( isset( $quote['children']['ages'] ) ) { $quote['children']['ages'] = array(); }
