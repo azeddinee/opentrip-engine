@@ -82,6 +82,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install WP-CLI and the i18n command
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
         run: |
           curl -fsSLo /tmp/wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           cat > /usr/local/bin/wp <<'EOF'
