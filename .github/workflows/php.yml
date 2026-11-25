@@ -71,3 +71,7 @@ jobs:
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: vendor/bin/phpunit -c phpunit.xml.dist
+      - name: Run multi-process inventory stress tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+        run: php tests/concurrency-stress.php
