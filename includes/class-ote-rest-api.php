@@ -43,7 +43,7 @@ final class OTE_REST_API {
 		);
 
 		register_rest_route(
-			self::NAMESPACE,
+			self::API_NAMESPACE,
 			'/tours/(?P<id>\d+)',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -61,7 +61,7 @@ final class OTE_REST_API {
 		);
 
 		register_rest_route(
-			self::NAMESPACE,
+			self::API_NAMESPACE,
 			'/tours/(?P<id>\d+)/departures',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -79,7 +79,7 @@ final class OTE_REST_API {
 		);
 
 		register_rest_route(
-			self::NAMESPACE,
+			self::API_NAMESPACE,
 			'/destinations',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
