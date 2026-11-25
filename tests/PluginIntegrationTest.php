@@ -742,6 +742,11 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":6,"price":50},{"min_age":6,"max_age":11,"price":70}]' ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '{broken json' ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 2.5 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 1.5 ), 1 ) );
+		$outside = clone $departure;
+		$outside->child_age_bands = '[{"min_age":1,"max_age":5,"price":50}]';
+		$this->assertWPError( OTE_Pricing::calculate_quote( $outside, 1, array( 5 ), array(), 1 ) );
 	}
 
 	public function test_age_parser_requires_one_valid_age_per_child_or_infant() {
