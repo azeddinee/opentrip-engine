@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.4
+Stable tag: 1.0.0-beta.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,12 @@ Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after instal
 
 == Changelog ==
 
-= 1.0.0-beta.4 =
+= 1.0.0-beta.5 =
+* Add transactional booking status and per-booking seat reservation ledger.
+* Add database-backed submission rate limits and privacy erasure for limiter hashes.
+* Add configurable agency/customer email notifications and departure close/reopen controls.
+* Harden public form input handling and correct HTTP error response codes.
+* Expand WordPress integration and compatibility testing.
 * Use a transactional reservation ledger to prevent duplicate seat increments when booking statuses are updated repeatedly.
 * Replace transient submission counts with atomic database-backed email-hash limits.
 * Add configurable agency and customer email notification settings.
