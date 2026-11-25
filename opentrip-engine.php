@@ -676,9 +676,9 @@ final class OpenTrip_Engine {
 			return '<p>' . esc_html__( 'Please select a published tour before booking.', 'opentrip-engine' ) . '</p>';
 		}
 		ob_start();
-		if ( isset( $_GET['ote_booking'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_booking'] ) ) ) {
+		if ( isset( $_GET['ote_booking'] ) && is_string( $_GET['ote_booking'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_booking'] ) ) ) {
 			echo '<p class="ote-success" role="status">' . esc_html__( 'Thank you. Your booking request was received. It is not confirmed until the travel agency contacts you.', 'opentrip-engine' ) . '</p>';
-			if ( isset( $_GET['ote_ref'] ) ) {
+			if ( isset( $_GET['ote_ref'] ) && is_string( $_GET['ote_ref'] ) ) {
 				echo '<p class="ote-booking-reference"><strong>' . esc_html__( 'Your request reference:', 'opentrip-engine' ) . '</strong> ' . esc_html( sanitize_text_field( wp_unslash( $_GET['ote_ref'] ) ) ) . '</p>';
 			}
 		}
@@ -1141,7 +1141,7 @@ final class OpenTrip_Engine {
 			return '';
 		}
 		ob_start();
-		if ( isset( $_GET['ote_review'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_review'] ) ) ) {
+		if ( isset( $_GET['ote_review'] ) && is_string( $_GET['ote_review'] ) && 'received' === sanitize_key( wp_unslash( $_GET['ote_review'] ) ) ) {
 			echo '<p class="ote-review-notice" role="status">' . esc_html__( 'Thank you. Your review was submitted and is awaiting moderation.', 'opentrip-engine' ) . '</p>';
 		}
 		?>
