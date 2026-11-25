@@ -941,7 +941,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_stripe_webhook_signature_requires_valid_hmac_and_fresh_timestamp() {
-		$secret = 'whsec_unit_test_secret';
+		$secret = 'whsec_unittestsecret';
 		$payload = '{"id":"evt_signature_test","type":"ignored.event"}';
 		$timestamp = 1700000000;
 		$digest = hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
@@ -959,8 +959,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		delete_option( 'ote_stripe_enabled' );
 		$this->assertWPError( $gateway->create_checkout_session( $booking_id ) );
 		update_option( 'ote_stripe_enabled', '1' );
-		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
-		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unittestkey123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unittestsecret' );
 		$this->assertWPError( $gateway->create_checkout_session( $booking_id ) );
 	}
 
@@ -969,8 +969,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_option( 'home', 'https://example.org' );
 		update_option( 'siteurl', 'https://example.org' );
 		update_option( 'ote_stripe_enabled', '1' );
-		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
-		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unittestkey123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unittestsecret' );
 		update_option( 'ote_stripe_deposit_percent', 50 );
 		$calls = array();
 		$mock = function( $preempt, $args, $url ) use ( &$calls ) {
@@ -988,7 +988,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $calls );
 		$this->assertSame( 6000, $calls[0]['body']['line_items'][0]['price_data']['unit_amount'] );
 		$this->assertSame( 'OTE-PAY-TEST', $calls[0]['body']['client_reference_id'] );
-		$this->assertSame( 'Bearer sk_test_unit_test_key_123456789', $calls[0]['headers']['Authorization'] );
+		$this->assertSame( 'Bearer sk_test_unittestkey123456789', $calls[0]['headers']['Authorization'] );
 		$reused = $gateway->create_checkout_session( $booking_id );
 		$this->assertNotWPError( $reused );
 		$this->assertTrue( $reused['reused'] );
@@ -1002,7 +1002,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_webhook123' );
 		update_post_meta( $booking_id, '_ote_payment_amount_minor', 6000 );
 		update_post_meta( $booking_id, '_ote_payment_currency', 'USD' );
-		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unittestsecret' );
 		$gateway = new OTE_Stripe_Gateway();
 		$unpaid = $this->stripe_test_event( 'evt_unpaid_completed', 'checkout.session.completed', $booking_id, 'cs_test_webhook123', 'unpaid' );
 		$this->assertTrue( $gateway->handle_webhook( $unpaid['payload'], $unpaid['signature'] ) );
@@ -1062,7 +1062,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		);
 		$payload = wp_json_encode( $event );
 		$timestamp = time();
-		$secret = 'whsec_unit_test_secret';
+		$secret = 'whsec_unittestsecret';
 		$signature = 't=' . $timestamp . ',v1=' . hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
 		return array( 'payload' => $payload, 'signature' => $signature );
 	}
@@ -1089,8 +1089,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_option( 'home', 'https://example.org' );
 		update_option( 'siteurl', 'https://example.org' );
 		update_option( 'ote_stripe_enabled', '1' );
-		update_option( 'ote_stripe_secret_key', 'sk_test_unit_test_key_123456789' );
-		update_option( 'ote_stripe_webhook_secret', 'whsec_unit_test_secret' );
+		update_option( 'ote_stripe_secret_key', 'sk_test_unittestkey123456789' );
+		update_option( 'ote_stripe_webhook_secret', 'whsec_unittestsecret' );
 		update_option( 'ote_stripe_deposit_percent', 50 );
 		update_post_meta( $booking_id, '_ote_payment_status', 'pending' );
 		update_post_meta( $booking_id, '_ote_payment_session_id', 'cs_test_old123' );
