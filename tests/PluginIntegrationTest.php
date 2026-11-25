@@ -269,6 +269,20 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 
 
 
+
+	public function test_public_form_handlers_ignore_array_shaped_action_values() {
+		$original_post = $_POST;
+		$_POST = array(
+			'ote_action'        => array( 'submit_booking' ),
+			'ote_review_action' => array( 'submit_review' ),
+		);
+		$engine = OpenTrip_Engine::instance();
+		$engine->handle_booking();
+		$engine->handle_review_submission();
+		$_POST = $original_post;
+		$this->assertTrue( true );
+	}
+
 	public function test_email_notification_settings_are_validated_and_can_disable_customer_mail() {
 		$engine = OpenTrip_Engine::instance();
 		$this->assertSame( '1', $engine->sanitize_boolean_setting( '1' ) );
