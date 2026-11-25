@@ -311,7 +311,11 @@ final class OTE_Departures {
 					$wpdb->query( 'ROLLBACK' );
 					return false;
 				}
-				$wpdb->delete( $this->reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
+				$deleted = $wpdb->delete( $this->reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
+				if ( 1 !== $deleted ) {
+					$wpdb->query( 'ROLLBACK' );
+					return false;
+				}
 			} else {
 				// Compatibility path for confirmed bookings created before the reservation ledger existed.
 				$changed = $wpdb->query( $wpdb->prepare(
