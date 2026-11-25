@@ -93,13 +93,13 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
 - [x] Multi-process inventory concurrency stress test (capacity race and duplicate-confirmation idempotency)
-- [ ] Permission-checked REST API
-- [ ] Pricing rules and multi-currency formatting
+- [ ] [Permission-checked REST API (#7)](https://github.com/azeddinee/opentrip-engine/issues/7)
+- [ ] [Adult, child and infant pricing rules (#8)](https://github.com/azeddinee/opentrip-engine/issues/8)
 - [ ] Optional payment gateway adapters
-- [ ] Translation and accessibility review
+- [ ] [Accessibility and translation readiness (#9)](https://github.com/azeddinee/opentrip-engine/issues/9)
 
 ## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and focused pull requests are welcome.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Use the issue templates to report reproducible bugs or propose travel-workflow improvements. Focused pull requests are welcome; please include tests and update documentation for user-facing changes. The open roadmap is tracked in [GitHub Issues](https://github.com/azeddinee/opentrip-engine/issues).
 
 ## License
 GPL-2.0-or-later. See [LICENSE](LICENSE).
