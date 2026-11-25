@@ -894,7 +894,8 @@ final class OpenTrip_Engine {
 			return;
 		}
 		$content  = '<p>' . esc_html__( 'OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations.', 'opentrip-engine' ) . '</p>';
-		$content .= '<p>' . esc_html__( 'The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details and removes review author details and review text; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved.', 'opentrip-engine' ) . '</p>';
+		$content .= '<p>' . esc_html__( 'The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details, removes review author details and review text, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved.', 'opentrip-engine' ) . '</p>';
+		$content .= '<p>' . esc_html__( 'For abuse prevention, the plugin stores a salted hash of email addresses submitted through booking and review forms, not the raw address in its rate-limit table. These records are opportunistically cleaned up after 24 hours and are also removed when the matching email is processed by the personal data eraser.', 'opentrip-engine' ) . '</p>';
 		wp_add_privacy_policy_content( __( 'OpenTrip Engine', 'opentrip-engine' ), $content );
 	}
 
@@ -1021,6 +1022,8 @@ final class OpenTrip_Engine {
 				$removed++;
 			}
 		}
+		OTE_Submission_Limiter::erase_email( $email_address );
+
 		return array(
 			'items_removed'  => $removed,
 			'items_retained' => 0,
