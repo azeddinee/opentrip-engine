@@ -54,6 +54,7 @@ final class OpenTrip_Engine {
 		add_action( 'rest_api_init', array( 'OTE_Stripe_Gateway', 'register_webhook_route' ) );
 		add_action( 'admin_post_ote_create_stripe_payment_link', array( $this, 'handle_create_stripe_payment_link' ) );
 		add_action( 'init', array( $this, 'register_types' ) );
+		add_action( 'admin_init', array( $this, 'ensure_payment_secrets_are_not_autoloaded' ), 1 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_menu' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_tour_meta_box' ) );
@@ -98,6 +99,17 @@ final class OpenTrip_Engine {
 		flush_rewrite_rules();
 	}
 
+
+	public function ensure_payment_secrets_are_not_autoloaded() {
+		foreach ( array( 'ote_stripe_secret_key', 'ote_stripe_webhook_secret' ) as $option_name ) {
+			$value = get_option( $option_name, false );
+			if ( false === $value ) {
+				add_option( $option_name, '', '', 'no' );
+			} else {
+				update_option( $option_name, $value, false );
+			}
+		}
+	}
 
 	public function register_settings() {
 		register_setting(
@@ -226,6 +238,8 @@ final class OpenTrip_Engine {
 		$configured = 0 === strpos( (string) get_option( 'ote_stripe_webhook_secret', '' ), 'whsec_' );
 		echo '<input type="password" class="regular-text" name="ote_stripe_webhook_secret" value="" autocomplete="new-password" spellcheck="false" placeholder="' . esc_attr__( 'Paste the Stripe webhook signing secret', 'opentrip-engine' ) . '">';
 		echo '<p class="description">' . esc_html( $configured ? __( 'Webhook secret configured.', 'opentrip-engine' ) : __( 'Webhook secret not configured.', 'opentrip-engine' ) ) . ' ' . esc_html__( 'Leave blank to keep the saved secret.', 'opentrip-engine' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Webhook URL:', 'opentrip-engine' ) . ' <code>' . esc_html( rest_url( 'opentrip-engine/v1/payments/stripe/webhook' ) ) . '</code></p>';
+		echo '<p class="description">' . esc_html__( 'Subscribe to checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed and checkout.session.expired.', 'opentrip-engine' ) . '</p>';
 	}
 
 	public function render_stripe_deposit_percent_field() {
@@ -958,6 +972,10 @@ final class OpenTrip_Engine {
 			'expired'     => __( 'Payment link expired', 'opentrip-engine' ),
 		);
 		echo '<p><strong>' . esc_html__( 'Payment status:', 'opentrip-engine' ) . '</strong> ' . esc_html( isset( $labels[ $status ] ) ? $labels[ $status ] : $status ) . '</p>';
+		$transaction_id = (string) get_post_meta( $post->ID, '_ote_payment_transaction_id', true );
+		if ( $transaction_id ) {
+			echo '<p><strong>' . esc_html__( 'Stripe transaction:', 'opentrip-engine' ) . '</strong> ' . esc_html( $transaction_id ) . '</p>';
+		}
 		$provider = (string) get_post_meta( $post->ID, '_ote_payment_provider', true );
 		if ( $provider ) {
 			echo '<p><strong>' . esc_html__( 'Provider:', 'opentrip-engine' ) . '</strong> ' . esc_html( $provider ) . '</p>';
