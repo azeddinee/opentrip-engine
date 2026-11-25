@@ -715,7 +715,7 @@ final class OpenTrip_Engine {
 		<select required name="ote_departure_id">
 			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
 			<?php foreach ( $available_departures as $departure ) : ?>
-			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
+			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
 			<?php endforeach; ?>
 		</select></label></p>
 			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
