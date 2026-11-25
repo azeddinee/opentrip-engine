@@ -16,3 +16,71 @@
 .ote-tour-card a:focus,.ote-gallery a:focus,.ote-booking-form button:focus,.ote-review-form button:focus,.ote-booking-form input:focus,.ote-booking-form select:focus,.ote-booking-form textarea:focus,.ote-review-form input:focus,.ote-review-form select:focus,.ote-review-form textarea:focus{outline:3px solid #1d4ed8;outline-offset:3px}
 .ote-booking-form-title,.ote-review-form-title{margin:24px 0 12px}
 @media(prefers-reduced-motion:reduce){.ote-gallery img{transition:none}.ote-gallery a:hover img{transform:none}}
+
+
+/* Accessible keyboard focus, form controls and motion preferences. */
+.ote-tour-card a:focus-visible,
+.ote-gallery-link:focus-visible,
+.ote-booking-form input:focus-visible,
+.ote-booking-form select:focus-visible,
+.ote-booking-form textarea:focus-visible,
+.ote-booking-form button:focus-visible,
+.ote-review-form input:focus-visible,
+.ote-review-form select:focus-visible,
+.ote-review-form textarea:focus-visible,
+.ote-review-form button:focus-visible {
+	outline: 3px solid #1d4ed8;
+	outline-offset: 3px;
+	box-shadow: 0 0 0 2px #fff;
+}
+
+.ote-booking-form fieldset,
+.ote-review-form fieldset {
+	min-width: 0;
+	margin: 0 0 16px;
+	padding: 16px;
+	border: 1px solid #94a3b8;
+	border-radius: 8px;
+}
+
+.ote-booking-form legend,
+.ote-review-form legend {
+	padding: 0 6px;
+	font-weight: 700;
+}
+
+.ote-booking-form input:focus-visible,
+.ote-booking-form select:focus-visible,
+.ote-booking-form textarea:focus-visible,
+.ote-review-form input:focus-visible,
+.ote-review-form select:focus-visible,
+.ote-review-form textarea:focus-visible {
+	border-color: #1d4ed8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ote-gallery img {
+		transition: none;
+	}
+
+	.ote-gallery a:hover img {
+		transform: none;
+	}
+}
+
+@media (forced-colors: active) {
+	.ote-tour-card,
+	.ote-booking-form,
+	.ote-review-form,
+	.ote-gallery-item,
+	.ote-itinerary-day,
+	.ote-inclusions-column,
+	.ote-review {
+		border: 1px solid CanvasText;
+	}
+
+	.ote-booking-form button,
+	.ote-review-form button {
+		border: 1px solid ButtonText;
+	}
+}
