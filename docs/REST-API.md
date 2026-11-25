@@ -83,7 +83,7 @@ WordPress REST API error responses include a machine-readable `code`, human-read
 - Booking records, customer names/emails, booking references, internal booking statuses, private review metadata, settings and payment information are not included.
 - The API does not create bookings, reserve seats, confirm departures, process payments or modify WordPress content.
 - Do not add customer or booking fields to public responses. Any future write endpoint must be designed separately with authentication, capability checks, nonces/application passwords as appropriate, rate limiting, validation and privacy review.
-- Public tour content is rendered through the standard WordPress content filter. Site administrators should review public tour content and shortcode output before publishing.
+- Public tour content is sanitized with WordPress `wp_kses_post()`; shortcode tokens are returned as saved text and are not executed by the API.
 
 ## Versioning
 
