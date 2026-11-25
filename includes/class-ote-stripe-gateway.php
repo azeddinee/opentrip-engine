@@ -157,6 +157,9 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		if ( ! $base_url ) {
 			$base_url = home_url( '/' );
 		}
+		if ( 'https' !== strtolower( (string) wp_parse_url( $base_url, PHP_URL_SCHEME ) ) ) {
+			return new WP_Error( 'ote_stripe_requires_https', __( 'The website must use HTTPS before Stripe payment links can be created.', 'opentrip-engine' ) );
+		}
 		$success_url = add_query_arg( array( 'ote_payment' => 'returned', 'ote_ref' => $reference ), $base_url );
 		$cancel_url = add_query_arg( array( 'ote_payment' => 'cancelled', 'ote_ref' => rawurlencode( $reference ) ), $base_url );
 		$attempt = absint( get_post_meta( $booking_id, '_ote_payment_attempt', true ) ) + 1;
