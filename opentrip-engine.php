@@ -652,7 +652,7 @@ final class OpenTrip_Engine {
 		if ( $admin_email && is_email( $admin_email ) ) {
 			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
 			$body = sprintf(
-				__( "A new booking request was received.\n\nReference: %1$s\nTour: %2$s\nName: %3$s\nEmail: %4$s\nTravel date: %5$s\nTravellers: %6$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
+				__( "A new booking request was received.\n\nReference: %1\$2\nTour: %2\$2\nName: %3\$2\nEmail: %4\$2\nTravel date: %5\$2\nTravellers: %6\$2\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
 				$reference, get_the_title( $tour_id ), $name, $email, $departure->start_date, $travellers
 			);
 			wp_mail( $admin_email, $subject, $body );
@@ -935,7 +935,7 @@ final class OpenTrip_Engine {
 		$name = get_post_meta( $booking_id, '_ote_customer_name', true );
 		$greeting = sprintf( __( 'Hello %s,', 'opentrip-engine' ), $name );
 		$details = sprintf(
-			__( "Request reference: %1$s\nTour: %2$s\nDeparture: %3$s\nTravellers: %4$d\nEstimated total: %5$s %6$s", 'opentrip-engine' ),
+			__( "Request reference: %1\$2\nTour: %2\$2\nDeparture: %3\$2\nTravellers: %4\$2\nEstimated total: %5\$2 %6\$2", 'opentrip-engine' ),
 			$reference, $tour_name, $travel_date, $travellers, $total, $currency
 		);
 		if ( 'pending' === $status ) {
@@ -1025,7 +1025,7 @@ final class OpenTrip_Engine {
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
 			'post_status' => 'pending',
-			'post_title' => sprintf( __( 'Review for %1$s by %2$s', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
+			'post_title' => sprintf( __( 'Review for %1\$2 by %2\$2', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $review_id ) ) {
