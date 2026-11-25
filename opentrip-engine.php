@@ -36,6 +36,7 @@ final class OpenTrip_Engine {
 	}
 
 	private function __construct() {
+		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_menu' ) );
@@ -208,6 +209,15 @@ final class OpenTrip_Engine {
 
 	public function enqueue_assets() {
 		wp_enqueue_style( 'opentrip-engine', plugin_dir_url( __FILE__ ) . 'assets/opentrip-engine.css', array(), OTE_VERSION );
+	}
+
+
+	public function load_textdomain() {
+		load_plugin_textdomain(
+			'opentrip-engine',
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages'
+		);
 	}
 
 	public function register_types() {
