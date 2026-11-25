@@ -983,20 +983,21 @@ final class OpenTrip_Engine {
 		$amount = get_post_meta( $post->ID, '_ote_payment_amount', true );
 		$currency = get_post_meta( $post->ID, '_ote_payment_currency', true );
 		if ( '' !== (string) $amount && $currency ) {
-			echo '<p><strong>' . esc_html__( 'Requested payment:', 'opentrip-engine' ) . '</strong> ' . esc_html( number_format_i18n( (float) $amount, 2 ) . ' ' . $currency ) . '</p>';
+			$decimals = OTE_Stripe_Gateway::currency_decimals( $currency );
+			echo '<p><strong>' . esc_html__( 'Requested payment:', 'opentrip-engine' ) . '</strong> ' . esc_html( number_format_i18n( (float) $amount, $decimals ) . ' ' . $currency ) . '</p>';
 		}
 		$attention = get_post_meta( $post->ID, '_ote_payment_attention', true );
 		if ( $attention ) {
 			echo '<div class="notice notice-warning inline"><p>' . esc_html( $attention ) . '</p></div>';
 		}
-		$notice_key = 'ote_payment_notice_' . get_current_user_id();
+		$notice_key = 'ote_payment_notice_' . get_current_user_id() . '_' . $post->ID;
 		$notice = get_transient( $notice_key );
 		if ( is_array( $notice ) && ! empty( $notice['message'] ) ) {
 			delete_transient( $notice_key );
 			echo '<div class="notice notice-' . esc_attr( isset( $notice['type'] ) ? $notice['type'] : 'info' ) . ' inline"><p>' . esc_html( $notice['message'] ) . '</p></div>';
 		}
 		$url = (string) get_post_meta( $post->ID, '_ote_payment_url', true );
-		if ( $url && 'pending' === $status && OTE_Stripe_Gateway::is_checkout_url_public( $url ) ) {
+		if ( $url && 'pending' === $status && absint( get_post_meta( $post->ID, '_ote_payment_expires_at', true ) ) > time() && OTE_Stripe_Gateway::is_checkout_url_public( $url ) ) {
 			echo '<p><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open existing Stripe payment link', 'opentrip-engine' ) . '</a></p>';
 		}
 		if ( 'confirmed' !== get_post_meta( $post->ID, '_ote_booking_status', true ) || 'paid' === $status ) {
@@ -1039,7 +1040,7 @@ final class OpenTrip_Engine {
 				'message' => $sent ? __( 'Stripe payment link created and emailed to the customer.', 'opentrip-engine' ) : __( 'Stripe payment link created. Customer email was not sent; copy the link from this booking record.', 'opentrip-engine' ),
 			);
 		}
-		set_transient( 'ote_payment_notice_' . get_current_user_id(), $notice, MINUTE_IN_SECONDS );
+		set_transient( 'ote_payment_notice_' . get_current_user_id() . '_' . $booking_id, $notice, MINUTE_IN_SECONDS );
 		$edit_url = get_edit_post_link( $booking_id, 'url' );
 		wp_safe_redirect( add_query_arg( 'ote_payment_notice', '1', $edit_url ) );
 		exit;
@@ -1055,7 +1056,7 @@ final class OpenTrip_Engine {
 		}
 		$name = sanitize_text_field( get_post_meta( $booking_id, '_ote_customer_name', true ) );
 		$reference = sanitize_text_field( get_post_meta( $booking_id, '_ote_booking_reference', true ) );
-		$amount = number_format_i18n( (float) $session['amount'], 2 );
+		$amount = number_format_i18n( (float) $session['amount'], OTE_Stripe_Gateway::currency_decimals( $session['currency'] ) );
 		$currency = sanitize_text_field( $session['currency'] );
 		$subject = sprintf( __( 'Secure payment link for booking %s', 'opentrip-engine' ), $reference );
 		$message = sprintf(
@@ -1321,6 +1322,8 @@ final class OpenTrip_Engine {
 					delete_post_meta( $post_id, '_ote_payment_url' );
 					delete_post_meta( $post_id, '_ote_payment_session_id' );
 					delete_post_meta( $post_id, '_ote_payment_transaction_id' );
+					delete_post_meta( $post_id, '_ote_payment_session_history' );
+					delete_post_meta( $post_id, '_ote_payment_last_session_id' );
 					delete_post_meta( $post_id, '_ote_payment_attention' );
 					$quote = get_post_meta( $post_id, '_ote_quote_snapshot', true );
 					if ( is_array( $quote ) ) {
