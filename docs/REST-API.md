@@ -56,9 +56,9 @@ Draft, private, missing and password-protected tours return HTTP `404`. The API 
 curl "https://example.com/wp-json/opentrip-engine/v1/tours/123/departures"
 ```
 
-Only future departures that are open and have remaining capacity are returned. Each item includes the departure ID, tour ID, start/end dates, seats remaining, price and currency. Closed, full and past departures are omitted.
+Only future departures that are open and have remaining capacity are returned. Each item includes the departure ID, tour ID, start/end dates, seats remaining, effective adult price (`price` and `adult_price`), child price, infant price, per-room charge, inclusive infant/child age limits, optional child age-band rates and currency. Legacy departures expose the base price as the adult and child fallback. Closed, full and past departures are omitted.
 
-This endpoint reports inventory at the time of the request; it is not a seat hold or booking confirmation. Availability can change immediately after the response.
+This endpoint reports inventory and configured price rules at the time of the request; it is not a seat hold or booking confirmation. Availability and rates can change immediately after the response. Prices remain in the departure currency and are never converted by the API.
 
 ## Destinations
 
