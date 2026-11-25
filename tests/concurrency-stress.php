@@ -194,18 +194,26 @@ if ( $is_worker ) {
 	$success = false !== $result;
 	if ( ! $success ) {
 		global $wpdb;
+		$transition_error = $wpdb->last_error;
 		$departure_table = $wpdb->prefix . 'ote_departures';
 		$departure = $wpdb->get_row( $wpdb->prepare(
 			"SELECT reserved, capacity, status, start_date FROM {$departure_table} WHERE id = %d AND tour_id = %d",
 			$departure_id,
 			$tour_id
 		) );
+		$booking_status = get_post_meta( $booking_id, '_ote_booking_status', true );
 		$expected_capacity_rejection = $departure
 			&& ( 'open' !== $departure->status
 				|| $departure->start_date < wp_date( 'Y-m-d' )
 				|| (int) $departure->reserved + $seats > (int) $departure->capacity );
-		if ( ! $expected_capacity_rejection || '' !== $wpdb->last_error ) {
-			fwrite( STDERR, 'Unexpected booking transition failure: ' . $wpdb->last_error . "\\n" );
+		if ( ! $expected_capacity_rejection || '' !== $transition_error ) {
+			fwrite( STDERR, 'Unexpected booking transition failure: ' . wp_json_encode( array(
+				'db_error' => $transition_error,
+				'prefix' => $wpdb->prefix,
+				'booking_id' => $booking_id,
+				'booking_status' => $booking_status,
+				'departure' => $departure,
+			) ) . "\\n" );
 			exit( 5 );
 		}
 	}
