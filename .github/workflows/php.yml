@@ -76,6 +76,76 @@ jobs:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: php tests/concurrency-stress.php
 
+  browser-e2e:
+    runs-on: ubuntu-latest
+    name: Playwright public booking and review flows
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_e2e
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, xml, zip
+          coverage: none
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download WP-CLI
+        run: curl -fsSLo /tmp/wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+      - name: Provision disposable WordPress site
+        env:
+          WP_CLI_PHAR: /tmp/wp-cli.phar
+          WP_PATH: /tmp/ote-e2e-wordpress
+          DB_NAME: wordpress_e2e
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_HOST: 127.0.0.1:3306
+        run: sh scripts/setup-e2e-wordpress.sh
+      - name: Start WordPress and publish test URLs
+        run: |
+          BOOKING_PAGE_ID=$(cat /tmp/ote-e2e-booking-page-id)
+          REVIEW_PAGE_ID=$(cat /tmp/ote-e2e-review-page-id)
+          BOOKING_URL="http://127.0.0.1:8080/?page_id=$BOOKING_PAGE_ID"
+          REVIEW_URL="http://127.0.0.1:8080/?page_id=$REVIEW_PAGE_ID"
+          echo "E2E_BASE_URL=http://127.0.0.1:8080" >> "$GITHUB_ENV"
+          echo "E2E_BOOKING_URL=$BOOKING_URL" >> "$GITHUB_ENV"
+          echo "E2E_REVIEW_URL=$REVIEW_URL" >> "$GITHUB_ENV"
+          nohup php -S 127.0.0.1:8080 -t /tmp/ote-e2e-wordpress >/tmp/ote-e2e-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS "$BOOKING_URL" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/ote-e2e-server.log
+          exit 1
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser end-to-end tests
+        run: npm run test:e2e
+      - name: Verify only valid submissions were persisted
+        run: |
+          BOOKING_COUNT=$(php /tmp/wp-cli.phar --path=/tmp/ote-e2e-wordpress eval 'global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = \"ote_booking\" AND post_status = \"private\"" );')
+          REVIEW_COUNT=$(php /tmp/wp-cli.phar --path=/tmp/ote-e2e-wordpress eval 'global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = \"ote_review\" AND post_status = \"pending\"" );')
+          test "$BOOKING_COUNT" -eq 1
+          test "$REVIEW_COUNT" -eq 1
+
   plugin-package:
     runs-on: ubuntu-latest
     name: Build and validate installable ZIP
