@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.5 — transactional inventory, configurable notifications and hardened forms.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
+**Current status: 1.0.0-beta.6 — traveller-aware quotes, age validation and immutable booking price snapshots.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -22,7 +22,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Responsive frontend CSS for tour cards and booking forms.
 - Admin departure manager with dates, capacity, price, currency and safe close/reopen controls.
 - Booking form selects a real departure and displays remaining seats.
-- Booking requests capture adult and child counts plus rooms required.
+- Booking requests capture adult, child and infant counts, ages and rooms required.
+- Per-departure adult, child, infant and room rates, inclusive child age bands (up to ten bands), and explicit currency handling.
+- Itemized booking-time quote snapshots are shown to administrators and included in customer receipts; later departure rate changes do not rewrite saved quotes.
 - Day-by-day itinerary editor for up to 60 days, with city, activities, overnight stay, meals and transportation.
 - `[opentrip_itinerary]` renders the current tour's itinerary; `[opentrip_itinerary tour_id="123"]` renders a selected tour's itinerary.
 - Per-tour inclusions and exclusions editor with one item per line, saved as sanitized tour metadata.
@@ -41,7 +43,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 
 ## Testing
 
-Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 23 tests and 138 assertions, covering content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, privacy export/erasure, and the public REST API. The CI workflow also runs a multi-process MySQL stress suite on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
+Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 23 tests and 138 assertions, covering content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, privacy export/erasure, and the public REST API. The CI workflow also runs a multi-process MySQL stress suite on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Pricing unit/integration coverage includes inclusive age-band boundaries, gaps and overlaps, missing/default rates, free infants, room charges, rounding, currency preservation and immutable quote snapshots. Full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
 
 ## Requirements
 - WordPress 6.2+
