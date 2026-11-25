@@ -560,7 +560,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 				'post_type'    => 'ote_tour',
 				'post_status'  => 'publish',
 				'post_title'   => 'Public API Tour',
-				'post_content' => 'A public tour description.',
+				'post_content' => 'A public <strong>tour</strong> description. <script>alert(1)</script>',
 			)
 		);
 		$draft_id = self::factory()->post->create(
@@ -593,6 +593,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $data );
 		$this->assertSame( $published_id, $data[0]['id'] );
 		$this->assertSame( 'Public API Tour', $data[0]['title'] );
+		$this->assertStringContainsString( '<strong>tour</strong>', $data[0]['content'] );
+		$this->assertStringNotContainsString( '<script>', $data[0]['content'] );
 		$this->assertSame( 125.5, $data[0]['price'] );
 		$this->assertSame( 'Marrakech', $data[0]['itinerary'][0]['city'] );
 		$this->assertSame( array( 'Breakfast' ), $data[0]['inclusions'] );
@@ -602,6 +604,13 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'private-customer@example.com', wp_json_encode( $data ) );
 		$this->assertStringNotContainsString( 'Private Draft Tour', wp_json_encode( $data ) );
 		$this->assertSame( '1', $response->get_headers()['X-WP-Total'] );
+	}
+
+	public function test_public_rest_api_rejects_invalid_page_size() {
+		$request = new WP_REST_Request( 'GET', '/opentrip-engine/v1/tours' );
+		$request->set_param( 'per_page', 51 );
+		$response = rest_do_request( $request );
+		$this->assertSame( 400, $response->get_status() );
 	}
 
 	public function test_public_rest_api_returns_404_for_draft_and_password_protected_tours() {
@@ -625,7 +634,6 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$tour_id = self::factory()->post->create(
 			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Departure API Tour' )
 		);
-		$today = wp_date( 'Y-m-d' );
 		$rows = array(
 			array( 'start_date' => wp_date( 'Y-m-d', strtotime( '+12 days' ) ), 'status' => 'open', 'capacity' => 8, 'reserved' => 3 ),
 			array( 'start_date' => wp_date( 'Y-m-d', strtotime( '+20 days' ) ), 'status' => 'closed', 'capacity' => 8, 'reserved' => 0 ),
