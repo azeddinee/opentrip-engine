@@ -40,7 +40,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 
 ## Testing
 
-Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. PHPUnit covers content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, and privacy export/erasure. A multi-process load test and full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
+Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 18 tests and 108 assertions, covering content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, and privacy export/erasure. A multi-process load test and full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
 
 ## Requirements
 - WordPress 6.2+
