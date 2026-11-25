@@ -202,6 +202,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 		$this->assertTrue( current_user_can( 'edit_post', $booking_id ) );
 		$this->assertTrue( current_user_can( 'read_post', $booking_id ) );
+		$this->assertFalse( current_user_can( 'delete_post', $booking_id ) );
 		$this->assertTrue( current_user_can( 'edit_post', $review_id ) );
 		$this->assertTrue( current_user_can( 'read_post', $review_id ) );
 	}
