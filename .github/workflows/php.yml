@@ -89,7 +89,7 @@ jobs:
           grep -q 'msgid "Guest reviews"' languages/opentrip-engine.pot
           grep -q 'msgid "Request a booking"' languages/opentrip-engine.pot
       - name: Upload translation template
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: opentrip-engine-translation-template
           path: languages/opentrip-engine.pot
@@ -122,7 +122,7 @@ jobs:
           find "$PACKAGE/includes" -name '*.php' -print0 | xargs -0 -n1 php -l
           mv dist/opentrip-engine-test.zip dist/opentrip-engine-1.0.0-beta.7.zip
       - name: Upload installable plugin ZIP
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: opentrip-engine-1.0.0-beta.7
           path: dist/opentrip-engine-1.0.0-beta.7.zip
