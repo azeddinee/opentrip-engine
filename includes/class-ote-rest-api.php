@@ -294,7 +294,7 @@ final class OTE_REST_API {
 					$gallery[] = array(
 						'id'  => $attachment_id,
 						'url' => esc_url_raw( $image_url ),
-						'alt' => (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+						'alt' => sanitize_text_field( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
 					);
 				}
 			}
@@ -306,7 +306,7 @@ final class OTE_REST_API {
 			foreach ( $terms as $term ) {
 				$destinations[] = array(
 					'id'   => (int) $term->term_id,
-					'name' => (string) $term->name,
+					'name' => sanitize_text_field( $term->name ),
 					'slug' => (string) $term->slug,
 				);
 			}
@@ -320,7 +320,7 @@ final class OTE_REST_API {
 				$featured_image = array(
 					'id'  => (int) $thumbnail_id,
 					'url' => esc_url_raw( $thumbnail_url ),
-					'alt' => (string) get_post_meta( $thumbnail_id, '_wp_attachment_image_alt', true ),
+					'alt' => sanitize_text_field( (string) get_post_meta( $thumbnail_id, '_wp_attachment_image_alt', true ) ),
 				);
 			}
 		}
@@ -328,13 +328,13 @@ final class OTE_REST_API {
 		return array(
 			'id'             => $tour_id,
 			'slug'           => (string) $tour->post_name,
-			'title'          => get_the_title( $tour_id ),
+			'title'          => sanitize_text_field( $tour->post_title ),
 			'link'           => get_permalink( $tour_id ),
-			'excerpt'        => get_the_excerpt( $tour_id ),
-			'content'        => apply_filters( 'the_content', $tour->post_content ),
+			'excerpt'        => sanitize_text_field( $tour->post_excerpt ? $tour->post_excerpt : wp_trim_words( wp_strip_all_tags( $tour->post_content ), 55 ) ),
+			'content'        => wp_kses_post( $tour->post_content ),
 			'price'          => (float) get_post_meta( $tour_id, '_ote_price', true ),
 			'currency'       => (string) ( get_post_meta( $tour_id, '_ote_currency', true ) ? get_post_meta( $tour_id, '_ote_currency', true ) : 'USD' ),
-			'duration'       => (string) get_post_meta( $tour_id, '_ote_duration', true ),
+			'duration'       => sanitize_text_field( (string) get_post_meta( $tour_id, '_ote_duration', true ) ),
 			'featured_image' => $featured_image,
 			'destinations'   => $destinations,
 			'itinerary'      => $days,
