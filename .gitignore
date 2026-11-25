@@ -4,3 +4,5 @@ Thumbs.db
 /vendor/
 /node_modules/
 /.phpunit.cache/
+/playwright-report/
+/test-results/
