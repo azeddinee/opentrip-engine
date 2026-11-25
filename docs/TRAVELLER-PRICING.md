@@ -23,7 +23,7 @@ Example child age bands:
 ]
 ```
 
-Age boundaries are inclusive. A child must match exactly one configured band. Gaps and overlaps are rejected at configuration/quote time. If no JSON bands are configured, the departure's single child age range and child price apply.
+Age boundaries are inclusive. A child must match exactly one configured band. Bands must be contiguous, non-overlapping, and cover the full configured child minimum-to-maximum age range; the range cannot overlap the infant age band. Gaps, overlaps and out-of-range rates are rejected. If no JSON bands are configured, the departure's single child age range and child price apply.
 
 ## Example family quote
 
