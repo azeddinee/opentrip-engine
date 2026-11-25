@@ -5,8 +5,6 @@
  * Run after the WordPress test library has been installed:
  * WP_TESTS_DIR=/tmp/wordpress-tests-lib php tests/concurrency-stress.php
  */
-require_once dirname( __DIR__ ) . '/vendor/autoload.php';
-require_once __DIR__ . '/bootstrap.php';
 
 function ote_stress_departure( $tour_id, $capacity ) {
 	global $wpdb;
@@ -126,32 +124,41 @@ function ote_stress_workers( $booking_ids, $tour_id, $departure_id, $seats ) {
 	return $results;
 }
 
-if ( isset( $argv[1] ) && 'worker' === $argv[1] ) {
-	$booking_id  = isset( $argv[2] ) ? (int) $argv[2] : 0;
-	$tour_id     = isset( $argv[3] ) ? (int) $argv[3] : 0;
+$is_worker = isset( $argv[1] ) && 'worker' === $argv[1];
+if ( $is_worker ) {
+	$booking_id   = isset( $argv[2] ) ? (int) $argv[2] : 0;
+	$tour_id      = isset( $argv[3] ) ? (int) $argv[3] : 0;
 	$departure_id = isset( $argv[4] ) ? (int) $argv[4] : 0;
-	$seats       = isset( $argv[5] ) ? (int) $argv[5] : 0;
-	$barrier     = isset( $argv[6] ) ? $argv[6] : '';
-	$ready       = isset( $argv[7] ) ? $argv[7] : '';
+	$seats        = isset( $argv[5] ) ? (int) $argv[5] : 0;
+	$barrier      = isset( $argv[6] ) ? $argv[6] : '';
+	$ready        = isset( $argv[7] ) ? $argv[7] : '';
 	if ( ! $booking_id || ! $tour_id || ! $departure_id || ! $seats || '' === $barrier || '' === $ready ) {
-		fwrite( STDERR, "Invalid worker arguments.\n" );
+		fwrite( STDERR, "Invalid worker arguments.\\n" );
 		exit( 2 );
 	}
+	// Signal readiness before loading WordPress so all processes start their
+	// WordPress bootstrap together, rather than serializing at the barrier.
 	touch( $ready );
 	$deadline = microtime( true ) + 60;
 	while ( ! file_exists( $barrier ) && microtime( true ) < $deadline ) {
 		usleep( 1000 );
 	}
 	if ( ! file_exists( $barrier ) ) {
-		echo wp_json_encode( array( 'error' => 'Timed out waiting for worker barrier.' ) );
+		fwrite( STDERR, "Timed out waiting for worker barrier.\\n" );
 		exit( 3 );
 	}
+}
+
+require_once dirname( __DIR__ ) . '/vendor/autoload.php';
+require_once __DIR__ . '/bootstrap.php';
+
+if ( $is_worker ) {
 	$result = OTE_Departures::instance()->transition_booking( $booking_id, $tour_id, $departure_id, $seats, 'confirmed' );
 	echo wp_json_encode( array(
 		'success' => false !== $result,
 		'changed' => false !== $result && ! empty( $result['changed'] ),
 	) );
-	exit( 0 );
+	exit( false === $result ? 1 : 0 );
 }
 
 global $wpdb;
