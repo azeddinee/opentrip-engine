@@ -30,7 +30,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Media Library gallery picker for each tour, supporting up to 40 images.
 - Visitor review form with 1–5 star ratings; submissions are saved as Pending and require administrator approval.
 - `[opentrip_reviews]` displays approved reviews and their average rating; `[opentrip_review_form]` displays the review form for the current tour.
-- Review author email is stored privately in review metadata and is not displayed publicly; booking and review forms include a honeypot and a best-effort limit of five submissions per email address per form type in a rolling 15-minute window. The limiter stores only a salted hash of the email in a WordPress transient.
+- Review author email is stored privately in review metadata and is not displayed publicly; booking and review forms include a honeypot and a best-effort limit of five submissions per email address per form type in a rolling 15-minute window. The limiter uses an atomic database counter keyed by a salted email hash and form type; raw email addresses are not stored in the limiter table, and old hashes are cleaned up opportunistically after 24 hours.
 - `[opentrip_gallery]` renders the current tour gallery; `[opentrip_gallery tour_id="123" columns="4"]` renders a selected tour gallery.
 - Itinerary data is stored as structured tour metadata and sanitized on save.
 - The estimated total and unit price are saved as a booking-time price snapshot.
@@ -75,7 +75,7 @@ Edit a tour and use the **Tour Inclusions & Exclusions** panel. Enter one item p
 Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
-This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. The seat inventory update is atomic at the database level, but simultaneous administrator confirmations have not yet been stress-tested. Public forms use a honeypot, bounded input validation and a best-effort limit of five submissions per email address per form type in a rolling 15-minute window. The rate limiter hashes email identifiers and does not trust proxy IP headers. It is not a substitute for host/WAF protection: WordPress transients are best-effort under concurrent requests, and distributed abuse can use different email addresses. CAPTCHA and IP-based edge rate limiting are not built in.
+This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. Seat inventory and booking status transitions now run in a database transaction with a locked booking-status row and a per-booking reservation ledger, preventing duplicate seat increments for repeated or overlapping confirmations. Multi-process load testing is still required before claiming production-scale concurrency validation. Public forms use a honeypot, bounded input validation and an atomic database-backed limit of five submissions per email address per form type in a rolling 15-minute window. The limiter stores a salted email hash rather than the raw address and does not trust proxy IP headers. It is not a substitute for host/WAF protection: distributed abuse can use different email addresses. CAPTCHA and IP-based edge rate limiting are not built in.
 
 Booking records contain personal data. Site operators are responsible for privacy notices, retention, access controls, backups and HTTPS. Privacy exporter/eraser integration is available; automated coverage is included for booking and review export/erasure. Site owners remain responsible for reviewing legal retention obligations and configuring their privacy policy.
 
@@ -86,7 +86,8 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Initial WordPress integration tests (content types, shortcode output and MySQL inventory)
 - [x] Departure dates and atomic seat inventory reservation
 - [x] Customer booking receipts and status-change notifications
-- [x] Best-effort email-scoped public form rate limiting
+- [x] Atomic database-backed email-scoped public form rate limiting
+- [x] Transactional booking status and seat reservation ledger
 - [x] Booking form and customer email integration coverage
 - [ ] Configurable email notification settings
 - [x] WordPress privacy exporter/eraser integration
