@@ -1000,8 +1000,12 @@ final class OpenTrip_Engine {
 						'Travel date'       => get_post_meta( $post_id, '_ote_travel_date', true ),
 						'Adults'            => get_post_meta( $post_id, '_ote_adults', true ),
 						'Children'          => get_post_meta( $post_id, '_ote_children', true ),
+						'Child ages'        => implode( ', ', (array) get_post_meta( $post_id, '_ote_child_ages', true ) ),
+						'Infants'           => get_post_meta( $post_id, '_ote_infants', true ),
+						'Infant ages'       => implode( ', ', (array) get_post_meta( $post_id, '_ote_infant_ages', true ) ),
 						'Rooms'             => get_post_meta( $post_id, '_ote_rooms', true ),
 						'Request status'    => get_post_meta( $post_id, '_ote_booking_status', true ),
+						'Price breakdown'   => $this->booking_quote_summary( get_post_meta( $post_id, '_ote_quote_snapshot', true ) ),
 						'Estimated total'   => get_post_meta( $post_id, '_ote_total_price', true ),
 						'Currency'          => get_post_meta( $post_id, '_ote_currency', true ),
 						'Customer message'  => get_post_meta( $post_id, '_ote_customer_message', true ),
@@ -1061,6 +1065,15 @@ final class OpenTrip_Engine {
 					update_post_meta( $post_id, '_ote_customer_name', __( 'Anonymized customer', 'opentrip-engine' ) );
 					update_post_meta( $post_id, '_ote_customer_email', '' );
 					update_post_meta( $post_id, '_ote_customer_message', '' );
+					delete_post_meta( $post_id, '_ote_child_ages' );
+					delete_post_meta( $post_id, '_ote_infant_ages' );
+					$quote = get_post_meta( $post_id, '_ote_quote_snapshot', true );
+					if ( is_array( $quote ) ) {
+						if ( isset( $quote['children']['ages'] ) ) { $quote['children']['ages'] = array(); }
+						if ( isset( $quote['children']['items'] ) ) { $quote['children']['items'] = array(); }
+						if ( isset( $quote['infants']['ages'] ) ) { $quote['infants']['ages'] = array(); }
+						update_post_meta( $post_id, '_ote_quote_snapshot', $quote );
+					}
 					wp_update_post( array( 'ID' => $post_id, 'post_title' => __( 'Anonymized booking request', 'opentrip-engine' ) ) );
 				} else {
 					update_post_meta( $post_id, '_ote_review_name', __( 'Anonymous', 'opentrip-engine' ) );
