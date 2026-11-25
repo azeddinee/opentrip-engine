@@ -780,17 +780,8 @@ final class OpenTrip_Engine {
 		$reference = sprintf( 'OTE-%06d', $booking_id );
 		update_post_meta( $booking_id, '_ote_booking_reference', $reference );
 
-		$admin_email = get_option( 'ote_notification_email', get_option( 'admin_email' ) );
 		$this->send_customer_booking_email( $booking_id, 'pending' );
-
-		if ( '1' === (string) get_option( 'ote_admin_notifications_enabled', '1' ) && $admin_email && is_email( $admin_email ) ) {
-			$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
-			$body = sprintf(
-				__( "A new booking request was received.\n\nReference: %1\$s\nTour: %2\$s\nName: %3\$s\nEmail: %4\$s\nTravel date: %5\$s\nTravellers: %6\$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
-				$reference, get_the_title( $tour_id ), $name, $email, $departure->start_date, $travellers
-			);
-			wp_mail( $admin_email, $subject, $body );
-		}
+		$this->send_admin_booking_email( $booking_id );
 
 		$referer = wp_get_referer();
 		$redirect = $referer ? $referer : get_permalink( $tour_id );
@@ -1056,6 +1047,35 @@ final class OpenTrip_Engine {
 	 * @param int    $booking_id Booking post ID.
 	 * @param string $status     Current booking status.
 	 */
+
+	/**
+	 * Send the agency notification for a newly received booking request.
+	 *
+	 * @param int $booking_id Booking post ID.
+	 * @return bool Whether WordPress accepted the email for delivery.
+	 */
+	public function send_admin_booking_email( $booking_id ) {
+		if ( '1' !== (string) get_option( 'ote_admin_notifications_enabled', '1' ) ) {
+			return false;
+		}
+		$admin_email = get_option( 'ote_notification_email', get_option( 'admin_email' ) );
+		if ( ! is_email( $admin_email ) ) {
+			return false;
+		}
+		$tour_id = (int) get_post_meta( $booking_id, '_ote_tour_id', true );
+		$subject = sprintf( __( 'New booking request: %s', 'opentrip-engine' ), get_the_title( $tour_id ) );
+		$body = sprintf(
+			__( "A new booking request was received.\n\nReference: %1\$s\nTour: %2\$s\nName: %3\$s\nEmail: %4\$s\nTravel date: %5\$s\nTravellers: %6\$d\n\nReview it in your WordPress dashboard.", 'opentrip-engine' ),
+			get_post_meta( $booking_id, '_ote_booking_reference', true ),
+			get_the_title( $tour_id ),
+			get_post_meta( $booking_id, '_ote_customer_name', true ),
+			get_post_meta( $booking_id, '_ote_customer_email', true ),
+			get_post_meta( $booking_id, '_ote_travel_date', true ),
+			(int) get_post_meta( $booking_id, '_ote_travellers', true )
+		);
+		return wp_mail( $admin_email, $subject, $body );
+	}
+
 	public function send_customer_booking_email( $booking_id, $status ) {
 		if ( '1' !== (string) get_option( 'ote_customer_notifications_enabled', '1' ) ) {
 			return;
