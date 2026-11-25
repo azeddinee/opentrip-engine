@@ -59,6 +59,10 @@ test.describe('public booking and review shortcodes', () => {
 
 		await page.getByRole('button', { name: 'Submit review' }).click();
 
+		if ( 0 === await page.getByRole('status').count() ) {
+			console.log('Review submission URL:', page.url());
+			console.log('Review submission page:', await page.locator('body').innerText());
+		}
 		await expect(page.getByRole('status')).toContainText('awaiting moderation');
 	});
 });
