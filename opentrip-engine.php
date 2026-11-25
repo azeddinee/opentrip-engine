@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 1.0.0-beta.4
+ * Version: 1.0.0-beta.5
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '1.0.0-beta.4' );
+define( 'OTE_VERSION', '1.0.0-beta.5' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
 
