@@ -974,7 +974,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$mock = function( $preempt, $args, $url ) use ( &$calls ) {
 			if ( OTE_Stripe_Gateway::API_URL !== $url ) { return $preempt; }
 			$calls[] = $args;
-			return array( 'headers' => array(), 'body' => wp_json_encode( array( 'id' => 'cs_test_unit123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_unit123', 'expires_at' => time() + HOUR_IN_SECONDS ) ), 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
+			return array( 'headers' => array(), 'body' => wp_json_encode( array( 'id' => 'cs_test_unit123', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_unit123', 'expires_at' => time() + HOUR_IN_SECONDS, 'livemode' => false ) ), 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
 		};
 		add_filter( 'pre_http_request', $mock, 10, 3 );
 		$gateway = new OTE_Stripe_Gateway();
@@ -1054,6 +1054,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 				'currency' => 'usd',
 				'amount_total' => 6000,
 				'payment_status' => $payment_status,
+				'livemode' => false,
 				'payment_intent' => 'pi_test_transaction',
 			) ),
 		);
