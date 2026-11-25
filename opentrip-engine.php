@@ -37,6 +37,13 @@ final class OpenTrip_Engine {
 		return (string) wp_unslash( $_POST[ $key ] );
 	}
 
+	private function posted_uint( $key ) {
+		$value = $this->posted_string( $key );
+		if ( ! preg_match( '/^[0-9]{1,2}$/', $value ) ) {
+			return -1;
+		}
+		return (int) $value;
+	}
 	private function __construct() {
 		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
 		add_action( 'rest_api_init', array( 'OTE_REST_API', 'register_routes' ) );
@@ -762,17 +769,17 @@ final class OpenTrip_Engine {
 		$name = sanitize_text_field( $this->posted_string( 'ote_name' ) );
 		$email = strtolower( sanitize_email( $this->posted_string( 'ote_email' ) ) );
 		$departure_id = absint( $this->posted_string( 'ote_departure_id' ) );
-		$adults = absint( $this->posted_string( 'ote_adults' ) );
-		$children = absint( $this->posted_string( 'ote_children' ) );
-		$infants = absint( $this->posted_string( 'ote_infants' ) );
+		$adults = $this->posted_uint( 'ote_adults' );
+		$children = $this->posted_uint( 'ote_children' );
+		$infants = $this->posted_uint( 'ote_infants' );
 		$child_ages = OTE_Pricing::parse_ages( $this->posted_string( 'ote_child_ages' ), $children );
 		$infant_ages = OTE_Pricing::parse_ages( $this->posted_string( 'ote_infant_ages' ), $infants );
-		$rooms = absint( $this->posted_string( 'ote_rooms' ) );
+		$rooms = $this->posted_uint( 'ote_rooms' );
 		$seats = $adults + $children;
 		$travellers = $seats + $infants;
 		$message = sanitize_textarea_field( $this->posted_string( 'ote_message' ) );
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
-		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $infants > 30 || $travellers > 30 || $rooms < 1 || $rooms > 20 || is_wp_error( $child_ages ) || is_wp_error( $infant_ages ) || (int) $departure->capacity - (int) $departure->reserved < $seats ) {
+		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children < 0 || $children > 29 || $infants < 0 || $infants > 30 || $travellers > 30 || $rooms < 1 || $rooms > 20 || is_wp_error( $child_ages ) || is_wp_error( $infant_ages ) || (int) $departure->capacity - (int) $departure->reserved < $seats ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		$quote = OTE_Pricing::calculate_quote( $departure, $adults, $child_ages, $infant_ages, $rooms );
