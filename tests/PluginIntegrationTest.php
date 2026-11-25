@@ -381,6 +381,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_travellers', 2 );
 		update_post_meta( $booking_id, '_ote_total_price', 250 );
 		update_post_meta( $booking_id, '_ote_currency', 'USD' );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'currency' => 'USD', 'adults' => array( 'subtotal' => 200 ), 'children' => array( 'subtotal' => 50 ), 'infants' => array( 'subtotal' => 0 ), 'rooms' => array( 'subtotal' => 20 ) ) );
 
 		$sent = array();
 		$capture = function( $short_circuit, $atts ) use ( &$sent ) {
@@ -399,6 +400,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'traveller@example.com', $sent[0]['to'] );
 		$this->assertStringContainsString( 'received your booking request', strtolower( $sent[0]['subject'] ) );
 		$this->assertStringContainsString( 'OTE-EMAIL-1', $sent[0]['message'] );
+		$this->assertStringContainsString( 'Adults: 200.00 USD', $sent[0]['message'] );
+		$this->assertStringContainsString( 'Rooms: 20.00 USD', $sent[0]['message'] );
 		$this->assertStringContainsString( 'confirmed', strtolower( $sent[1]['subject'] ) );
 	}
 
