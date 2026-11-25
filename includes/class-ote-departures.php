@@ -24,6 +24,7 @@ final class OTE_Departures {
 		$this->reservations_table = $wpdb->prefix . 'ote_booking_reservations';
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_post_ote_create_departure', array( $this, 'create_departure' ) );
+		add_action( 'admin_post_ote_set_departure_status', array( $this, 'set_departure_status_from_admin' ) );
 	}
 
 	public static function install() {
@@ -102,10 +103,10 @@ final class OTE_Departures {
 				<?php submit_button( __( 'Create departure', 'opentrip-engine' ) ); ?>
 			</form>
 			<hr><h2><?php esc_html_e( 'Existing departures', 'opentrip-engine' ); ?></h2>
-			<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Tour', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Dates', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Seats', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Price', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Status', 'opentrip-engine' ); ?></th></tr></thead><tbody>
+			<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Tour', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Dates', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Seats', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Price', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Status', 'opentrip-engine' ); ?></th><th><?php esc_html_e( 'Actions', 'opentrip-engine' ); ?></th></tr></thead><tbody>
 			<?php if ( $departures ) : foreach ( $departures as $departure ) : ?>
-				<tr><td><?php echo esc_html( get_the_title( $departure->tour_id ) ); ?></td><td><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date ); ?></td><td><?php echo esc_html( max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' / ' . (int) $departure->capacity ); ?></td><td><?php echo esc_html( number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></td><td><?php echo esc_html( ucfirst( $departure->status ) ); ?></td></tr>
-			<?php endforeach; else : ?><tr><td colspan="5"><?php esc_html_e( 'No departures created yet.', 'opentrip-engine' ); ?></td></tr><?php endif; ?>
+				<tr><td><?php echo esc_html( get_the_title( $departure->tour_id ) ); ?></td><td><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date ); ?></td><td><?php echo esc_html( max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' / ' . (int) $departure->capacity ); ?></td><td><?php echo esc_html( number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></td><td><?php echo esc_html( ucfirst( $departure->status ) ); ?></td><td><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ote_set_departure_status"><input type="hidden" name="departure_id" value="<?php echo esc_attr( $departure->id ); ?>"><input type="hidden" name="status" value="<?php echo esc_attr( 'open' === $departure->status ? 'closed' : 'open' ); ?>"><?php wp_nonce_field( 'ote_set_departure_status_' . $departure->id, 'ote_departure_status_nonce' ); ?><button type="submit" class="button button-small"><?php echo esc_html( 'open' === $departure->status ? __( 'Close', 'opentrip-engine' ) : __( 'Reopen', 'opentrip-engine' ) ); ?></button></form></td></tr>
+			<?php endforeach; else : ?><tr><td colspan="6"><?php esc_html_e( 'No departures created yet.', 'opentrip-engine' ); ?></td></tr><?php endif; ?>
 			</tbody></table>
 		</div>
 		<?php
@@ -140,6 +141,55 @@ final class OTE_Departures {
 			'created_at' => current_time( 'mysql', true ),
 		), array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' ) );
 		$redirect = add_query_arg( array( 'post_type' => 'ote_tour', 'page' => 'ote-departures', 'created' => $wpdb->insert_id ? 1 : 0 ), admin_url( 'edit.php' ) );
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+
+	/**
+	 * Update a departure's public booking status.
+	 *
+	 * @param int    $departure_id Departure ID.
+	 * @param string $status       open or closed.
+	 * @return bool Whether the row was updated.
+	 */
+	public function set_status( $departure_id, $status ) {
+		global $wpdb;
+		$departure_id = absint( $departure_id );
+		if ( ! $departure_id || ! in_array( $status, array( 'open', 'closed' ), true ) ) {
+			return false;
+		}
+		if ( 'closed' === $status ) {
+			$changed = $wpdb->query( $wpdb->prepare(
+				"UPDATE {$this->table} SET status = 'closed' WHERE id = %d AND status = 'open'",
+				$departure_id
+			) );
+		} else {
+			$changed = $wpdb->query( $wpdb->prepare(
+				"UPDATE {$this->table} SET status = 'open' WHERE id = %d AND status = 'closed' AND start_date >= %s AND reserved < capacity",
+				$departure_id,
+				wp_date( 'Y-m-d' )
+			) );
+		}
+		return 1 === $changed;
+	}
+
+	public function set_departure_status_from_admin() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do this.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+		}
+		$departure_id = isset( $_POST['departure_id'] ) ? absint( $_POST['departure_id'] ) : 0;
+		check_admin_referer( 'ote_set_departure_status_' . $departure_id, 'ote_departure_status_nonce' );
+		$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+		$updated = $this->set_status( $departure_id, $status );
+		$redirect = add_query_arg(
+			array(
+				'post_type' => 'ote_tour',
+				'page'      => 'ote-departures',
+				'updated'   => $updated ? 1 : 0,
+			),
+			admin_url( 'edit.php' )
+		);
 		wp_safe_redirect( $redirect );
 		exit;
 	}
