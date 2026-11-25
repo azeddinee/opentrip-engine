@@ -113,7 +113,7 @@ final class OTE_Departures {
 
 	public function create_departure() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'opentrip-engine' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( 'ote_create_departure', 'ote_departure_nonce' );
 		$tour_id = isset( $_POST['tour_id'] ) ? absint( $_POST['tour_id'] ) : 0;
@@ -125,7 +125,7 @@ final class OTE_Departures {
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || $price < 0 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
-			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		global $wpdb;
 		$wpdb->insert( $this->table, array(
