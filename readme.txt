@@ -11,7 +11,7 @@ A lightweight tour catalogue, departure inventory and booking-request engine for
 
 == Description ==
 
-Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, collect moderated guest reviews and star ratings, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the site administrator and customer without WooCommerce. Customers receive a unique request reference and email updates when the agency changes the request status.
+Publish tours, organize destinations, build day-by-day itineraries, publish tour inclusions and exclusions, manage tour photo galleries, collect moderated guest reviews and star ratings, display tour cards, collect booking requests, manage dated departures and seat inventory, record traveller counts and room requirements, snapshot estimated booking totals, track request status and notify the agency and optionally the customer without WooCommerce. Customers receive a unique request reference; customer and agency email notifications can be configured in Tours > Settings.
 
 == Installation ==
 
@@ -19,7 +19,9 @@ Publish tours, organize destinations, build day-by-day itineraries, publish tour
 2. Activate OpenTrip Engine.
 3. Create tours under Tours.
 4. Use [opentrip_tours] to display tours.
-5. Use [opentrip_booking_form] on a single tour page to collect requests.
+5. Open Tours > Departures and create future dates with capacity and price.
+6. Open Tours > Settings to configure the agency recipient and email notification toggles.
+7. Use [opentrip_booking_form] on a single tour page to collect requests.
 
 == Itinerary Builder ==
 
