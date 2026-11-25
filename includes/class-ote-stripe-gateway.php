@@ -153,7 +153,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		if ( ! $base_url ) {
 			$base_url = home_url( '/' );
 		}
-		$success_url = add_query_arg( array( 'ote_payment' => 'returned', 'ote_ref' => rawurlencode( $reference ) ), $base_url );
+		$success_url = add_query_arg( array( 'ote_payment' => 'returned', 'ote_ref' => $reference ), $base_url );
 		$cancel_url = add_query_arg( array( 'ote_payment' => 'cancelled', 'ote_ref' => rawurlencode( $reference ) ), $base_url );
 		$attempt = absint( get_post_meta( $booking_id, '_ote_payment_attempt', true ) ) + 1;
 		$idempotency_key = 'ote-booking-' . $booking_id . '-attempt-' . $attempt;
@@ -388,6 +388,10 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 	 * @param string $url URL.
 	 * @return bool
 	 */
+	public static function is_checkout_url_public( $url ) {
+		return self::is_checkout_url( $url );
+	}
+
 	private static function is_checkout_url( $url ) {
 		$parts = wp_parse_url( (string) $url );
 		return is_array( $parts ) && isset( $parts['scheme'], $parts['host'] ) &&
