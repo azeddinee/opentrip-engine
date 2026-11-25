@@ -212,10 +212,22 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		if ( $code < 200 || $code >= 300 || ! is_array( $data ) || empty( $data['id'] ) || empty( $data['url'] ) ||
 			! preg_match( '/^cs_(test|live)_[A-Za-z0-9]+$/', (string) $data['id'] ) ||
 			( ( 'test' === $this->get_mode() ) !== ( 0 === strpos( (string) $data['id'], 'cs_test_' ) ) ) ||
-			! self::is_checkout_url( $data['url'] ) ) {
+			! self::is_checkout_url( $data['url'] ) || ! isset( $data['livemode'] ) || (bool) $data['livemode'] !== ( 'live' === $this->get_mode() ) ) {
 			return new WP_Error( 'ote_stripe_session_failed', __( 'Stripe did not return a valid hosted checkout session. Check the Stripe settings and try again.', 'opentrip-engine' ) );
 		}
 		$expires_at = isset( $data['expires_at'] ) ? absint( $data['expires_at'] ) : time() + DAY_IN_SECONDS;
+		$history = get_post_meta( $booking_id, '_ote_payment_session_history', true );
+		$history = is_array( $history ) ? $history : array();
+		$previous_session = (string) get_post_meta( $booking_id, '_ote_payment_session_id', true );
+		if ( $previous_session && $previous_session !== $data['id'] ) {
+			$history[] = array(
+				'id' => $previous_session,
+				'amount_minor' => (int) get_post_meta( $booking_id, '_ote_payment_amount_minor', true ),
+				'currency' => strtoupper( (string) get_post_meta( $booking_id, '_ote_payment_currency', true ) ),
+			);
+			$history = array_slice( $history, -10 );
+			update_post_meta( $booking_id, '_ote_payment_session_history', $history );
+		}
 		update_post_meta( $booking_id, '_ote_payment_provider', 'stripe' );
 		update_post_meta( $booking_id, '_ote_payment_status', 'pending' );
 		update_post_meta( $booking_id, '_ote_payment_session_id', sanitize_text_field( $data['id'] ) );
@@ -273,12 +285,25 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		$session_id = (string) get_post_meta( $booking_id, '_ote_payment_session_id', true );
 		$expected_currency = strtolower( (string) get_post_meta( $booking_id, '_ote_payment_currency', true ) );
 		$expected_amount = (int) get_post_meta( $booking_id, '_ote_payment_amount_minor', true );
+		$session_matches = ! empty( $session['id'] ) && $session_id && hash_equals( $session_id, (string) $session['id'] );
+		if ( ! $session_matches && ! empty( $session['id'] ) ) {
+			$history = get_post_meta( $booking_id, '_ote_payment_session_history', true );
+			foreach ( is_array( $history ) ? $history : array() as $previous ) {
+				if ( isset( $previous['id'], $previous['amount_minor'], $previous['currency'] ) && hash_equals( (string) $previous['id'], (string) $session['id'] ) ) {
+					$session_matches = true;
+					$expected_amount = (int) $previous['amount_minor'];
+					$expected_currency = strtolower( (string) $previous['currency'] );
+					break;
+				}
+			}
+		}
 		if ( 'stripe' !== get_post_meta( $booking_id, '_ote_payment_provider', true ) ||
-			empty( $session['id'] ) || ! hash_equals( $session_id, (string) $session['id'] ) ||
+			! $session_matches ||
 			empty( $session['client_reference_id'] ) || ! hash_equals( $reference, (string) $session['client_reference_id'] ) ||
 			empty( $session['metadata']['booking_reference'] ) || ! hash_equals( $reference, (string) $session['metadata']['booking_reference'] ) ||
 			empty( $session['currency'] ) || strtolower( (string) $session['currency'] ) !== $expected_currency ||
-			! isset( $session['amount_total'] ) || (int) $session['amount_total'] !== $expected_amount ) {
+			! isset( $session['amount_total'] ) || (int) $session['amount_total'] !== $expected_amount ||
+			! isset( $session['livemode'] ) || (bool) $session['livemode'] !== ( 'live' === $this->get_mode() ) ) {
 			return new WP_Error( 'ote_stripe_session_mismatch', __( 'The Stripe event does not match the saved booking payment session.', 'opentrip-engine' ), array( 'status' => 400 ) );
 		}
 		$event_key = 'ote_stripe_event_' . hash( 'sha256', (string) $event['id'] );
@@ -302,6 +327,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 		if ( 'paid' === $new_status && 'confirmed' !== get_post_meta( $booking_id, '_ote_booking_status', true ) ) {
 			update_post_meta( $booking_id, '_ote_payment_attention', __( 'Payment received after the booking request was no longer confirmed. Review the booking and arrange any required refund manually.', 'opentrip-engine' ) );
 		}
+		update_post_meta( $booking_id, '_ote_payment_last_session_id', sanitize_text_field( $session['id'] ) );
 		update_post_meta( $booking_id, '_ote_payment_last_event_id', sanitize_text_field( $event['id'] ) );
 		update_post_meta( $booking_id, '_ote_payment_last_event_type', $event_type );
 		update_post_meta( $booking_id, '_ote_payment_updated_at', current_time( 'mysql', true ) );
