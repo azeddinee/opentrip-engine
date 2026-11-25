@@ -39,7 +39,7 @@ Edit a tour and select images in the Tour Photo Gallery panel. Display the galle
 
 == Customer Booking Emails ==
 
-When a customer submits a request, the plugin emails a receipt with a reference such as OTE-000123. The page confirmation also displays the reference. The receipt states that the request is pending and no payment has been taken. When an administrator changes the status to Confirmed or Cancelled, the customer receives an update email. Delivery depends on the WordPress site's wp_mail() configuration. This release does not provide customer accounts, self-service booking lookup, payments or invoices.
+When a customer submits a request, the plugin emails a receipt with a reference such as OTE-000123. The page confirmation also displays the reference. The receipt states that the request is pending and no payment has been taken. When an administrator changes the status to Confirmed or Cancelled, the customer receives an update email if customer notifications are enabled under Tours > Settings. Agency notification recipient and agency/customer notification toggles are configurable there. Delivery depends on the WordPress site's wp_mail() configuration. This release does not provide customer accounts, self-service booking lookup, payments or invoices.
 
 == Frequently Asked Questions ==
 
@@ -50,7 +50,7 @@ No. OpenTrip Engine collects booking requests but does not process payments.
 Booking requests capture adults, children and rooms required. The estimated total uses the departure's per-traveller price for each adult and child. Room count is recorded but does not affect the price. Infant-specific prices and child discounts are not included yet.
 
 = How do departures and seats work? =
-Administrators create dated departures with a capacity. Customers select a departure when submitting a request. Requests reserve seats only after an administrator confirms them; cancelling a confirmed request releases its seats.
+Administrators create dated departures with a capacity and can close or reopen future departures when needed. Customers select a departure when submitting a request. Requests reserve seats only after an administrator confirms them; cancelling a confirmed request releases its seats.
 
 = Can I track booking request status? =
 Yes. Administrators can mark requests Pending, Confirmed or Cancelled. These are internal statuses only.
@@ -63,20 +63,18 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 
 == Testing ==
 
-Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions provisions WordPress and MySQL 8.0 and runs integration tests for content type registration, shortcode output/escaping, and real database seat reservation/release. A separate job runs PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The suite also checks booking form output, customer email content, email-scoped submission limits, repeated inventory capacity boundaries and transactional booking confirmation/cancellation. Multi-process administrator concurrency stress tests and full live form-submission paths remain outstanding.
+Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The suite also checks booking form output, customer email content, email-scoped submission limits, repeated inventory capacity boundaries and transactional booking confirmation/cancellation. Multi-process administrator concurrency stress tests and full live form-submission paths remain outstanding.
 
 == Changelog ==
 
 = 1.0.0-beta.5 =
 * Add transactional booking status and per-booking seat reservation ledger.
-* Add database-backed submission rate limits and privacy erasure for limiter hashes.
+* Add atomic database-backed submission limits and erase limiter hashes through privacy requests.
 * Add configurable agency/customer email notifications and departure close/reopen controls.
 * Harden public form input handling and correct HTTP error response codes.
 * Expand WordPress integration and compatibility testing.
-* Use a transactional reservation ledger to prevent duplicate seat increments when booking statuses are updated repeatedly.
-* Replace transient submission counts with atomic database-backed email-hash limits.
-* Add configurable agency and customer email notification settings.
-* Add safe departure close and reopen controls.
+
+= 1.0.0-beta.4 =
 * Add privacy-preserving, email-scoped best-effort rate limits to booking and review submissions.
 * Expand integration coverage for booking form output, customer emails and inventory capacity boundaries.
 
