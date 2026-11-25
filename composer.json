@@ -12,6 +12,7 @@
     "sort-packages": true
   },
   "scripts": {
-    "i18n:pot": "sh tools/generate-pot.sh"
+    "i18n:pot": "sh tools/generate-pot.sh",
+    "make-pot": "sh scripts/make-pot.sh"
   }
 }
