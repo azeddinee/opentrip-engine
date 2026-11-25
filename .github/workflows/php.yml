@@ -139,6 +139,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run browser end-to-end tests
         run: npm run test:e2e
+      - name: Show WordPress server log on failure
+        if: failure()
+        run: cat /tmp/ote-e2e-server.log
       - name: Verify only valid submissions were persisted
         run: |
           BOOKING_COUNT=$(php /tmp/wp-cli.phar --path=/tmp/ote-e2e-wordpress eval 'global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = \"ote_booking\" AND post_status = \"private\"" );')
