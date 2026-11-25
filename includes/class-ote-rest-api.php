@@ -166,7 +166,7 @@ final class OTE_REST_API {
 		foreach ( $departures as $departure ) {
 			$items[] = array(
 				'id'             => (int) $departure->id,
-				'tour_id'        => (int) $departure->tour_id,
+				'tour_id'        => $tour_id,
 				'start_date'     => (string) $departure->start_date,
 				'end_date'       => (string) $departure->end_date,
 				'seats_remaining'=> max( 0, (int) $departure->capacity - (int) $departure->reserved ),
