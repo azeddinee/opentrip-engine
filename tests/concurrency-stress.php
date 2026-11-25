@@ -168,7 +168,7 @@ if ( $is_worker ) {
 	tests_reset__SERVER();
 	define( 'WP_TESTS_TABLE_PREFIX', $table_prefix );
 	define( 'DIR_TESTDATA', $_tests_dir . '/data' );
-	define( 'DIR_TESTROOT', realpath( dirname( $_tests_dir ) ) );
+	define( 'DIR_TESTROOT', realpath( $_tests_dir ) );
 	define( 'WP_LANG_DIR', realpath( DIR_TESTDATA . '/languages' ) );
 	define( 'DISABLE_WP_CRON', true );
 	define( 'WP_MEMORY_LIMIT', '-1' );
