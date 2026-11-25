@@ -90,6 +90,8 @@ final class OTE_Submission_Limiter {
 		}
 
 		return $count > $limit;
+	}
+
 	/**
 	 * Remove short-lived limiter records for a privacy erasure request.
 	 *
@@ -106,7 +108,5 @@ final class OTE_Submission_Limiter {
 			array( 'email_hash' => hash_hmac( 'sha256', $email, wp_salt( 'auth' ) ) ),
 			array( '%s' )
 		);
-	}
-
 	}
 }
