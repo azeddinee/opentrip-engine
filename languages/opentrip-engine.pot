@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenTrip Engine 1.0.0-beta.7\n"
+"Project-Id-Version: OpenTrip Engine 1.0.0-beta.8\n"
 "Report-Msgid-Bugs-To: https://github.com/azeddinee/opentrip-engine/issues\n"
 "POT-Creation-Date: 2026-11-25 00:00+0000\n"
 "MIME-Version: 1.0\n"
@@ -244,579 +244,851 @@ msgstr ""
 msgid "Tour not found."
 msgstr ""
 
-#: opentrip-engine.php:127
+#: includes/class-ote-stripe-gateway.php:57
+msgid "The payment amount or currency is invalid for Stripe."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:64
+msgid "This Stripe currency only accepts whole-unit amounts."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:69
+msgid "The payment amount has unsupported precision or exceeds Stripe limits."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:97
+msgid "The deposit percentage or booking total is invalid."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:103
+msgid "The saved booking quote contains fractional units for a whole-unit Stripe currency."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:129
+msgid "Stripe payments are not enabled or configured."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:134
+msgid "Only confirmed booking requests can receive a payment link."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:137
+msgid "This booking already has a recorded payment."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:141
+msgid "A valid saved booking quote is required before payment."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:166
+msgid "The booking is missing a customer email, reference or tour."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:173
+msgid "The website must use HTTPS before Stripe payment links can be created."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:191
+msgid "Booking deposit — %s"
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:192
+msgid "Booking reference %s"
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:223
+msgid "Stripe could not be reached. No payment link was created."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:231
+msgid "Stripe did not return a valid hosted checkout session. Check the Stripe settings and try again."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:277
+msgid "The Stripe webhook signature is invalid or expired."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:281
+msgid "The Stripe webhook payload is invalid."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:297
+msgid "The booking linked to this Stripe event was not found."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:322
+msgid "The Stripe event does not match the saved booking payment session."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:332
+msgid "The payment event could not be recorded safely. Stripe can retry this delivery."
+msgstr ""
+
+#: includes/class-ote-stripe-gateway.php:343
+msgid "Payment received after the booking request was no longer confirmed. Review the booking and arrange any required refund manually."
+msgstr ""
+
+#: opentrip-engine.php:145
 msgid "Email notifications"
 msgstr ""
 
-#: opentrip-engine.php:129
+#: opentrip-engine.php:147
 msgid "Choose where booking alerts are sent and whether customers receive booking receipts and status updates."
 msgstr ""
 
-#: opentrip-engine.php:135
+#: opentrip-engine.php:153
 msgid "Booking notification recipient"
 msgstr ""
 
-#: opentrip-engine.php:142
+#: opentrip-engine.php:160
 msgid "Agency notifications"
 msgstr ""
 
-#: opentrip-engine.php:149
+#: opentrip-engine.php:167
 msgid "Customer notifications"
 msgstr ""
 
-#: opentrip-engine.php:164
-msgid "Enter a valid notification email address. The previous address has been kept."
+#: opentrip-engine.php:179
+msgid "Hosted payments (optional)"
 msgstr ""
 
 #: opentrip-engine.php:181
-msgid "Email the agency when a new booking request is received."
+msgid "Stripe Checkout is optional. Customers enter card details on Stripe; this site never receives or stores card numbers or security codes. The key prefix selects test or live mode."
+msgstr ""
+
+#: opentrip-engine.php:185
+msgid "Enable Stripe Checkout"
+msgstr ""
+
+#: opentrip-engine.php:186
+msgid "Stripe secret key"
 msgstr ""
 
 #: opentrip-engine.php:187
+msgid "Stripe webhook signing secret"
+msgstr ""
+
+#: opentrip-engine.php:188
+msgid "Payment percentage"
+msgstr ""
+
+#: opentrip-engine.php:197
+msgid "Enter a valid Stripe test or live secret key. The previous key has been kept."
+msgstr ""
+
+#: opentrip-engine.php:209
+msgid "Enter a valid Stripe webhook signing secret. The previous secret has been kept."
+msgstr ""
+
+#: opentrip-engine.php:218
+msgid "Payment percentage must be between 1 and 100. The previous value has been kept."
+msgstr ""
+
+#: opentrip-engine.php:227
+msgid "Allow the agency to create hosted payment links for confirmed bookings."
+msgstr ""
+
+#: opentrip-engine.php:232
+msgid "Live mode configured"
+msgstr ""
+
+#: opentrip-engine.php:232
+msgid "Test mode configured"
+msgstr ""
+
+#: opentrip-engine.php:232
+msgid "Not configured"
+msgstr ""
+
+#: opentrip-engine.php:233
+msgid "Paste a Stripe secret key"
+msgstr ""
+
+#: opentrip-engine.php:234
+msgid "Leave blank to keep the saved key. Use sk_test_ for test mode or sk_live_ for live mode. The key is never displayed after saving."
+msgstr ""
+
+#: opentrip-engine.php:239
+msgid "Paste the Stripe webhook signing secret"
+msgstr ""
+
+#: opentrip-engine.php:240
+msgid "Webhook secret configured."
+msgstr ""
+
+#: opentrip-engine.php:240
+msgid "Webhook secret not configured."
+msgstr ""
+
+#: opentrip-engine.php:240
+msgid "Leave blank to keep the saved secret."
+msgstr ""
+
+#: opentrip-engine.php:241
+msgid "Webhook URL:"
+msgstr ""
+
+#: opentrip-engine.php:242
+msgid "Subscribe to checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed and checkout.session.expired."
+msgstr ""
+
+#: opentrip-engine.php:248
+msgid "Percentage of the saved booking quote requested through Stripe. Set 100 for full payment or a lower value for a deposit."
+msgstr ""
+
+#: opentrip-engine.php:259
+msgid "Enter a valid notification email address. The previous address has been kept."
+msgstr ""
+
+#: opentrip-engine.php:276
+msgid "Email the agency when a new booking request is received."
+msgstr ""
+
+#: opentrip-engine.php:282
 msgid "Email customers when requests are received, confirmed or cancelled."
 msgstr ""
 
-#: opentrip-engine.php:193
+#: opentrip-engine.php:288
 msgid "OpenTrip Settings"
 msgstr ""
 
-#: opentrip-engine.php:194
+#: opentrip-engine.php:289
 msgid "Settings"
 msgstr ""
 
-#: opentrip-engine.php:207
+#: opentrip-engine.php:302
 msgid "OpenTrip Engine Settings"
 msgstr ""
 
-#: opentrip-engine.php:236
+#: opentrip-engine.php:331
 msgid "Tours"
 msgstr ""
 
-#: opentrip-engine.php:237
+#: opentrip-engine.php:332
 msgid "Tour"
 msgstr ""
 
-#: opentrip-engine.php:238
+#: opentrip-engine.php:333
 msgid "Add New Tour"
 msgstr ""
 
-#: opentrip-engine.php:250
+#: opentrip-engine.php:345
 msgid "Destinations"
 msgstr ""
 
-#: opentrip-engine.php:251
+#: opentrip-engine.php:346
 msgid "Destination"
 msgstr ""
 
-#: opentrip-engine.php:260
+#: opentrip-engine.php:355
 msgid "Booking Requests"
 msgstr ""
 
-#: opentrip-engine.php:261
+#: opentrip-engine.php:356
 msgid "Booking Request"
 msgstr ""
 
-#: opentrip-engine.php:286
+#: opentrip-engine.php:381
 msgid "Tour Reviews"
 msgstr ""
 
-#: opentrip-engine.php:287
+#: opentrip-engine.php:382
 msgid "Tour Review"
 msgstr ""
 
-#: opentrip-engine.php:288
+#: opentrip-engine.php:383
 msgid "Moderate Tour Review"
 msgstr ""
 
-#: opentrip-engine.php:313
+#: opentrip-engine.php:408
 msgid "Tour Details"
 msgstr ""
 
-#: opentrip-engine.php:325
+#: opentrip-engine.php:420
 msgid "Price per person"
 msgstr ""
 
-#: opentrip-engine.php:327
+#: opentrip-engine.php:422
 msgid "Currency (ISO code)"
 msgstr ""
 
-#: opentrip-engine.php:329
+#: opentrip-engine.php:424
 msgid "Duration (e.g. 8 days)"
 msgstr ""
 
-#: opentrip-engine.php:331
+#: opentrip-engine.php:426
 msgid "Capacity (informational only; 0 = unspecified)"
 msgstr ""
 
-#: opentrip-engine.php:337
+#: opentrip-engine.php:432
 msgid "Day-by-Day Itinerary"
 msgstr ""
 
-#: opentrip-engine.php:359
+#: opentrip-engine.php:454
 msgid "Enter the itinerary as a JSON array. Each day supports: day, title, city, activities, overnight, meals and transport."
 msgstr ""
 
-#: opentrip-engine.php:361
+#: opentrip-engine.php:456
 msgid "Leave the example in place or replace it with your tour schedule. Use a valid JSON array."
 msgstr ""
 
-#: opentrip-engine.php:420
+#: opentrip-engine.php:515
 msgid "Day %d: %s"
 msgstr ""
 
-#: opentrip-engine.php:421
+#: opentrip-engine.php:516
 msgid "Location"
 msgstr ""
 
-#: opentrip-engine.php:421
+#: opentrip-engine.php:516
 msgid "Activities"
 msgstr ""
 
-#: opentrip-engine.php:421
+#: opentrip-engine.php:516
 msgid "Overnight"
 msgstr ""
 
-#: opentrip-engine.php:421
+#: opentrip-engine.php:516
 msgid "Meals"
 msgstr ""
 
-#: opentrip-engine.php:421
+#: opentrip-engine.php:516
 msgid "Transportation"
 msgstr ""
 
-#: opentrip-engine.php:433
+#: opentrip-engine.php:528
 msgid "Tour Inclusions & Exclusions"
 msgstr ""
 
-#: opentrip-engine.php:444
+#: opentrip-engine.php:539
 msgid "Add one item per line. Leave a box empty if it does not apply."
 msgstr ""
 
-#: opentrip-engine.php:445
+#: opentrip-engine.php:540
 msgid "What is included in the price"
 msgstr ""
 
-#: opentrip-engine.php:447
+#: opentrip-engine.php:542
 msgid "What is not included in the price"
 msgstr ""
 
-#: opentrip-engine.php:499
+#: opentrip-engine.php:594
 msgid "Tour inclusions and exclusions"
 msgstr ""
 
-#: opentrip-engine.php:502
+#: opentrip-engine.php:597
 msgid "What is included"
 msgstr ""
 
-#: opentrip-engine.php:508
+#: opentrip-engine.php:603
 msgid "What is not included"
 msgstr ""
 
-#: opentrip-engine.php:518
+#: opentrip-engine.php:613
 msgid "Tour Photo Gallery"
 msgstr ""
 
-#: opentrip-engine.php:531
+#: opentrip-engine.php:626
 msgid "Select tour photos"
 msgstr ""
 
-#: opentrip-engine.php:532
+#: opentrip-engine.php:627
 msgid "Use selected photos"
 msgstr ""
 
-#: opentrip-engine.php:571
+#: opentrip-engine.php:666
 msgid "Choose multiple images from the Media Library. Dragging to reorder is not supported yet; selected order is retained."
 msgstr ""
 
-#: opentrip-engine.php:574
+#: opentrip-engine.php:669
 msgid "Clear gallery"
 msgstr ""
 
-#: opentrip-engine.php:621
+#: opentrip-engine.php:716
 msgid "Tour photo %1$d for %2$s"
 msgstr ""
 
-#: opentrip-engine.php:669
+#: opentrip-engine.php:764
 msgid "No tours found."
 msgstr ""
 
-#: opentrip-engine.php:704
+#: opentrip-engine.php:799
 msgid "Please select a published tour before booking."
 msgstr ""
 
-#: opentrip-engine.php:708
+#: opentrip-engine.php:805
+msgid "You returned from Stripe Checkout. Payment is verified by a secure server notification; the agency will update your booking record separately."
+msgstr ""
+
+#: opentrip-engine.php:807
+msgid "Checkout was cancelled. Your booking status has not changed. Contact the agency if you need a new payment link."
+msgstr ""
+
+#: opentrip-engine.php:811
 msgid "Thank you. Your booking request was received. It is not confirmed until the travel agency contacts you."
 msgstr ""
 
-#: opentrip-engine.php:710
+#: opentrip-engine.php:813
 msgid "Your request reference:"
 msgstr ""
 
-#: opentrip-engine.php:715
+#: opentrip-engine.php:818
 msgid "No departures are currently available for this tour. Please contact us."
 msgstr ""
 
-#: opentrip-engine.php:721
+#: opentrip-engine.php:824
 msgid "Request a booking"
 msgstr ""
 
-#: opentrip-engine.php:725
+#: opentrip-engine.php:828
 msgid "Leave this field empty"
 msgstr ""
 
-#: opentrip-engine.php:726
+#: opentrip-engine.php:829
 msgid "Full name"
 msgstr ""
 
-#: opentrip-engine.php:727
+#: opentrip-engine.php:830
 msgid "Email address"
 msgstr ""
 
-#: opentrip-engine.php:728
+#: opentrip-engine.php:831
 msgid "Departure date"
 msgstr ""
 
-#: opentrip-engine.php:730
+#: opentrip-engine.php:833
 msgid "Choose a departure"
 msgstr ""
 
-#: opentrip-engine.php:732
+#: opentrip-engine.php:835
 msgid "seats left"
 msgstr ""
 
-#: opentrip-engine.php:736
+#: opentrip-engine.php:839
 msgid "Travellers"
 msgstr ""
 
-#: opentrip-engine.php:737
+#: opentrip-engine.php:840
 msgid "Adults"
 msgstr ""
 
-#: opentrip-engine.php:738
+#: opentrip-engine.php:841
 msgid "Children"
 msgstr ""
 
-#: opentrip-engine.php:739
+#: opentrip-engine.php:842
 msgid "Child ages (comma-separated)"
 msgstr ""
 
-#: opentrip-engine.php:739
+#: opentrip-engine.php:842
 msgid "For example: 5, 9"
 msgstr ""
 
-#: opentrip-engine.php:740
+#: opentrip-engine.php:843
 msgid "Infants"
 msgstr ""
 
-#: opentrip-engine.php:741
+#: opentrip-engine.php:844
 msgid "Infant ages (comma-separated)"
 msgstr ""
 
-#: opentrip-engine.php:741
+#: opentrip-engine.php:844
 msgid "For example: 0, 1"
 msgstr ""
 
-#: opentrip-engine.php:743
+#: opentrip-engine.php:846
 msgid "Enter one whole-number age for every child and infant. Infants do not use departure seats. Configured room charges are added per room."
 msgstr ""
 
-#: opentrip-engine.php:744
+#: opentrip-engine.php:847
 msgid "Rooms required"
 msgstr ""
 
-#: opentrip-engine.php:745
+#: opentrip-engine.php:848
 msgid "Message (optional)"
 msgstr ""
 
-#: opentrip-engine.php:746
+#: opentrip-engine.php:849
 msgid "Send booking request"
 msgstr ""
 
-#: opentrip-engine.php:768
+#: opentrip-engine.php:871
 msgid "Unable to submit your request"
 msgstr ""
 
-#: opentrip-engine.php:782
+#: opentrip-engine.php:885
 msgid "Security check failed. Please go back and try again."
 msgstr ""
 
-#: opentrip-engine.php:785
+#: opentrip-engine.php:888
 msgid "Your booking request could not be submitted."
 msgstr ""
 
-#: opentrip-engine.php:789
+#: opentrip-engine.php:892
 msgid "The selected tour is unavailable."
 msgstr ""
 
-#: opentrip-engine.php:805
+#: opentrip-engine.php:908
 msgid "Please check your name, email, travel date and traveller count."
 msgstr ""
 
-#: opentrip-engine.php:812
+#: opentrip-engine.php:915
 msgid "Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again."
 msgstr ""
 
-#: opentrip-engine.php:820
+#: opentrip-engine.php:923
 msgid "We could not save your request. Please try again later."
 msgstr ""
 
-#: opentrip-engine.php:854
+#: opentrip-engine.php:957
 msgid "Booking Details"
 msgstr ""
 
-#: opentrip-engine.php:855
+#: opentrip-engine.php:958
 msgid "Request Status"
 msgstr ""
 
-#: opentrip-engine.php:861
-msgid "Reference"
+#: opentrip-engine.php:959
+msgid "Payment"
 msgstr ""
 
-#: opentrip-engine.php:862
-msgid "Status"
+#: opentrip-engine.php:968
+msgid "Not started"
 msgstr ""
 
-#: opentrip-engine.php:864
-msgid "Customer"
+#: opentrip-engine.php:969
+msgid "Payment pending"
 msgstr ""
 
-#: opentrip-engine.php:865
-msgid "Email"
+#: opentrip-engine.php:970
+msgid "Paid"
 msgstr ""
 
-#: opentrip-engine.php:866
-msgid "Travel date"
+#: opentrip-engine.php:971
+msgid "Payment failed"
 msgstr ""
 
-#: opentrip-engine.php:869
-msgid "Child ages"
+#: opentrip-engine.php:972
+msgid "Payment link expired"
 msgstr ""
 
-#: opentrip-engine.php:871
-msgid "Infant ages"
+#: opentrip-engine.php:974
+msgid "Payment status:"
 msgstr ""
 
-#: opentrip-engine.php:872
-msgid "Rooms"
-msgstr ""
-
-#: opentrip-engine.php:873
-msgid "Total travellers"
-msgstr ""
-
-#: opentrip-engine.php:874
-msgid "Price breakdown"
-msgstr ""
-
-#: opentrip-engine.php:875
-msgid "Estimated total"
-msgstr ""
-
-#: opentrip-engine.php:876
-msgid "Message"
-msgstr ""
-
-#: opentrip-engine.php:891
-msgid "Legacy quote; no itemized breakdown was saved."
-msgstr ""
-
-#: opentrip-engine.php:903
-msgid "Pending"
-msgstr ""
-
-#: opentrip-engine.php:904
-msgid "Confirmed"
-msgstr ""
-
-#: opentrip-engine.php:905
-msgid "Cancelled"
-msgstr ""
-
-#: opentrip-engine.php:913
-msgid "Booking"
-msgstr ""
-
-#: opentrip-engine.php:919
-msgid "Submitted"
-msgstr ""
-
-#: opentrip-engine.php:964
-msgid "The booking could not be confirmed because seats are unavailable or the inventory could not be updated. The booking status was not changed."
-msgstr ""
-
-#: opentrip-engine.php:965
-msgid "The reserved seats could not be released. The booking status was not changed; please check the departure inventory."
-msgstr ""
-
-#: opentrip-engine.php:978
-msgid "OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations."
-msgstr ""
-
-#: opentrip-engine.php:979
-msgid "The WordPress personal data exporter can export booking and review information associated with an email address. The personal data eraser anonymizes booking contact details, removes review author details and review text, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Anonymized booking records remain so operational inventory history is preserved."
-msgstr ""
-
-#: opentrip-engine.php:980
-msgid "For abuse prevention, the plugin stores a salted hash of email addresses submitted through booking and review forms, not the raw address in its rate-limit table. These records are opportunistically cleaned up after 24 hours and are also removed when the matching email is processed by the personal data eraser."
+#: opentrip-engine.php:977
+msgid "Stripe transaction:"
 msgstr ""
 
 #: opentrip-engine.php:981
-msgid "OpenTrip Engine"
+msgid "Provider:"
 msgstr ""
 
-#: opentrip-engine.php:986
-msgid "OpenTrip Engine bookings and reviews"
+#: opentrip-engine.php:987
+msgid "Requested payment:"
 msgstr ""
 
-#: opentrip-engine.php:1043
-msgid "OpenTrip Engine booking requests"
+#: opentrip-engine.php:992
+msgid "Amount received:"
 msgstr ""
 
-#: opentrip-engine.php:1053
-msgid "OpenTrip Engine reviews"
+#: opentrip-engine.php:1006
+msgid "Open existing Stripe payment link"
+msgstr ""
+
+#: opentrip-engine.php:1010
+msgid "Payment is recorded. Booking confirmation remains controlled by the agency."
+msgstr ""
+
+#: opentrip-engine.php:1012
+msgid "A payment link can be created after the booking request is confirmed."
+msgstr ""
+
+#: opentrip-engine.php:1018
+msgid "Enable and configure Stripe in OpenTrip Engine Settings to create payment links."
+msgstr ""
+
+#: opentrip-engine.php:1026
+msgid "Reuse or refresh payment link"
+msgstr ""
+
+#: opentrip-engine.php:1026
+msgid "Create Stripe payment link"
+msgstr ""
+
+#: opentrip-engine.php:1034
+msgid "You are not allowed to create a payment link for this booking."
+msgstr ""
+
+#: opentrip-engine.php:1038
+msgid "The Stripe payment adapter is unavailable."
+msgstr ""
+
+#: opentrip-engine.php:1045
+msgid "Stripe payment link created and emailed to the customer."
+msgstr ""
+
+#: opentrip-engine.php:1045
+msgid "Stripe payment link created. Customer email was not sent; copy the link from this booking record."
+msgstr ""
+
+#: opentrip-engine.php:1066
+msgid "Secure payment link for booking %s"
+msgstr ""
+
+#: opentrip-engine.php:1068
+msgid "Hello %1$s,\n\nThe travel agency has prepared a secure Stripe payment link for booking %2$s.\nAmount due now: %3$s %4$s.\n\nPay securely here: %5$s\n\nYour card details are entered directly on Stripe and are not stored by this website. Payment does not change the agency's booking confirmation decision.\n\nRegards,\n%6$s"
+msgstr ""
+
+#: opentrip-engine.php:1082
+msgid "Reference"
+msgstr ""
+
+#: opentrip-engine.php:1083
+msgid "Status"
+msgstr ""
+
+#: opentrip-engine.php:1085
+msgid "Customer"
+msgstr ""
+
+#: opentrip-engine.php:1086
+msgid "Email"
+msgstr ""
+
+#: opentrip-engine.php:1087
+msgid "Travel date"
+msgstr ""
+
+#: opentrip-engine.php:1090
+msgid "Child ages"
+msgstr ""
+
+#: opentrip-engine.php:1092
+msgid "Infant ages"
+msgstr ""
+
+#: opentrip-engine.php:1093
+msgid "Rooms"
 msgstr ""
 
 #: opentrip-engine.php:1094
-msgid "Anonymized customer"
+msgid "Total travellers"
 msgstr ""
 
-#: opentrip-engine.php:1106
-msgid "Anonymized booking request"
+#: opentrip-engine.php:1095
+msgid "Price breakdown"
 msgstr ""
 
-#: opentrip-engine.php:1108
-msgid "Anonymous"
+#: opentrip-engine.php:1096
+msgid "Estimated total"
+msgstr ""
+
+#: opentrip-engine.php:1097
+msgid "Message"
 msgstr ""
 
 #: opentrip-engine.php:1112
-msgid "Anonymized review"
+msgid "Legacy quote; no itemized breakdown was saved."
 msgstr ""
 
-#: opentrip-engine.php:1162
-msgid "New booking request: %s"
+#: opentrip-engine.php:1124
+msgid "Pending"
 msgstr ""
 
-#: opentrip-engine.php:1164
-msgid "A new booking request was received.\n\nReference: %1$s\nTour: %2$s\nName: %3$s\nEmail: %4$s\nTravel date: %5$s\nTravellers: %6$d\n\nReview it in your WordPress dashboard."
+#: opentrip-engine.php:1125
+msgid "Confirmed"
 msgstr ""
 
-#: opentrip-engine.php:1192
-msgid "Hello %s,"
+#: opentrip-engine.php:1126
+msgid "Cancelled"
 msgstr ""
 
-#: opentrip-engine.php:1194
-msgid "Request reference: %1$s\nTour: %2$s\nDeparture: %3$s\nTravellers: %4$d\nEstimated total: %5$s %6$s"
+#: opentrip-engine.php:1134
+msgid "Booking"
+msgstr ""
+
+#: opentrip-engine.php:1140
+msgid "Submitted"
+msgstr ""
+
+#: opentrip-engine.php:1185
+msgid "The booking could not be confirmed because seats are unavailable or the inventory could not be updated. The booking status was not changed."
+msgstr ""
+
+#: opentrip-engine.php:1186
+msgid "The reserved seats could not be released. The booking status was not changed; please check the departure inventory."
+msgstr ""
+
+#: opentrip-engine.php:1199
+msgid "OpenTrip Engine stores booking request details such as customer name, email address, travel date, traveller counts, room count, optional message, request status and estimated price. It also stores submitted tour reviews, including author name, email address, rating and review text. This information is used to manage travel enquiries, communicate with customers and moderate reviews. Booking and review data are stored in this WordPress site. Booking receipts and status updates are sent using the site email service. Site owners determine retention periods and should review applicable legal obligations."
+msgstr ""
+
+#: opentrip-engine.php:1200
+msgid "The WordPress personal data exporter can export booking, review and payment-status information associated with an email address. If Stripe Checkout is enabled, the plugin sends the customer email, booking reference, payment amount and currency to Stripe to create a hosted payment session; card numbers and security codes are entered directly on Stripe and are not received or stored by this site. The personal data eraser anonymizes booking contact details, removes review author details and review text, removes local checkout URLs and provider transaction identifiers, and clears the associated short-lived hashed submission-limiter record; erased reviews are unpublished. Payment status and amount/currency may remain on anonymized bookings for accounting and inventory audit purposes. Site owners must determine any additional retention obligations."
 msgstr ""
 
 #: opentrip-engine.php:1201
-msgid "We received your booking request — %s"
+msgid "For abuse prevention, the plugin stores a salted hash of email addresses submitted through booking and review forms, not the raw address in its rate-limit table. These records are opportunistically cleaned up after 24 hours and are also removed when the matching email is processed by the personal data eraser."
 msgstr ""
 
 #: opentrip-engine.php:1202
-msgid "Thank you for your interest. We have received your booking request. This is not a confirmed reservation and no payment has been taken. Our team will review availability and contact you.\n\n"
-msgstr ""
-
-#: opentrip-engine.php:1204
-msgid "Your booking request is confirmed — %s"
-msgstr ""
-
-#: opentrip-engine.php:1205
-msgid "Good news: the travel agency has marked your booking request as confirmed. Please contact the agency if you need payment or final travel documents.\n\n"
+msgid "OpenTrip Engine"
 msgstr ""
 
 #: opentrip-engine.php:1207
+msgid "OpenTrip Engine bookings and reviews"
+msgstr ""
+
+#: opentrip-engine.php:1273
+msgid "OpenTrip Engine booking requests"
+msgstr ""
+
+#: opentrip-engine.php:1283
+msgid "OpenTrip Engine reviews"
+msgstr ""
+
+#: opentrip-engine.php:1324
+msgid "Anonymized customer"
+msgstr ""
+
+#: opentrip-engine.php:1342
+msgid "Anonymized booking request"
+msgstr ""
+
+#: opentrip-engine.php:1344
+msgid "Anonymous"
+msgstr ""
+
+#: opentrip-engine.php:1348
+msgid "Anonymized review"
+msgstr ""
+
+#: opentrip-engine.php:1398
+msgid "New booking request: %s"
+msgstr ""
+
+#: opentrip-engine.php:1400
+msgid "A new booking request was received.\n\nReference: %1$s\nTour: %2$s\nName: %3$s\nEmail: %4$s\nTravel date: %5$s\nTravellers: %6$d\n\nReview it in your WordPress dashboard."
+msgstr ""
+
+#: opentrip-engine.php:1428
+msgid "Hello %s,"
+msgstr ""
+
+#: opentrip-engine.php:1430
+msgid "Request reference: %1$s\nTour: %2$s\nDeparture: %3$s\nTravellers: %4$d\nEstimated total: %5$s %6$s"
+msgstr ""
+
+#: opentrip-engine.php:1437
+msgid "We received your booking request — %s"
+msgstr ""
+
+#: opentrip-engine.php:1438
+msgid "Thank you for your interest. We have received your booking request. This is not a confirmed reservation and no payment has been taken. Our team will review availability and contact you.\n\n"
+msgstr ""
+
+#: opentrip-engine.php:1440
+msgid "Your booking request is confirmed — %s"
+msgstr ""
+
+#: opentrip-engine.php:1441
+msgid "Good news: the travel agency has marked your booking request as confirmed. Please contact the agency if you need payment or final travel documents.\n\n"
+msgstr ""
+
+#: opentrip-engine.php:1443
 msgid "Booking request update — %s"
 msgstr ""
 
-#: opentrip-engine.php:1208
+#: opentrip-engine.php:1444
 msgid "Your booking request has been marked as cancelled by the travel agency. Please contact the agency if you believe this is an error.\n\n"
 msgstr ""
 
-#: opentrip-engine.php:1212
+#: opentrip-engine.php:1448
 msgid "\n\nRegards,\n%s"
 msgstr ""
 
-#: opentrip-engine.php:1224
+#: opentrip-engine.php:1460
 msgid "Request status"
 msgstr ""
 
-#: opentrip-engine.php:1230
+#: opentrip-engine.php:1466
 msgid "This is an internal request status. It does not take payment or guarantee availability."
 msgstr ""
 
-#: opentrip-engine.php:1246
+#: opentrip-engine.php:1482
 msgid "Thank you. Your review was submitted and is awaiting moderation."
 msgstr ""
 
-#: opentrip-engine.php:1250
+#: opentrip-engine.php:1486
 msgid "Write a guest review"
 msgstr ""
 
-#: opentrip-engine.php:1255
+#: opentrip-engine.php:1491
 msgid "Your name"
 msgstr ""
 
-#: opentrip-engine.php:1256
+#: opentrip-engine.php:1492
 msgid "Email (not displayed publicly)"
 msgstr ""
 
-#: opentrip-engine.php:1257
+#: opentrip-engine.php:1493
 msgid "Rating"
 msgstr ""
 
-#: opentrip-engine.php:1257
+#: opentrip-engine.php:1493
 msgid "Choose a rating"
 msgstr ""
 
-#: opentrip-engine.php:1257
+#: opentrip-engine.php:1493
 msgid "%d star"
 msgid_plural "%d stars"
 msgstr[0] ""
 msgstr[1] ""
 
-#: opentrip-engine.php:1258
+#: opentrip-engine.php:1494
 msgid "Your review"
 msgstr ""
 
-#: opentrip-engine.php:1259
+#: opentrip-engine.php:1495
 msgid "Submit review"
 msgstr ""
 
-#: opentrip-engine.php:1273
+#: opentrip-engine.php:1509
 msgid "Your review could not be submitted."
 msgstr ""
 
-#: opentrip-engine.php:1281
+#: opentrip-engine.php:1517
 msgid "Please check your name, email, rating and review text."
 msgstr ""
 
-#: opentrip-engine.php:1284
+#: opentrip-engine.php:1520
 msgid "Too many reviews have been submitted for this email address. Please wait 15 minutes and try again."
 msgstr ""
 
-#: opentrip-engine.php:1289
+#: opentrip-engine.php:1525
 msgid "Review for %1\\$s by %2\\$s"
 msgstr ""
 
-#: opentrip-engine.php:1293
+#: opentrip-engine.php:1529
 msgid "We could not save your review. Please try again later."
 msgstr ""
 
-#: opentrip-engine.php:1322
+#: opentrip-engine.php:1558
 msgid "Guest reviews"
 msgstr ""
 
-#: opentrip-engine.php:1322
+#: opentrip-engine.php:1558
 msgid "No approved reviews yet."
 msgstr ""
 
-#: opentrip-engine.php:1334
+#: opentrip-engine.php:1570
 msgid "%d approved review"
 msgid_plural "%d approved reviews"
 msgstr[0] ""
 msgstr[1] ""
 
-#: opentrip-engine.php:1337
+#: opentrip-engine.php:1573
 msgid "%d out of 5 stars"
 msgstr ""
 

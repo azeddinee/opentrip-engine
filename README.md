@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.7 — accessible public forms, keyboard focus, reduced motion and translation template.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
+**Current status: 1.0.0-beta.8 — optional Stripe-hosted Checkout, signed webhook verification and payment audit states.** Card details are entered on Stripe and are never handled or stored by this plugin; tax calculation is not included.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -22,6 +22,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Responsive frontend CSS for tour cards and booking forms.
 - Accessible booking and review forms with explicit labels, traveller fieldsets, announced errors/statuses, visible keyboard focus, reduced-motion support and meaningful image alternatives.
 - Translation-ready PHP strings under the opentrip-engine text domain, with a WP-CLI POT generator and CI translation-template artifact.
+- Optional Stripe-hosted Checkout for confirmed bookings, configurable full/deposit percentage, signed webhook verification and separate payment states; see [Stripe Payments](docs/STRIPE-PAYMENTS.md).
 - Admin departure manager with dates, capacity, price, currency and safe close/reopen controls.
 - Booking form selects a real departure and displays remaining seats.
 - Booking requests capture adult, child and infant counts, ages and rooms required.
@@ -113,8 +114,8 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] Multi-process inventory concurrency stress test (capacity race and duplicate-confirmation idempotency)
 - [x] Public read-only REST API for tours, destinations and available departures (see [REST API docs](docs/REST-API.md))
 - [x] Adult, child and infant pricing, age validation and immutable booking quote snapshots (#8)
-- [ ] Optional payment gateway adapters
-- [ ] [Accessibility and translation readiness (#9)](https://github.com/azeddinee/opentrip-engine/issues/9)
+- [x] [Accessibility and translation readiness (#9)](https://github.com/azeddinee/opentrip-engine/issues/9)
+- [ ] [Optional hosted payment gateway adapters (Stripe first) (#13)](https://github.com/azeddinee/opentrip-engine/issues/13)
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Use the issue templates to report reproducible bugs or propose travel-workflow improvements. Focused pull requests are welcome; please include tests and update documentation for user-facing changes. The open roadmap is tracked in [GitHub Issues](https://github.com/azeddinee/opentrip-engine/issues).
