@@ -48,7 +48,7 @@ A tour response contains only deliberately selected public fields:
 - `itinerary` with day, title, city, activities, overnight, meals and transport
 - `inclusions` and `exclusions`
 
-Draft, private, missing and password-protected tours return HTTP `404`. The API does not serialize arbitrary post meta.
+Draft, private, missing and password-protected tours return HTTP `404`. The API does not serialize arbitrary post meta. The `content` field contains sanitized saved post content; shortcodes are not executed by the API response.
 
 ## Available departures
 
