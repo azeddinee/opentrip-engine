@@ -63,7 +63,7 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 
 == Testing ==
 
-Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. The suite also checks booking form output, customer email content, email-scoped submission limits, repeated inventory capacity boundaries and transactional booking confirmation/cancellation. Multi-process administrator concurrency stress tests and full live form-submission paths remain outstanding.
+Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 18 tests and 108 assertions, including booking form output, customer/agency email content, email-scoped submission limits, inventory capacity boundaries, transactional booking confirmation/cancellation and privacy erasure. Multi-process administrator concurrency stress tests and full live form-submission paths remain outstanding.
 
 == Changelog ==
 
