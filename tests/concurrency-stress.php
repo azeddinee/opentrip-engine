@@ -184,6 +184,9 @@ if ( $is_worker ) {
 	if ( file_exists( DIR_TESTDATA . '/themedir1' ) ) {
 		$GLOBALS['wp_theme_directories'][] = DIR_TESTDATA . '/themedir1';
 	}
+	function ote_manually_load_plugin() {
+		require dirname( __DIR__ ) . '/opentrip-engine.php';
+	}
 	tests_add_filter( 'muplugins_loaded', 'ote_manually_load_plugin' );
 	require_once ABSPATH . 'wp-settings.php';
 
