@@ -849,15 +849,6 @@ final class OpenTrip_Engine {
 		foreach ( $fields as $label => $value ) {
 			echo '<p><strong>' . esc_html( $label ) . ':</strong> ' . esc_html( $value ) . '</p>';
 		}
-		$quote = get_post_meta( $post->ID, '_ote_quote_snapshot', true );
-		if ( is_array( $quote ) ) {
-			echo '<h3>' . esc_html__( 'Saved price breakdown', 'opentrip-engine' ) . '</h3>';
-			foreach ( array( 'adults' => __( 'Adults', 'opentrip-engine' ), 'children' => __( 'Children', 'opentrip-engine' ), 'infants' => __( 'Infants', 'opentrip-engine' ), 'rooms' => __( 'Rooms', 'opentrip-engine' ) ) as $key => $label ) {
-				if ( isset( $quote[ $key ]['subtotal'] ) ) {
-					echo '<p><strong>' . esc_html( $label ) . ':</strong> ' . esc_html( number_format_i18n( (float) $quote[ $key ]['subtotal'], 2 ) . ' ' . $quote['currency'] ) . '</p>';
-				}
-			}
-		}
 	}
 
 	/**
@@ -1161,17 +1152,6 @@ final class OpenTrip_Engine {
 			__( "Request reference: %1\$s\nTour: %2\$s\nDeparture: %3\$s\nTravellers: %4\$d\nEstimated total: %5\$s %6\$s", 'opentrip-engine' ),
 			$reference, $tour_name, $travel_date, $travellers, $total, $currency
 		);
-		if ( is_array( $quote ) ) {
-			$lines = array();
-			foreach ( array( 'adults' => __( 'Adults', 'opentrip-engine' ), 'children' => __( 'Children', 'opentrip-engine' ), 'infants' => __( 'Infants', 'opentrip-engine' ), 'rooms' => __( 'Rooms', 'opentrip-engine' ) ) as $key => $label ) {
-				if ( isset( $quote[ $key ]['quantity'], $quote[ $key ]['subtotal'] ) ) {
-					$lines[] = sprintf( '%1\$s (%2\$d): %3\$s %4\$s', $label, (int) $quote[ $key ]['quantity'], number_format_i18n( (float) $quote[ $key ]['subtotal'], 2 ), $currency );
-				}
-			}
-			if ( $lines ) {
-				$details .= "\n\n" . __( 'Price breakdown:', 'opentrip-engine' ) . "\n" . implode( "\n", $lines );
-			}
-		}
 		if ( is_array( $quote ) ) {
 			$details .= "\n" . $this->booking_quote_summary( $quote );
 		}
