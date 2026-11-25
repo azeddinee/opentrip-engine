@@ -85,9 +85,13 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 			return new WP_Error( 'ote_invalid_payment_percentage', __( 'The deposit percentage or booking total is invalid.', 'opentrip-engine' ) );
 		}
 		$currency = strtoupper( (string) $currency );
-		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
+		$zero_decimal = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
+		$whole_unit_currencies = array_merge( $zero_decimal, array( 'ISK', 'UGX' ) );
+		if ( in_array( $currency, $whole_unit_currencies, true ) && abs( (float) $total - round( (float) $total ) ) > 0.00001 ) {
+			return new WP_Error( 'ote_fractional_booking_currency', __( 'The saved booking quote contains fractional units for a whole-unit Stripe currency.', 'opentrip-engine' ) );
+		}
 		$amount = round( (float) $total * $deposit_percent / 100, 2, PHP_ROUND_HALF_UP );
-		if ( in_array( $currency, $zero_decimal, true ) || in_array( $currency, array( 'ISK', 'UGX' ), true ) ) {
+		if ( in_array( $currency, $whole_unit_currencies, true ) ) {
 			$amount = round( $amount, 0, PHP_ROUND_HALF_UP );
 		}
 		$minor = self::amount_to_minor_units( $amount, $currency );
