@@ -260,17 +260,17 @@ final class OTE_Departures {
 			return false;
 		}
 
-		$status_row = $wpdb->get_row( $wpdb->prepare(
-			"SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id DESC LIMIT 1 FOR UPDATE",
+		$status_rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id ASC FOR UPDATE",
 			$booking_id,
 			'_ote_booking_status'
 		) );
-		if ( ! $status_row ) {
+		if ( empty( $status_rows ) ) {
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
 
-		$previous = $status_row->meta_value ? $status_row->meta_value : 'pending';
+		$previous = $status_rows[0]->meta_value ? $status_rows[0]->meta_value : 'pending';
 		if ( $previous === $new_status ) {
 			$wpdb->query( 'COMMIT' );
 			return array( 'previous' => $previous, 'changed' => false );
@@ -344,9 +344,12 @@ final class OTE_Departures {
 		$updated = $wpdb->update(
 			$wpdb->postmeta,
 			array( 'meta_value' => $new_status ),
-			array( 'meta_id' => (int) $status_row->meta_id ),
+			array(
+				'post_id'  => $booking_id,
+				'meta_key' => '_ote_booking_status',
+			),
 			array( '%s' ),
-			array( '%d' )
+			array( '%d', '%s' )
 		);
 		if ( false === $updated ) {
 			$wpdb->query( 'ROLLBACK' );
