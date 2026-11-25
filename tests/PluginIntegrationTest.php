@@ -334,6 +334,9 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( ':focus-visible', $css );
 		$this->assertStringContainsString( 'prefers-reduced-motion: reduce', $css );
 		$this->assertNotFalse( has_action( 'init', array( $engine, 'load_textdomain' ) ) );
+		$pot = file_get_contents( dirname( __DIR__ ) . '/languages/opentrip-engine.pot' );
+		$this->assertStringContainsString( 'msgid "Guest reviews"', $pot );
+		$this->assertStringContainsString( 'msgid "For example: 5, 9"', $pot );
 	}
 
 
