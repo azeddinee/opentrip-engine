@@ -22,6 +22,9 @@ final class OTE_Pricing {
 		}
 
 		$value = trim( (string) $value );
+		if ( $expected_count > 30 || strlen( $value ) > 100 ) {
+			return new WP_Error( 'ote_age_input_too_large', __( 'Enter no more than 30 traveller ages using whole numbers.', 'opentrip-engine' ) );
+		}
 		if ( 0 === $expected_count ) {
 			return '' === $value
 				? array()
