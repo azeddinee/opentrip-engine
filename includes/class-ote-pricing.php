@@ -78,6 +78,10 @@ final class OTE_Pricing {
 			return new WP_Error( 'ote_invalid_traveller_count', __( 'Check the number of travellers and rooms.', 'opentrip-engine' ) );
 		}
 
+		$child_bands = self::normalize_child_age_bands( isset( $departure->child_age_bands ) ? $departure->child_age_bands : '' );
+		if ( is_wp_error( $child_bands ) ) {
+			return $child_bands;
+		}
 		$child_min_age  = isset( $departure->child_min_age ) ? absint( $departure->child_min_age ) : 2;
 		$child_max_age  = isset( $departure->child_max_age ) ? absint( $departure->child_max_age ) : 11;
 		$infant_max_age = isset( $departure->infant_max_age ) ? absint( $departure->infant_max_age ) : 1;
@@ -86,7 +90,7 @@ final class OTE_Pricing {
 		}
 
 		foreach ( $child_ages as $age ) {
-			if ( ! is_numeric( $age ) || (int) $age < $child_min_age || (int) $age > $child_max_age ) {
+			if ( ! is_numeric( $age ) || (int) $age < 0 || (int) $age > 17 || ( empty( $child_bands ) && ( (int) $age < $child_min_age || (int) $age > $child_max_age ) ) ) {
 				return new WP_Error(
 					'ote_child_age_outside_band',
 					sprintf(
@@ -128,7 +132,27 @@ final class OTE_Pricing {
 		}
 
 		$adult_subtotal  = round( $adults * $adult_price, 2, PHP_ROUND_HALF_UP );
-		$child_subtotal  = round( $children * $child_price, 2, PHP_ROUND_HALF_UP );
+		$child_line_items = array();
+		$child_subtotal = 0.0;
+		foreach ( $child_ages as $child_age ) {
+			$line_price = $child_price;
+			if ( ! empty( $child_bands ) ) {
+				$matched_band = false;
+				foreach ( $child_bands as $band ) {
+					if ( (int) $child_age >= $band['min_age'] && (int) $child_age <= $band['max_age'] ) {
+						$line_price = $band['price'];
+						$matched_band = true;
+						break;
+					}
+				}
+				if ( ! $matched_band ) {
+					return new WP_Error( 'ote_child_age_outside_band', __( 'A child age does not match any configured child age band.', 'opentrip-engine' ) );
+				}
+			}
+			$child_subtotal += $line_price;
+			$child_line_items[] = array( 'age' => (int) $child_age, 'unit_price' => $line_price, 'subtotal' => $line_price );
+		}
+		$child_subtotal = round( $child_subtotal, 2, PHP_ROUND_HALF_UP );
 		$infant_subtotal = round( $infants * $infant_price, 2, PHP_ROUND_HALF_UP );
 		$room_subtotal   = round( $rooms * $room_price, 2, PHP_ROUND_HALF_UP );
 		$total = round( $adult_subtotal + $child_subtotal + $infant_subtotal + $room_subtotal, 2, PHP_ROUND_HALF_UP );
@@ -136,7 +160,7 @@ final class OTE_Pricing {
 		return array(
 			'currency' => $currency,
 			'adults'   => array( 'quantity' => $adults, 'unit_price' => $adult_price, 'subtotal' => $adult_subtotal ),
-			'children' => array( 'quantity' => $children, 'ages' => array_values( array_map( 'intval', $child_ages ) ), 'unit_price' => $child_price, 'subtotal' => $child_subtotal ),
+			'children' => array( 'quantity' => $children, 'ages' => array_values( array_map( 'intval', $child_ages ) ), 'unit_price' => $child_price, 'items' => $child_line_items, 'subtotal' => $child_subtotal ),
 			'infants'  => array( 'quantity' => $infants, 'ages' => array_values( array_map( 'intval', $infant_ages ) ), 'unit_price' => $infant_price, 'subtotal' => $infant_subtotal ),
 			'rooms'    => array( 'quantity' => $rooms, 'unit_price' => $room_price, 'subtotal' => $room_subtotal ),
 			'age_bands' => array(
@@ -150,6 +174,34 @@ final class OTE_Pricing {
 		);
 	}
 
+	/**
+	 * Normalize optional per-departure child age bands.
+	 *
+	 * @param mixed $value JSON or an array of bands.
+	 * @return array|WP_Error
+	 */
+	public static function normalize_child_age_bands( $value ) {
+		if ( is_string( $value ) ) {
+			if ( '' === trim( $value ) ) { return array(); }
+			$value = json_decode( $value, true );
+		}
+		if ( ! is_array( $value ) ) { return new WP_Error( 'ote_invalid_child_bands', __( 'Child age bands must be a valid JSON array.', 'opentrip-engine' ) ); }
+		if ( count( $value ) > 10 ) { return new WP_Error( 'ote_too_many_child_bands', __( 'A maximum of ten child age bands is allowed.', 'opentrip-engine' ) ); }
+		$bands = array();
+		foreach ( $value as $band ) {
+			if ( ! is_array( $band ) || ! isset( $band['min_age'], $band['max_age'], $band['price'] ) || ! is_numeric( $band['min_age'] ) || ! is_numeric( $band['max_age'] ) || (int) $band['min_age'] != $band['min_age'] || (int) $band['max_age'] != $band['max_age'] || (int) $band['min_age'] < 0 || (int) $band['max_age'] > 17 || (int) $band['min_age'] > (int) $band['max_age'] || ! is_numeric( $band['price'] ) || ! is_finite( (float) $band['price'] ) || (float) $band['price'] < 0 || (float) $band['price'] > 9999999999.99 ) {
+				return new WP_Error( 'ote_invalid_child_band', __( 'Each child age band needs valid inclusive ages and a non-negative price.', 'opentrip-engine' ) );
+			}
+			$bands[] = array( 'min_age' => (int) $band['min_age'], 'max_age' => (int) $band['max_age'], 'price' => round( (float) $band['price'], 2, PHP_ROUND_HALF_UP ) );
+		}
+		usort( $bands, function( $a, $b ) { return $a['min_age'] - $b['min_age']; } );
+		$previous_max = -1;
+		foreach ( $bands as $band ) {
+			if ( $band['min_age'] <= $previous_max ) { return new WP_Error( 'ote_overlapping_child_bands', __( 'Child age bands cannot overlap.', 'opentrip-engine' ) ); }
+			$previous_max = $band['max_age'];
+		}
+		return $bands;
+	}
 	/**
 	 * Read and validate one configured rate.
 	 *
