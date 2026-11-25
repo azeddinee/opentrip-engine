@@ -44,6 +44,11 @@ function ote_stress_booking() {
 		throw new RuntimeException( $booking_id->get_error_message() );
 	}
 	update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+	// The WP test suite can reuse post IDs after its cleanup while custom
+	// plugin tables retain rows. Remove any orphaned ledger row for this
+	// freshly-created fixture before starting concurrent workers.
+	global $wpdb;
+	$wpdb->delete( $wpdb->prefix . 'ote_booking_reservations', array( 'booking_id' => $booking_id ), array( '%d' ) );
 	return (int) $booking_id;
 }
 
