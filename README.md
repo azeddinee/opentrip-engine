@@ -51,9 +51,9 @@ Run the lightweight departure inventory smoke tests with `php tests/departures-s
 
 ## Accessibility and translations
 
-See the [accessibility audit](docs/ACCESSIBILITY.md) for implemented semantics, keyboard/focus behavior, contrast notes, known limitations and reproducible manual screen-reader checks.
+See the [accessibility audit](docs/ACCESSIBILITY-AND-TRANSLATIONS.md) for implemented semantics, keyboard/focus behavior, contrast notes, known limitations and reproducible manual screen-reader checks.
 
-The plugin uses the opentrip-engine text domain. Install WP-CLI and its i18n command once with `wp package install wp-cli/i18n-command`, then run `composer make-pot` to generate `languages/opentrip-engine.pot`. See [languages/README.md](languages/README.md) for creating PO/MO files. CI also generates and publishes the POT template as an Actions artifact.
+The plugin uses the opentrip-engine text domain. Install WP-CLI and its i18n command once with `wp package install wp-cli/i18n-command`, then run `composer i18n:pot` to generate `languages/opentrip-engine.pot`. See [languages/README.md](languages/README.md) for creating PO/MO files. CI also generates and publishes the POT template as an Actions artifact.
 
 ## Requirements
 - WordPress 6.2+
