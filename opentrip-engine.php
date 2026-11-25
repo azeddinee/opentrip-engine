@@ -721,6 +721,7 @@ final class OpenTrip_Engine {
 			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Request a booking', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_action" value="submit_booking">
 			<input type="hidden" name="ote_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
+			<input type="hidden" name="ote_return_url" value="<?php echo esc_url( get_permalink() ); ?>">
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
 			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
 			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_name" autocomplete="name"></p>
@@ -845,7 +846,8 @@ final class OpenTrip_Engine {
 		$this->send_admin_booking_email( $booking_id );
 
 		$referer = wp_get_referer();
-		$redirect = $referer ? $referer : get_permalink( $tour_id );
+		$return_url = $this->posted_string( 'ote_return_url' );
+		$redirect = wp_validate_redirect( $referer ? $referer : $return_url, get_permalink( $tour_id ) );
 		wp_safe_redirect( add_query_arg( array( 'ote_booking' => 'received', 'ote_ref' => $reference ), $redirect ) );
 		exit;
 	}
@@ -1250,6 +1252,7 @@ final class OpenTrip_Engine {
 			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Write a guest review', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_review_action" value="submit_review">
 			<input type="hidden" name="ote_review_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
+			<input type="hidden" name="ote_return_url" value="<?php echo esc_url( get_permalink() ); ?>">
 			<?php wp_nonce_field( 'ote_submit_review', 'ote_review_nonce' ); ?>
 			<p class="ote-review-trap" aria-hidden="true"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></p>
 			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></p>
@@ -1286,7 +1289,7 @@ final class OpenTrip_Engine {
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
 			'post_status' => 'pending',
-			'post_title' => sprintf( __( 'Review for %1\$s by %2\$s', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
+			'post_title' => sprintf( __( 'Review for %1$s by %2$s', 'opentrip-engine' ), get_the_title( $tour_id ), $name ),
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $review_id ) ) {
@@ -1297,7 +1300,8 @@ final class OpenTrip_Engine {
 		update_post_meta( $review_id, '_ote_review_email', $email );
 		update_post_meta( $review_id, '_ote_review_rating', $rating );
 		$referer = wp_get_referer();
-		$redirect = $referer ? $referer : get_permalink( $tour_id );
+		$return_url = $this->posted_string( 'ote_return_url' );
+		$redirect = wp_validate_redirect( $referer ? $referer : $return_url, get_permalink( $tour_id ) );
 		wp_safe_redirect( add_query_arg( 'ote_review', 'received', $redirect ) );
 		exit;
 	}
