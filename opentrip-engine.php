@@ -537,6 +537,11 @@ final class OpenTrip_Engine {
 				echo '<p class="ote-booking-reference"><strong>' . esc_html__( 'Your request reference:', 'opentrip-engine' ) . '</strong> ' . esc_html( sanitize_text_field( wp_unslash( $_GET['ote_ref'] ) ) ) . '</p>';
 			}
 		}
+		$available_departures = OTE_Departures::instance()->get_available( $tour_id );
+		if ( ! $available_departures ) {
+			echo '<p class="ote-no-departures" role="status">' . esc_html__( 'No departures are currently available for this tour. Please contact us.', 'opentrip-engine' ) . '</p>';
+			return ob_get_clean();
+		}
 		?>
 		<form method="post" class="ote-booking-form">
 			<input type="hidden" name="ote_action" value="submit_booking">
@@ -545,8 +550,6 @@ final class OpenTrip_Engine {
 			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
 			<p><label><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?><br><input required type="text" name="ote_name" autocomplete="name"></label></p>
 			<p><label><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?><br><input required type="email" name="ote_email" autocomplete="email"></label></p>
-			<?php $available_departures = OTE_Departures::instance()->get_available( $tour_id ); ?>
-		<?php if ( $available_departures ) : ?>
 		<p><label><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?><br>
 		<select required name="ote_departure_id">
 			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
@@ -554,9 +557,6 @@ final class OpenTrip_Engine {
 			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
 			<?php endforeach; ?>
 		</select></label></p>
-		<?php else : ?>
-		<p><?php esc_html_e( 'No departures are currently available for this tour. Please contact us.', 'opentrip-engine' ); ?></p>
-		<?php endif; ?>
 			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
 			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="30" value="0"></label></p>
 			<p><label><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?><br><input required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
