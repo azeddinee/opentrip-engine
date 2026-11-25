@@ -619,7 +619,7 @@ final class OpenTrip_Engine {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
 		}
 		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
-			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
+			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
 		}
 		$booking_id = wp_insert_post( array(
 			'post_type' => 'ote_booking',
@@ -1020,7 +1020,7 @@ final class OpenTrip_Engine {
 			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), 400 );
 		}
 		if ( $this->is_submission_rate_limited( 'review', $email ) ) {
-			wp_die( esc_html__( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
+			wp_die( esc_html__( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
 		}
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
