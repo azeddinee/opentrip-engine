@@ -164,13 +164,24 @@ final class OTE_REST_API {
 		$departures = OTE_Departures::instance()->get_available( $tour_id );
 		$items      = array();
 		foreach ( $departures as $departure ) {
+			$adult_price = isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price;
+			$child_price = isset( $departure->child_price ) && null !== $departure->child_price ? (float) $departure->child_price : $adult_price;
+			$child_bands = OTE_Pricing::normalize_child_age_bands( isset( $departure->child_age_bands ) ? $departure->child_age_bands : '' );
 			$items[] = array(
 				'id'             => (int) $departure->id,
 				'tour_id'        => $tour_id,
 				'start_date'     => (string) $departure->start_date,
 				'end_date'       => (string) $departure->end_date,
 				'seats_remaining'=> max( 0, (int) $departure->capacity - (int) $departure->reserved ),
-				'price'          => (float) $departure->price,
+				'price'          => $adult_price,
+				'adult_price'    => $adult_price,
+				'child_price'    => $child_price,
+				'infant_price'   => isset( $departure->infant_price ) ? (float) $departure->infant_price : 0.0,
+				'room_price'     => isset( $departure->room_price ) ? (float) $departure->room_price : 0.0,
+				'infant_max_age' => isset( $departure->infant_max_age ) ? (int) $departure->infant_max_age : 1,
+				'child_min_age'  => isset( $departure->child_min_age ) ? (int) $departure->child_min_age : 2,
+				'child_max_age'  => isset( $departure->child_max_age ) ? (int) $departure->child_max_age : 11,
+				'child_age_bands'=> is_wp_error( $child_bands ) ? array() : $child_bands,
 				'currency'       => (string) $departure->currency,
 			);
 		}

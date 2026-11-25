@@ -156,6 +156,10 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_customer_email', $email );
 		update_post_meta( $booking_id, '_ote_customer_name', 'Privacy Test Customer' );
 		update_post_meta( $booking_id, '_ote_customer_message', 'Please call me.' );
+		update_post_meta( $booking_id, '_ote_child_ages', array( 7 ) );
+		update_post_meta( $booking_id, '_ote_infants', 1 );
+		update_post_meta( $booking_id, '_ote_infant_ages', array( 1 ) );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'currency' => 'USD', 'children' => array( 'ages' => array( 7 ), 'items' => array( array( 'age' => 7, 'unit_price' => 50 ) ), 'subtotal' => 50 ), 'infants' => array( 'ages' => array( 1 ), 'subtotal' => 0 ), 'adults' => array( 'subtotal' => 100 ), 'rooms' => array( 'subtotal' => 0 ) ) );
 
 		$review_id = self::factory()->post->create(
 			array(
@@ -172,6 +176,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$engine->is_submission_rate_limited( 'booking', $email );
 		$export = $engine->export_personal_data( $email, 1 );
 		$this->assertCount( 2, $export['data'] );
+		$this->assertStringContainsString( 'Child ages', wp_json_encode( $export['data'] ) );
+		$this->assertStringContainsString( 'Infant ages', wp_json_encode( $export['data'] ) );
 		$this->assertTrue( $export['done'] );
 
 		$erase = $engine->erase_personal_data( $email, 1 );
@@ -179,6 +185,12 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_email', true ) );
 		$this->assertSame( '', get_post_meta( $booking_id, '_ote_customer_message', true ) );
 		$this->assertSame( 'Anonymized customer', get_post_meta( $booking_id, '_ote_customer_name', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_child_ages', true ) );
+		$this->assertSame( '', get_post_meta( $booking_id, '_ote_infant_ages', true ) );
+		$redacted_quote = get_post_meta( $booking_id, '_ote_quote_snapshot', true );
+		$this->assertSame( array(), $redacted_quote['children']['ages'] );
+		$this->assertSame( array(), $redacted_quote['infants']['ages'] );
+		$this->assertArrayNotHasKey( 'age', $redacted_quote['children']['items'][0] ?? array() );
 		$this->assertSame( '', get_post_meta( $review_id, '_ote_review_email', true ) );
 		$this->assertSame( '', get_post_field( 'post_content', $review_id ) );
 		$this->assertSame( 'draft', get_post_status( $review_id ) );
@@ -369,6 +381,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $booking_id, '_ote_travellers', 2 );
 		update_post_meta( $booking_id, '_ote_total_price', 250 );
 		update_post_meta( $booking_id, '_ote_currency', 'USD' );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', array( 'currency' => 'USD', 'adults' => array( 'subtotal' => 200 ), 'children' => array( 'subtotal' => 50 ), 'infants' => array( 'subtotal' => 0 ), 'rooms' => array( 'subtotal' => 20 ) ) );
 
 		$sent = array();
 		$capture = function( $short_circuit, $atts ) use ( &$sent ) {
@@ -387,6 +400,8 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'traveller@example.com', $sent[0]['to'] );
 		$this->assertStringContainsString( 'received your booking request', strtolower( $sent[0]['subject'] ) );
 		$this->assertStringContainsString( 'OTE-EMAIL-1', $sent[0]['message'] );
+		$this->assertStringContainsString( 'Adults: 200.00 USD', $sent[0]['message'] );
+		$this->assertStringContainsString( 'Rooms: 20.00 USD', $sent[0]['message'] );
 		$this->assertStringContainsString( 'confirmed', strtolower( $sent[1]['subject'] ) );
 	}
 
@@ -659,11 +674,19 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 					'capacity'   => $row['capacity'],
 					'reserved'   => $row['reserved'],
 					'price'      => 249.95,
+					'adult_price' => 199.99,
+					'child_price' => 99.50,
+					'infant_price' => 0,
+					'room_price' => 12.50,
+					'infant_max_age' => 1,
+					'child_min_age' => 2,
+					'child_max_age' => 11,
+					'child_age_bands' => '[{"min_age":2,"max_age":11,"price":80}]',
 					'currency'   => 'USD',
 					'status'     => $row['status'],
 					'created_at' => current_time( 'mysql', true ),
 				),
-				array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+				array( '%d', '%s', '%s', '%d', '%d', '%f', '%f', '%f', '%f', '%f', '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
 			);
 			$inserted_ids[] = (int) $wpdb->insert_id;
 		}
@@ -674,7 +697,11 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertCount( 1, $data );
 		$this->assertSame( 5, $data[0]['seats_remaining'] );
-		$this->assertSame( 249.95, $data[0]['price'] );
+		$this->assertSame( 199.99, $data[0]['price'] );
+		$this->assertSame( 99.5, $data[0]['child_price'] );
+		$this->assertSame( 0.0, $data[0]['infant_price'] );
+		$this->assertSame( 12.5, $data[0]['room_price'] );
+		$this->assertSame( array( array( 'min_age' => 2, 'max_age' => 11, 'price' => 80.0 ) ), $data[0]['child_age_bands'] );
 		$this->assertSame( 'USD', $data[0]['currency'] );
 
 		foreach ( $inserted_ids as $departure_id ) {
@@ -702,4 +729,78 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'morocco-api', $destinations->get_data()[0]['slug'] );
 	}
 
+
+	public function test_traveller_quote_supports_age_bands_infants_and_room_charges() {
+		$departure = (object) array( 'price' => 150, 'adult_price' => null, 'child_price' => null, 'infant_price' => 0, 'room_price' => 15, 'currency' => 'EUR', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => wp_json_encode( array( array( 'min_age' => 2, 'max_age' => 5, 'price' => 70 ), array( 'min_age' => 6, 'max_age' => 11, 'price' => 80 ) ) ) );
+		$quote = OTE_Pricing::calculate_quote( $departure, 2, array( 2, 5, 6, 11 ), array( 0, 1 ), 2 );
+		$this->assertNotWPError( $quote );
+		$this->assertSame( 300.0, $quote['adults']['subtotal'] );
+		$this->assertSame( 300.0, $quote['children']['subtotal'] );
+		$this->assertSame( 0.0, $quote['infants']['subtotal'] );
+		$this->assertSame( 30.0, $quote['rooms']['subtotal'] );
+		$this->assertSame( 630.0, $quote['total'] );
+		$this->assertSame( 'EUR', $quote['currency'] );
+		$this->assertSame( array( 2, 5, 6, 11 ), $quote['children']['ages'] );
+		$this->assertSame( array( 0, 1 ), $quote['infants']['ages'] );
+	}
+
+	public function test_traveller_quote_preserves_legacy_rates_and_rounds_money() {
+		$legacy = (object) array( 'price' => 99.99, 'currency' => 'USD' );
+		$quote = OTE_Pricing::calculate_quote( $legacy, 1, array( 11 ), array( 0 ), 1 );
+		$this->assertNotWPError( $quote );
+		$this->assertSame( 99.99, $quote['adults']['subtotal'] );
+		$this->assertSame( 99.99, $quote['children']['subtotal'] );
+		$this->assertSame( 0.0, $quote['infants']['subtotal'] );
+		$this->assertSame( 0.0, $quote['rooms']['subtotal'] );
+		$this->assertSame( 199.98, $quote['total'] );
+
+		$rounding = (object) array( 'price' => 10, 'adult_price' => 10.006, 'currency' => 'USD' );
+		$rounded = OTE_Pricing::calculate_quote( $rounding, 3, array(), array(), 1 );
+		$this->assertNotWPError( $rounded );
+		$this->assertSame( 10.01, $rounded['adults']['unit_price'] );
+		$this->assertSame( 30.03, $rounded['total'] );
+	}
+
+	public function test_traveller_age_boundaries_and_invalid_rules_are_rejected() {
+		$departure = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":5,"price":50},{"min_age":6,"max_age":11,"price":75}]' );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 1 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 12 ), array(), 1 ) );
+		$overwide_band = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":17,"price":50}]' );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $overwide_band, 1, array( 12 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 2 ), 1 ) );
+		$this->assertNotWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":6,"price":50},{"min_age":6,"max_age":11,"price":70}]' ) );
+		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":5,"price":50},{"min_age":7,"max_age":11,"price":70}]' ) );
+		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '{broken json' ) );
+		$gapped = (object) array( 'price' => 100, 'currency' => 'USD', 'infant_max_age' => 1, 'child_min_age' => 2, 'child_max_age' => 11, 'child_age_bands' => '[{"min_age":2,"max_age":5,"price":50},{"min_age":7,"max_age":11,"price":75}]' );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $gapped, 1, array( 6 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 2.5 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 1.5 ), 1 ) );
+		$outside = clone $departure;
+		$outside->child_age_bands = '[{"min_age":1,"max_age":5,"price":50}]';
+		$this->assertWPError( OTE_Pricing::calculate_quote( $outside, 1, array( 5 ), array(), 1 ) );
+	}
+
+	public function test_age_parser_requires_one_valid_age_per_child_or_infant() {
+		$this->assertSame( array(), OTE_Pricing::parse_ages( '', 0 ) );
+		$this->assertSame( array( 4, 9 ), OTE_Pricing::parse_ages( '4, 9', 2 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( '4', 2 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( '4, eighteen', 2 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( '18', 1 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( str_repeat( '1,', 60 ), 30 ) );
+		$this->assertWPError( OTE_Pricing::calculate_quote( (object) array( 'price' => 100, 'currency' => 'USD' ), 1, array( 5.5 ), array(), 1 ) );
+		$this->assertWPError( OTE_Pricing::parse_ages( '4', 0 ) );
+	}
+
+	public function test_quote_snapshot_is_independent_of_later_departure_rate_changes() {
+		$departure = (object) array( 'price' => 120, 'adult_price' => 120, 'child_price' => 60, 'infant_price' => 0, 'room_price' => 0, 'currency' => 'USD' );
+		$snapshot = OTE_Pricing::calculate_quote( $departure, 2, array( 8 ), array(), 1 );
+		$booking_id = self::factory()->post->create( array( 'post_type' => 'ote_booking', 'post_status' => 'private' ) );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', $snapshot );
+		update_post_meta( $booking_id, '_ote_total_price', $snapshot['total'] );
+		$departure->adult_price = 500;
+		$departure->child_price = 250;
+		$this->assertSame( 300.0, (float) get_post_meta( $booking_id, '_ote_total_price', true ) );
+		$this->assertSame( $snapshot, get_post_meta( $booking_id, '_ote_quote_snapshot', true ) );
+	}
 }

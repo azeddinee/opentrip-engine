@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 1.0.0-beta.5
+ * Version: 1.0.0-beta.6
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,10 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '1.0.0-beta.5' );
+define( 'OTE_VERSION', '1.0.0-beta.6' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-rest-api.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-pricing.php';
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -36,6 +37,13 @@ final class OpenTrip_Engine {
 		return (string) wp_unslash( $_POST[ $key ] );
 	}
 
+	private function posted_uint( $key ) {
+		$value = $this->posted_string( $key );
+		if ( ! preg_match( '/^[0-9]{1,2}$/', $value ) ) {
+			return -1;
+		}
+		return (int) $value;
+	}
 	private function __construct() {
 		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
 		add_action( 'rest_api_init', array( 'OTE_REST_API', 'register_routes' ) );
@@ -714,13 +722,16 @@ final class OpenTrip_Engine {
 		<select required name="ote_departure_id">
 			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
 			<?php foreach ( $available_departures as $departure ) : ?>
-			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
+			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
 			<?php endforeach; ?>
 		</select></label></p>
 			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
-			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="30" value="0"></label></p>
+			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
+			<p><label><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_child_ages" placeholder="e.g. 5, 9" autocomplete="off"></label></p>
+			<p><label><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
+			<p><label><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_infant_ages" placeholder="e.g. 0, 1" autocomplete="off"></label></p>
 			<p><label><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?><br><input required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
-			<p class="ote-price-note"><?php esc_html_e( 'The displayed departure price is applied per traveller. Room selection is recorded for the agency and does not change the quote.', 'opentrip-engine' ); ?></p>
+			<p class="ote-price-note"><?php esc_html_e( 'Enter an age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
 			<p><label><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?><br><textarea name="ote_message" rows="4"></textarea></label></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
 		</form>
@@ -758,14 +769,22 @@ final class OpenTrip_Engine {
 		$name = sanitize_text_field( $this->posted_string( 'ote_name' ) );
 		$email = strtolower( sanitize_email( $this->posted_string( 'ote_email' ) ) );
 		$departure_id = absint( $this->posted_string( 'ote_departure_id' ) );
-		$adults = absint( $this->posted_string( 'ote_adults' ) );
-		$children = absint( $this->posted_string( 'ote_children' ) );
-		$rooms = absint( $this->posted_string( 'ote_rooms' ) );
-		$travellers = $adults + $children;
+		$adults = $this->posted_uint( 'ote_adults' );
+		$children = $this->posted_uint( 'ote_children' );
+		$infants = $this->posted_uint( 'ote_infants' );
+		$child_ages = OTE_Pricing::parse_ages( $this->posted_string( 'ote_child_ages' ), $children );
+		$infant_ages = OTE_Pricing::parse_ages( $this->posted_string( 'ote_infant_ages' ), $infants );
+		$rooms = $this->posted_uint( 'ote_rooms' );
+		$seats = $adults + $children;
+		$travellers = $seats + $infants;
 		$message = sanitize_textarea_field( $this->posted_string( 'ote_message' ) );
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
-		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
+		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children < 0 || $children > 29 || $infants < 0 || $infants > 30 || $travellers > 30 || $rooms < 1 || $rooms > 20 || is_wp_error( $child_ages ) || is_wp_error( $infant_ages ) || (int) $departure->capacity - (int) $departure->reserved < $seats ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
+		}
+		$quote = OTE_Pricing::calculate_quote( $departure, $adults, $child_ages, $infant_ages, $rooms );
+		if ( is_wp_error( $quote ) ) {
+			wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 400 ) );
 		}
 		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
 			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
@@ -785,11 +804,16 @@ final class OpenTrip_Engine {
 		update_post_meta( $booking_id, '_ote_travel_date', $departure->start_date );
 		update_post_meta( $booking_id, '_ote_adults', $adults );
 		update_post_meta( $booking_id, '_ote_children', $children );
+		update_post_meta( $booking_id, '_ote_child_ages', $child_ages );
+		update_post_meta( $booking_id, '_ote_infants', $infants );
+		update_post_meta( $booking_id, '_ote_infant_ages', $infant_ages );
 		update_post_meta( $booking_id, '_ote_rooms', $rooms );
 		update_post_meta( $booking_id, '_ote_travellers', $travellers );
+		update_post_meta( $booking_id, '_ote_seats', $seats );
 		update_post_meta( $booking_id, '_ote_unit_price', (float) $departure->price );
-		update_post_meta( $booking_id, '_ote_currency', $departure->currency );
-		update_post_meta( $booking_id, '_ote_total_price', round( $travellers * (float) $departure->price, 2 ) );
+		update_post_meta( $booking_id, '_ote_currency', $quote['currency'] );
+		update_post_meta( $booking_id, '_ote_quote_snapshot', $quote );
+		update_post_meta( $booking_id, '_ote_total_price', $quote['total'] );
 		update_post_meta( $booking_id, '_ote_customer_message', $message );
 		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
 		$reference = sprintf( 'OTE-%06d', $booking_id );
@@ -820,8 +844,12 @@ final class OpenTrip_Engine {
 			__( 'Travel date', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_travel_date', true ),
 			__( 'Adults', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_adults', true ),
 			__( 'Children', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_children', true ),
+			__( 'Child ages', 'opentrip-engine' ) => implode( ', ', (array) get_post_meta( $post->ID, '_ote_child_ages', true ) ),
+			__( 'Infants', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_infants', true ),
+			__( 'Infant ages', 'opentrip-engine' ) => implode( ', ', (array) get_post_meta( $post->ID, '_ote_infant_ages', true ) ),
 			__( 'Rooms', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_rooms', true ),
 			__( 'Total travellers', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_travellers', true ),
+			__( 'Price breakdown', 'opentrip-engine' ) => $this->booking_quote_summary( get_post_meta( $post->ID, '_ote_quote_snapshot', true ) ),
 			__( 'Estimated total', 'opentrip-engine' ) => number_format_i18n( (float) get_post_meta( $post->ID, '_ote_total_price', true ), 2 ) . ' ' . get_post_meta( $post->ID, '_ote_currency', true ),
 			__( 'Message', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_customer_message', true ),
 		);
@@ -830,6 +858,24 @@ final class OpenTrip_Engine {
 		}
 	}
 
+	/**
+	 * Format the immutable booking quote for admin and customer communications.
+	 *
+	 * @param mixed $quote Saved quote snapshot.
+	 * @return string
+	 */
+	public function booking_quote_summary( $quote ) {
+		if ( ! is_array( $quote ) || empty( $quote['currency'] ) ) {
+			return __( 'Legacy quote; no itemized breakdown was saved.', 'opentrip-engine' );
+		}
+		$parts = array();
+		foreach ( array( 'adults' => __( 'Adults', 'opentrip-engine' ), 'children' => __( 'Children', 'opentrip-engine' ), 'infants' => __( 'Infants', 'opentrip-engine' ), 'rooms' => __( 'Rooms', 'opentrip-engine' ) ) as $key => $label ) {
+			if ( isset( $quote[ $key ]['subtotal'] ) ) {
+				$parts[] = sprintf( '%1$s: %2$s %3$s', $label, number_format_i18n( (float) $quote[ $key ]['subtotal'], 2 ), $quote['currency'] );
+			}
+		}
+		return implode( ' | ', $parts );
+	}
 	public function booking_status_label( $status ) {
 		$labels = array(
 			'pending' => __( 'Pending', 'opentrip-engine' ),
@@ -888,7 +934,7 @@ final class OpenTrip_Engine {
 			$post_id,
 			(int) get_post_meta( $post_id, '_ote_tour_id', true ),
 			(int) get_post_meta( $post_id, '_ote_departure_id', true ),
-			(int) get_post_meta( $post_id, '_ote_travellers', true ),
+			(int) get_post_meta( $post_id, '_ote_seats', true ) ? (int) get_post_meta( $post_id, '_ote_seats', true ) : (int) get_post_meta( $post_id, '_ote_travellers', true ),
 			$status
 		);
 		if ( false === $transition ) {
@@ -961,8 +1007,12 @@ final class OpenTrip_Engine {
 						'Travel date'       => get_post_meta( $post_id, '_ote_travel_date', true ),
 						'Adults'            => get_post_meta( $post_id, '_ote_adults', true ),
 						'Children'          => get_post_meta( $post_id, '_ote_children', true ),
+						'Child ages'        => implode( ', ', (array) get_post_meta( $post_id, '_ote_child_ages', true ) ),
+						'Infants'           => get_post_meta( $post_id, '_ote_infants', true ),
+						'Infant ages'       => implode( ', ', (array) get_post_meta( $post_id, '_ote_infant_ages', true ) ),
 						'Rooms'             => get_post_meta( $post_id, '_ote_rooms', true ),
 						'Request status'    => get_post_meta( $post_id, '_ote_booking_status', true ),
+						'Price breakdown'   => $this->booking_quote_summary( get_post_meta( $post_id, '_ote_quote_snapshot', true ) ),
 						'Estimated total'   => get_post_meta( $post_id, '_ote_total_price', true ),
 						'Currency'          => get_post_meta( $post_id, '_ote_currency', true ),
 						'Customer message'  => get_post_meta( $post_id, '_ote_customer_message', true ),
@@ -1022,6 +1072,15 @@ final class OpenTrip_Engine {
 					update_post_meta( $post_id, '_ote_customer_name', __( 'Anonymized customer', 'opentrip-engine' ) );
 					update_post_meta( $post_id, '_ote_customer_email', '' );
 					update_post_meta( $post_id, '_ote_customer_message', '' );
+					delete_post_meta( $post_id, '_ote_child_ages' );
+					delete_post_meta( $post_id, '_ote_infant_ages' );
+					$quote = get_post_meta( $post_id, '_ote_quote_snapshot', true );
+					if ( is_array( $quote ) ) {
+						if ( isset( $quote['children']['ages'] ) ) { $quote['children']['ages'] = array(); }
+						if ( isset( $quote['children']['items'] ) ) { $quote['children']['items'] = array(); }
+						if ( isset( $quote['infants']['ages'] ) ) { $quote['infants']['ages'] = array(); }
+						update_post_meta( $post_id, '_ote_quote_snapshot', $quote );
+					}
 					wp_update_post( array( 'ID' => $post_id, 'post_title' => __( 'Anonymized booking request', 'opentrip-engine' ) ) );
 				} else {
 					update_post_meta( $post_id, '_ote_review_name', __( 'Anonymous', 'opentrip-engine' ) );
@@ -1104,6 +1163,7 @@ final class OpenTrip_Engine {
 		$reference = get_post_meta( $booking_id, '_ote_booking_reference', true );
 		$travel_date = get_post_meta( $booking_id, '_ote_travel_date', true );
 		$travellers = (int) get_post_meta( $booking_id, '_ote_travellers', true );
+		$quote = get_post_meta( $booking_id, '_ote_quote_snapshot', true );
 		$total = number_format_i18n( (float) get_post_meta( $booking_id, '_ote_total_price', true ), 2 );
 		$currency = get_post_meta( $booking_id, '_ote_currency', true );
 		$name = get_post_meta( $booking_id, '_ote_customer_name', true );
@@ -1112,6 +1172,9 @@ final class OpenTrip_Engine {
 			__( "Request reference: %1\$s\nTour: %2\$s\nDeparture: %3\$s\nTravellers: %4\$d\nEstimated total: %5\$s %6\$s", 'opentrip-engine' ),
 			$reference, $tour_name, $travel_date, $travellers, $total, $currency
 		);
+		if ( is_array( $quote ) ) {
+			$details .= "\n" . $this->booking_quote_summary( $quote );
+		}
 		if ( 'pending' === $status ) {
 			$subject = sprintf( __( 'We received your booking request — %s', 'opentrip-engine' ), $reference );
 			$message = __( "Thank you for your interest. We have received your booking request. This is not a confirmed reservation and no payment has been taken. Our team will review availability and contact you.\n\n", 'opentrip-engine' );

@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.5 — transactional inventory, configurable notifications and hardened forms.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
+**Current status: 1.0.0-beta.6 — traveller-aware quotes, age validation and immutable booking price snapshots.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -22,7 +22,9 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Responsive frontend CSS for tour cards and booking forms.
 - Admin departure manager with dates, capacity, price, currency and safe close/reopen controls.
 - Booking form selects a real departure and displays remaining seats.
-- Booking requests capture adult and child counts plus rooms required.
+- Booking requests capture adult, child and infant counts, ages and rooms required.
+- Per-departure adult, child, infant and room rates, inclusive child age bands (up to ten bands), and explicit currency handling.
+- Itemized booking-time quote snapshots are shown to administrators and included in customer receipts; later departure rate changes do not rewrite saved quotes.
 - Day-by-day itinerary editor for up to 60 days, with city, activities, overnight stay, meals and transportation.
 - `[opentrip_itinerary]` renders the current tour's itinerary; `[opentrip_itinerary tour_id="123"]` renders a selected tour's itinerary.
 - Per-tour inclusions and exclusions editor with one item per line, saved as sanitized tour metadata.
@@ -38,10 +40,11 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
 - Booking and review data are available through WordPress privacy export and erasure tools.
 - Versioned, read-only REST API for public tours, destinations and available departures; see [REST API documentation](docs/REST-API.md).
+- Configurable traveller pricing and booking-time quote snapshots; see [Traveller Pricing guide](docs/TRAVELLER-PRICING.md).
 
 ## Testing
 
-Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 23 tests and 138 assertions, covering content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, privacy export/erasure, and the public REST API. The CI workflow also runs a multi-process MySQL stress suite on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
+Run the lightweight departure inventory smoke tests with `php tests/departures-smoke.php`. The CI workflow tests WordPress 6.2.2 with PHP 7.4 and the latest WordPress with PHP 8.3 against MySQL 8.0. PHP syntax and inventory smoke tests run across PHP 7.4–8.3. The WordPress integration matrix covers content types, shortcode output/escaping, inventory capacity, transactional confirmation/cancellation, departure close/reopen, booking form output, email settings and content, database-backed rate limits, privacy export/erasure, traveller pricing and age boundaries, immutable quote snapshots, and the public REST API. The CI workflow also runs a multi-process MySQL stress suite on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Pricing unit/integration coverage includes inclusive age-band boundaries, gaps and overlaps, missing/default rates, free infants, room charges, rounding, currency preservation and immutable quote snapshots. Full browser-driven submission tests are still outstanding. Review the Actions results before treating a commit as verified.
 
 ## Requirements
 - WordPress 6.2+
@@ -73,8 +76,13 @@ Edit a tour and use the **Tour Photo Gallery** panel to select images from the W
 ## Inclusions and exclusions workflow in 0.6.0
 Edit a tour and use the **Tour Inclusions & Exclusions** panel. Enter one item per line in each box. The frontend shortcode `[opentrip_inclusions]` displays the two lists on the current tour; use `[opentrip_inclusions tour_id="123"]` for a specific tour. Empty lists are hidden, and each list is limited to 100 unique items.
 
-## Agency workflow in 0.6.0
-Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. The basic quote currently applies the departure's per-traveller price equally to adults and children. Room count is recorded but does not alter the quote. Infant-specific pricing, child discounts, room allocation and payment processing are not implemented yet. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
+## Traveller pricing and booking quotes
+
+Each departure can define an adult price (or inherit the base price), a child price (or inherit the adult price), an infant price (zero by default), a room charge per room (zero by default), and inclusive age boundaries. Defaults preserve the earlier equal adult/child pricing behavior. The default age bands are infant 0–1, child 2–11 and adult 12+; operators can change the infant maximum and child minimum/maximum when creating a departure. Every child and infant age must be supplied and is validated on the server. Infants are included in the traveller count but do not consume departure seats; adults and children do. Room charges apply only when explicitly configured.
+
+The quote is calculated in the departure's own three-letter currency; no currency conversion or tax calculation is performed. The plugin stores a complete quote breakdown (quantities, ages, unit rates, subtotals, room charge and total) on the booking when it is submitted. Later changes to departure prices do not recalculate existing booking snapshots. The saved breakdown appears in the administrator booking details and customer email receipt.
+
+Requests start as Pending. An administrator can confirm a request; confirmation attempts an atomic seat reservation against the selected departure. If capacity is no longer available, confirmation is rejected. Cancelling a confirmed request releases its seats. This is an inventory workflow, not payment processing or a guarantee that a tour operator has operationally approved the trip. Email delivery depends on WordPress mail configuration; configure SMTP separately if needed.
 
 ## Important limitations
 This beta does not process payments, calculate taxes, or provide customer accounts. Pending requests do not hold seats; only confirmed requests reserve seats. Seat inventory and booking status transitions run in a database transaction with a locked booking-status row and a per-booking reservation ledger. This prevents duplicate seat increments for repeated confirmations. A targeted multi-process MySQL stress suite verifies capacity safety (20 processes competing for five seats) and idempotency (10 processes confirming one booking); this is not a substitute for production-scale load testing. Public forms use a honeypot, bounded input validation and an atomic database-backed limit of five submissions per email address per form type in a rolling 15-minute window. The limiter stores a salted email hash rather than the raw address and does not trust proxy IP headers. It is not a substitute for host/WAF protection: distributed abuse can use different email addresses. CAPTCHA and IP-based edge rate limiting are not built in.
@@ -95,7 +103,7 @@ Booking records contain personal data. Site operators are responsible for privac
 - [x] WordPress privacy exporter/eraser integration
 - [x] Multi-process inventory concurrency stress test (capacity race and duplicate-confirmation idempotency)
 - [x] Public read-only REST API for tours, destinations and available departures (see [REST API docs](docs/REST-API.md))
-- [ ] [Adult, child and infant pricing rules (#8)](https://github.com/azeddinee/opentrip-engine/issues/8)
+- [x] Adult, child and infant pricing, age validation and immutable booking quote snapshots (#8)
 - [ ] Optional payment gateway adapters
 - [ ] [Accessibility and translation readiness (#9)](https://github.com/azeddinee/opentrip-engine/issues/9)
 
