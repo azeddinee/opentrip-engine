@@ -9,6 +9,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		parent::set_up();
 		OpenTrip_Engine::instance()->register_types();
 		OTE_Departures::install();
+		OTE_Submission_Limiter::install();
 	}
 
 	public function test_plugin_registers_expected_content_types_and_shortcodes() {
@@ -213,6 +214,15 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 			$this->assertFalse( $engine->is_submission_rate_limited( 'booking', $email ) );
 		}
 		$this->assertTrue( $engine->is_submission_rate_limited( 'booking', strtoupper( $email ) ) );
+		global $wpdb;
+		$hash = hash_hmac( 'sha256', strtolower( $email ), wp_salt( 'auth' ) );
+		$count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT attempts FROM " . OTE_Submission_Limiter::table_name() . " WHERE email_hash = %s AND form_type = %s",
+			$hash,
+			'booking'
+		) );
+		$this->assertSame( '6', (string) $count );
+		$this->assertSame( 64, strlen( $hash ) );
 		$this->assertFalse( $engine->is_submission_rate_limited( 'review', $email ) );
 		$this->assertTrue( $engine->is_submission_rate_limited( 'invalid', $email ) );
 		$this->assertTrue( $engine->is_submission_rate_limited( 'booking', 'not-an-email' ) );
