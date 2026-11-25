@@ -18,6 +18,10 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-rest-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-pricing.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/interface-ote-payment-gateway.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-payment-gateway-registry.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-stripe-gateway.php';
+OTE_Payment_Gateway_Registry::register( new OTE_Stripe_Gateway() );
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -47,6 +51,8 @@ final class OpenTrip_Engine {
 	private function __construct() {
 		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
 		add_action( 'rest_api_init', array( 'OTE_REST_API', 'register_routes' ) );
+		add_action( 'rest_api_init', array( 'OTE_Stripe_Gateway', 'register_webhook_route' ) );
+		add_action( 'admin_post_ote_create_stripe_payment_link', array( $this, 'handle_create_stripe_payment_link' ) );
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_menu' ) );
@@ -151,6 +157,81 @@ final class OpenTrip_Engine {
 			'ote-settings',
 			'ote_email_notifications'
 		);
+
+		register_setting( 'ote_settings', 'ote_stripe_enabled', array( 'type' => 'string', 'sanitize_callback' => array( $this, 'sanitize_boolean_setting' ), 'default' => '0' ) );
+		register_setting( 'ote_settings', 'ote_stripe_secret_key', array( 'type' => 'string', 'sanitize_callback' => array( $this, 'sanitize_stripe_secret_key' ), 'default' => '' ) );
+		register_setting( 'ote_settings', 'ote_stripe_webhook_secret', array( 'type' => 'string', 'sanitize_callback' => array( $this, 'sanitize_stripe_webhook_secret' ), 'default' => '' ) );
+		register_setting( 'ote_settings', 'ote_stripe_deposit_percent', array( 'type' => 'integer', 'sanitize_callback' => array( $this, 'sanitize_stripe_deposit_percent' ), 'default' => 100 ) );
+		add_settings_section(
+			'ote_stripe_payments',
+			__( 'Hosted payments (optional)', 'opentrip-engine' ),
+			function() {
+				echo '<p>' . esc_html__( 'Stripe Checkout is optional. Customers enter card details on Stripe; this site never receives or stores card numbers or security codes. The key prefix selects test or live mode.', 'opentrip-engine' ) . '</p>';
+			},
+			'ote-settings'
+		);
+		add_settings_field( 'ote_stripe_enabled', __( 'Enable Stripe Checkout', 'opentrip-engine' ), array( $this, 'render_stripe_enabled_field' ), 'ote-settings', 'ote_stripe_payments' );
+		add_settings_field( 'ote_stripe_secret_key', __( 'Stripe secret key', 'opentrip-engine' ), array( $this, 'render_stripe_secret_key_field' ), 'ote-settings', 'ote_stripe_payments' );
+		add_settings_field( 'ote_stripe_webhook_secret', __( 'Stripe webhook signing secret', 'opentrip-engine' ), array( $this, 'render_stripe_webhook_secret_field' ), 'ote-settings', 'ote_stripe_payments' );
+		add_settings_field( 'ote_stripe_deposit_percent', __( 'Payment percentage', 'opentrip-engine' ), array( $this, 'render_stripe_deposit_percent_field' ), 'ote-settings', 'ote_stripe_payments' );
+	}
+
+	public function sanitize_stripe_secret_key( $value ) {
+		$value = is_scalar( $value ) ? trim( (string) $value ) : '';
+		if ( '' === $value ) {
+			return (string) get_option( 'ote_stripe_secret_key', '' );
+		}
+		if ( ! preg_match( '/^sk_(test|live)_[A-Za-z0-9]+$/', $value ) ) {
+			add_settings_error( 'ote_stripe_secret_key', 'ote_invalid_stripe_secret', __( 'Enter a valid Stripe test or live secret key. The previous key has been kept.', 'opentrip-engine' ) );
+			return (string) get_option( 'ote_stripe_secret_key', '' );
+		}
+		return $value;
+	}
+
+	public function sanitize_stripe_webhook_secret( $value ) {
+		$value = is_scalar( $value ) ? trim( (string) $value ) : '';
+		if ( '' === $value ) {
+			return (string) get_option( 'ote_stripe_webhook_secret', '' );
+		}
+		if ( ! preg_match( '/^whsec_[A-Za-z0-9]+$/', $value ) ) {
+			add_settings_error( 'ote_stripe_webhook_secret', 'ote_invalid_stripe_webhook_secret', __( 'Enter a valid Stripe webhook signing secret. The previous secret has been kept.', 'opentrip-engine' ) );
+			return (string) get_option( 'ote_stripe_webhook_secret', '' );
+		}
+		return $value;
+	}
+
+	public function sanitize_stripe_deposit_percent( $value ) {
+		$percent = is_scalar( $value ) && preg_match( '/^[0-9]{1,3}$/', (string) $value ) ? (int) $value : 0;
+		if ( $percent < 1 || $percent > 100 ) {
+			add_settings_error( 'ote_stripe_deposit_percent', 'ote_invalid_stripe_deposit_percent', __( 'Payment percentage must be between 1 and 100. The previous value has been kept.', 'opentrip-engine' ) );
+			return absint( get_option( 'ote_stripe_deposit_percent', 100 ) );
+		}
+		return $percent;
+	}
+
+	public function render_stripe_enabled_field() {
+		$enabled = (string) get_option( 'ote_stripe_enabled', '0' );
+		echo '<input type="hidden" name="ote_stripe_enabled" value="0">';
+		echo '<label><input type="checkbox" name="ote_stripe_enabled" value="1" ' . checked( $enabled, '1', false ) . '> ' . esc_html__( 'Allow the agency to create hosted payment links for confirmed bookings.', 'opentrip-engine' ) . '</label>';
+	}
+
+	public function render_stripe_secret_key_field() {
+		$key = (string) get_option( 'ote_stripe_secret_key', '' );
+		$mode = 0 === strpos( $key, 'sk_live_' ) ? __( 'Live mode configured', 'opentrip-engine' ) : ( 0 === strpos( $key, 'sk_test_' ) ? __( 'Test mode configured', 'opentrip-engine' ) : __( 'Not configured', 'opentrip-engine' ) );
+		echo '<input type="password" class="regular-text" name="ote_stripe_secret_key" value="" autocomplete="new-password" spellcheck="false" placeholder="' . esc_attr__( 'Paste a Stripe secret key', 'opentrip-engine' ) . '">';
+		echo '<p class="description">' . esc_html( $mode ) . ' — ' . esc_html__( 'Leave blank to keep the saved key. Use sk_test_ for test mode or sk_live_ for live mode. The key is never displayed after saving.', 'opentrip-engine' ) . '</p>';
+	}
+
+	public function render_stripe_webhook_secret_field() {
+		$configured = 0 === strpos( (string) get_option( 'ote_stripe_webhook_secret', '' ), 'whsec_' );
+		echo '<input type="password" class="regular-text" name="ote_stripe_webhook_secret" value="" autocomplete="new-password" spellcheck="false" placeholder="' . esc_attr__( 'Paste the Stripe webhook signing secret', 'opentrip-engine' ) . '">';
+		echo '<p class="description">' . esc_html( $configured ? __( 'Webhook secret configured.', 'opentrip-engine' ) : __( 'Webhook secret not configured.', 'opentrip-engine' ) ) . ' ' . esc_html__( 'Leave blank to keep the saved secret.', 'opentrip-engine' ) . '</p>';
+	}
+
+	public function render_stripe_deposit_percent_field() {
+		$value = absint( get_option( 'ote_stripe_deposit_percent', 100 ) );
+		echo '<input type="number" min="1" max="100" step="1" name="ote_stripe_deposit_percent" value="' . esc_attr( $value ) . '"> %';
+		echo '<p class="description">' . esc_html__( 'Percentage of the saved booking quote requested through Stripe. Set 100 for full payment or a lower value for a deposit.', 'opentrip-engine' ) . '</p>';
 	}
 
 	public function sanitize_notification_email( $value ) {
@@ -853,6 +934,114 @@ final class OpenTrip_Engine {
 	public function add_booking_meta_box() {
 		add_meta_box( 'ote_booking_details', __( 'Booking Details', 'opentrip-engine' ), array( $this, 'render_booking_meta_box' ), 'ote_booking', 'normal', 'high' );
 		add_meta_box( 'ote_booking_status', __( 'Request Status', 'opentrip-engine' ), array( $this, 'render_booking_status_box' ), 'ote_booking', 'side', 'high' );
+		add_meta_box( 'ote_booking_payment', __( 'Payment', 'opentrip-engine' ), array( $this, 'render_booking_payment_box' ), 'ote_booking', 'side', 'default' );
+	}
+
+	public function render_booking_payment_box( $post ) {
+		$status = (string) get_post_meta( $post->ID, '_ote_payment_status', true );
+		if ( '' === $status ) {
+			$status = 'not_started';
+		}
+		$labels = array(
+			'not_started' => __( 'Not started', 'opentrip-engine' ),
+			'pending'     => __( 'Payment pending', 'opentrip-engine' ),
+			'paid'        => __( 'Paid', 'opentrip-engine' ),
+			'failed'      => __( 'Payment failed', 'opentrip-engine' ),
+			'expired'     => __( 'Payment link expired', 'opentrip-engine' ),
+		);
+		echo '<p><strong>' . esc_html__( 'Payment status:', 'opentrip-engine' ) . '</strong> ' . esc_html( isset( $labels[ $status ] ) ? $labels[ $status ] : $status ) . '</p>';
+		$provider = (string) get_post_meta( $post->ID, '_ote_payment_provider', true );
+		if ( $provider ) {
+			echo '<p><strong>' . esc_html__( 'Provider:', 'opentrip-engine' ) . '</strong> ' . esc_html( $provider ) . '</p>';
+		}
+		$amount = get_post_meta( $post->ID, '_ote_payment_amount', true );
+		$currency = get_post_meta( $post->ID, '_ote_payment_currency', true );
+		if ( '' !== (string) $amount && $currency ) {
+			echo '<p><strong>' . esc_html__( 'Requested payment:', 'opentrip-engine' ) . '</strong> ' . esc_html( number_format_i18n( (float) $amount, 2 ) . ' ' . $currency ) . '</p>';
+		}
+		$attention = get_post_meta( $post->ID, '_ote_payment_attention', true );
+		if ( $attention ) {
+			echo '<div class="notice notice-warning inline"><p>' . esc_html( $attention ) . '</p></div>';
+		}
+		$notice_key = 'ote_payment_notice_' . get_current_user_id();
+		$notice = get_transient( $notice_key );
+		if ( is_array( $notice ) && ! empty( $notice['message'] ) ) {
+			delete_transient( $notice_key );
+			echo '<div class="notice notice-' . esc_attr( isset( $notice['type'] ) ? $notice['type'] : 'info' ) . ' inline"><p>' . esc_html( $notice['message'] ) . '</p></div>';
+		}
+		$url = (string) get_post_meta( $post->ID, '_ote_payment_url', true );
+		if ( $url && 'pending' === $status && OTE_Stripe_Gateway::is_checkout_url_public( $url ) ) {
+			echo '<p><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open existing Stripe payment link', 'opentrip-engine' ) . '</a></p>';
+		}
+		if ( 'confirmed' !== get_post_meta( $post->ID, '_ote_booking_status', true ) || 'paid' === $status ) {
+			if ( 'paid' === $status ) {
+				echo '<p>' . esc_html__( 'Payment is recorded. Booking confirmation remains controlled by the agency.', 'opentrip-engine' ) . '</p>';
+			} else {
+				echo '<p>' . esc_html__( 'A payment link can be created after the booking request is confirmed.', 'opentrip-engine' ) . '</p>';
+			}
+			return;
+		}
+		$gateway = OTE_Payment_Gateway_Registry::get( 'stripe' );
+		if ( ! $gateway || ! $gateway->is_enabled() ) {
+			echo '<p>' . esc_html__( 'Enable and configure Stripe in OpenTrip Engine Settings to create payment links.', 'opentrip-engine' ) . '</p>';
+			return;
+		}
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="ote_create_stripe_payment_link">
+			<input type="hidden" name="booking_id" value="<?php echo esc_attr( $post->ID ); ?>">
+			<?php wp_nonce_field( 'ote_create_stripe_payment_link_' . $post->ID ); ?>
+			<?php submit_button( $url && 'pending' === $status ? __( 'Reuse or refresh payment link', 'opentrip-engine' ) : __( 'Create Stripe payment link', 'opentrip-engine' ), 'secondary', 'submit', false ); ?>
+		</form>
+		<?php
+	}
+
+	public function handle_create_stripe_payment_link() {
+		$booking_id = absint( $this->posted_string( 'booking_id' ) );
+		if ( ! $booking_id || 'ote_booking' !== get_post_type( $booking_id ) || ! current_user_can( 'edit_post', $booking_id ) ) {
+			wp_die( esc_html__( 'You are not allowed to create a payment link for this booking.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'ote_create_stripe_payment_link_' . $booking_id );
+		$gateway = OTE_Payment_Gateway_Registry::get( 'stripe' );
+		$result = $gateway ? $gateway->create_checkout_session( $booking_id ) : new WP_Error( 'ote_gateway_missing', __( 'The Stripe payment adapter is unavailable.', 'opentrip-engine' ) );
+		if ( is_wp_error( $result ) ) {
+			$notice = array( 'type' => 'error', 'message' => $result->get_error_message() );
+		} else {
+			$sent = $this->send_payment_link_email( $booking_id, $result );
+			$notice = array(
+				'type' => 'success',
+				'message' => $sent ? __( 'Stripe payment link created and emailed to the customer.', 'opentrip-engine' ) : __( 'Stripe payment link created. Customer email was not sent; copy the link from this booking record.', 'opentrip-engine' ),
+			);
+		}
+		set_transient( 'ote_payment_notice_' . get_current_user_id(), $notice, MINUTE_IN_SECONDS );
+		$edit_url = get_edit_post_link( $booking_id, 'url' );
+		wp_safe_redirect( add_query_arg( 'ote_payment_notice', '1', $edit_url ) );
+		exit;
+	}
+
+	public function send_payment_link_email( $booking_id, $session ) {
+		if ( '1' !== (string) get_option( 'ote_customer_notifications_enabled', '1' ) ) {
+			return false;
+		}
+		$email = sanitize_email( get_post_meta( $booking_id, '_ote_customer_email', true ) );
+		if ( ! is_email( $email ) || empty( $session['url'] ) || ! OTE_Stripe_Gateway::is_checkout_url_public( $session['url'] ) ) {
+			return false;
+		}
+		$name = sanitize_text_field( get_post_meta( $booking_id, '_ote_customer_name', true ) );
+		$reference = sanitize_text_field( get_post_meta( $booking_id, '_ote_booking_reference', true ) );
+		$amount = number_format_i18n( (float) $session['amount'], 2 );
+		$currency = sanitize_text_field( $session['currency'] );
+		$subject = sprintf( __( 'Secure payment link for booking %s', 'opentrip-engine' ), $reference );
+		$message = sprintf(
+			__( "Hello %1$s,\n\nThe travel agency has prepared a secure Stripe payment link for booking %2$s.\nAmount due now: %3$s %4$s.\n\nPay securely here: %5$s\n\nYour card details are entered directly on Stripe and are not stored by this website. Payment does not change the agency's booking confirmation decision.\n\nRegards,\n%6$s", 'opentrip-engine' ),
+			$name,
+			$reference,
+			$amount,
+			$currency,
+			esc_url_raw( $session['url'] ),
+			wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES )
+		);
+		return wp_mail( $email, $subject, $message );
 	}
 
 	public function render_booking_meta_box( $post ) {
