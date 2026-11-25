@@ -156,7 +156,7 @@ final class OpenTrip_Engine {
 	}
 
 	public function sanitize_boolean_setting( $value ) {
-		return empty( $value ) ? '0' : '1';
+		return is_scalar( $value ) && '1' === (string) $value ? '1' : '0';
 	}
 
 	public function render_notification_email_field() {
