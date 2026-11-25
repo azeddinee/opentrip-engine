@@ -569,10 +569,9 @@ final class OpenTrip_Engine {
 	}
 
 	/**
-	 * Apply a privacy-preserving, email-scoped limit to public submissions.
+	 * Apply an atomic, privacy-preserving email-scoped limit to public submissions.
 	 *
-	 * This is a best-effort application-level control, not a replacement for
-	 * edge/WAF rate limiting. It deliberately avoids trusting proxy IP headers.
+	 * The database limiter stores a salted hash and never trusts proxy IP headers.
 	 *
 	 * @param string $type  Submission type: booking or review.
 	 * @param string $email Validated customer email address.
