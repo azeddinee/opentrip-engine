@@ -37,6 +37,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Transactional booking-status changes and per-booking seat reservation ledger; repeated confirmations do not increment inventory twice, and cancellation releases reserved seats.
 - Nonce verification, capability checks, bounded input validation, input sanitization and output escaping.
 - Booking and review data are available through WordPress privacy export and erasure tools.
+- Versioned, read-only REST API for public tours, destinations and available departures; see [REST API documentation](docs/REST-API.md).
 
 ## Testing
 
