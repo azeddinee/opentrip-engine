@@ -587,14 +587,14 @@ final class OpenTrip_Engine {
 			return;
 		}
 		if ( ! isset( $_POST['ote_booking_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_booking_nonce'] ) ), 'ote_submit_booking' ) ) {
-			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
+			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
-			wp_die( esc_html__( 'Your booking request could not be submitted.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'Your booking request could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		$tour_id = isset( $_POST['ote_tour_id'] ) ? absint( $_POST['ote_tour_id'] ) : 0;
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
-			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		$name = isset( $_POST['ote_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_name'] ) ) : '';
 		$email = isset( $_POST['ote_email'] ) ? sanitize_email( wp_unslash( $_POST['ote_email'] ) ) : '';
@@ -606,7 +606,7 @@ final class OpenTrip_Engine {
 		$message = isset( $_POST['ote_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_message'] ) ) : '';
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
 		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
-			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
 			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
@@ -617,7 +617,7 @@ final class OpenTrip_Engine {
 			'post_title' => sprintf( '%s — %s', $name, get_the_title( $tour_id ) ),
 		), true );
 		if ( is_wp_error( $booking_id ) ) {
-			wp_die( esc_html__( 'We could not save your request. Please try again later.', 'opentrip-engine' ), 500 );
+			wp_die( esc_html__( 'We could not save your request. Please try again later.', 'opentrip-engine' ), '', array( 'response' => 500 ) );
 		}
 		update_post_meta( $booking_id, '_ote_tour_id', $tour_id );
 		update_post_meta( $booking_id, '_ote_customer_name', $name );
@@ -995,10 +995,10 @@ final class OpenTrip_Engine {
 			return;
 		}
 		if ( ! isset( $_POST['ote_review_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_review_nonce'] ) ), 'ote_submit_review' ) ) {
-			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), 403 );
+			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
-			wp_die( esc_html__( 'Your review could not be submitted.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'Your review could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		$tour_id = isset( $_POST['ote_review_tour_id'] ) ? absint( $_POST['ote_review_tour_id'] ) : 0;
 		$name = isset( $_POST['ote_review_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_review_name'] ) ) : '';
@@ -1006,7 +1006,7 @@ final class OpenTrip_Engine {
 		$rating = isset( $_POST['ote_review_rating'] ) ? absint( $_POST['ote_review_rating'] ) : 0;
 		$content = isset( $_POST['ote_review_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_review_content'] ) ) : '';
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
-			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), 400 );
+			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		if ( $this->is_submission_rate_limited( 'review', $email ) ) {
 			wp_die( esc_html__( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), '', array( 'response' => 429 ) );
@@ -1018,7 +1018,7 @@ final class OpenTrip_Engine {
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $review_id ) ) {
-			wp_die( esc_html__( 'We could not save your review. Please try again later.', 'opentrip-engine' ), 500 );
+			wp_die( esc_html__( 'We could not save your review. Please try again later.', 'opentrip-engine' ), '', array( 'response' => 500 ) );
 		}
 		update_post_meta( $review_id, '_ote_review_tour_id', $tour_id );
 		update_post_meta( $review_id, '_ote_review_name', $name );
