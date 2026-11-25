@@ -75,3 +75,32 @@ jobs:
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: php tests/concurrency-stress.php
+
+  plugin-package:
+    runs-on: ubuntu-latest
+    name: Build and validate installable ZIP
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Build plugin ZIP using release contents
+        run: |
+          mkdir -p dist/opentrip-engine
+          cp -R opentrip-engine.php includes assets languages readme.txt LICENSE README.md SECURITY.md dist/opentrip-engine/
+          cd dist
+          zip -qr opentrip-engine-test.zip opentrip-engine
+      - name: Verify ZIP integrity and install layout
+        run: |
+          unzip -t dist/opentrip-engine-test.zip
+          test -f dist/opentrip-engine/opentrip-engine.php
+          test -f dist/opentrip-engine/readme.txt
+          test -f dist/opentrip-engine/LICENSE
+          test -d dist/opentrip-engine/includes
+          test -d dist/opentrip-engine/assets
+          test ! -e dist/opentrip-engine/tests
+          test ! -e dist/opentrip-engine/vendor
+          php -l dist/opentrip-engine/opentrip-engine.php
+          find dist/opentrip-engine/includes -name '*.php' -print0 | xargs -0 -n1 php -l
