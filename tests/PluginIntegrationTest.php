@@ -263,6 +263,32 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 	}
 
 
+
+	public function test_email_notification_settings_are_validated_and_can_disable_customer_mail() {
+		$engine = OpenTrip_Engine::instance();
+		$this->assertSame( '1', $engine->sanitize_boolean_setting( '1' ) );
+		$this->assertSame( '0', $engine->sanitize_boolean_setting( '0' ) );
+		$previous_email = get_option( 'ote_notification_email', get_option( 'admin_email' ) );
+		$this->assertSame( $previous_email, $engine->sanitize_notification_email( 'not-an-email' ) );
+		$this->assertSame( 'alerts@example.com', $engine->sanitize_notification_email( 'alerts@example.com' ) );
+
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Notifications Disabled Test' )
+		);
+		update_post_meta( $booking_id, '_ote_customer_email', 'traveller@example.com' );
+		update_option( 'ote_customer_notifications_enabled', '0' );
+		$sent = array();
+		$capture = function( $short_circuit, $atts ) use ( &$sent ) {
+			$sent[] = $atts;
+			return true;
+		};
+		add_filter( 'pre_wp_mail', $capture, 10, 2 );
+		$engine->send_customer_booking_email( $booking_id, 'pending' );
+		remove_filter( 'pre_wp_mail', $capture, 10 );
+		delete_option( 'ote_customer_notifications_enabled' );
+		$this->assertCount( 0, $sent );
+	}
+
 	public function test_booking_form_is_not_rendered_without_available_departures() {
 		$tour_id = self::factory()->post->create(
 			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'No Departure Tour' )
