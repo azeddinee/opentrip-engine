@@ -832,7 +832,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 1 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 12 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array(), array( 2 ), 1 ) );
-		$this->assertWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) === false ? new WP_Error( 'invalid' ) : OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
+		$this->assertNotWPError( OTE_Pricing::calculate_quote( $departure, 1, array( 5, 6 ), array(), 1 ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '[{"min_age":2,"max_age":6,"price":50},{"min_age":6,"max_age":11,"price":70}]' ) );
 		$this->assertWPError( OTE_Pricing::normalize_child_age_bands( '{broken json' ) );
 	}
