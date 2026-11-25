@@ -236,6 +236,22 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 				'post_title'  => 'Booking Form Test Tour',
 			)
 		);
+		global $wpdb;
+		$wpdb->insert(
+			$wpdb->prefix . 'ote_departures',
+			array(
+				'tour_id' => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+10 days' ) ),
+				'end_date' => wp_date( 'Y-m-d', strtotime( '+11 days' ) ),
+				'capacity' => 8,
+				'reserved' => 0,
+				'price' => 120,
+				'currency' => 'USD',
+				'status' => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+		);
 		$html = OpenTrip_Engine::instance()->booking_shortcode( array( 'tour_id' => $tour_id ) );
 
 		$this->assertStringContainsString( 'name="ote_website"', $html );
@@ -243,6 +259,16 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'name="ote_email"', $html );
 		$this->assertStringContainsString( 'name="ote_message"', $html );
 		$this->assertStringContainsString( 'name="ote_adults"', $html );
+	}
+
+
+	public function test_booking_form_is_not_rendered_without_available_departures() {
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'No Departure Tour' )
+		);
+		$html = OpenTrip_Engine::instance()->booking_shortcode( array( 'tour_id' => $tour_id ) );
+		$this->assertStringContainsString( 'No departures are currently available', $html );
+		$this->assertStringNotContainsString( 'class="ote-booking-form"', $html );
 	}
 
 	public function test_customer_booking_emails_are_sent_for_supported_statuses() {
