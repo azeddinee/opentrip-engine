@@ -806,7 +806,7 @@ final class OpenTrip_Engine {
 		}
 		$quote = OTE_Pricing::calculate_quote( $departure, $adults, $child_ages, $infant_ages, $rooms );
 		if ( is_wp_error( $quote ) ) {
-			wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 400 ) );
+			$this->public_form_error( $quote->get_error_message(), 400 );
 		}
 		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
 			$this->public_form_error( __( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
