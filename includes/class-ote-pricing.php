@@ -205,7 +205,12 @@ final class OTE_Pricing {
 		usort( $bands, function( $a, $b ) { return $a['min_age'] - $b['min_age']; } );
 		$previous_max = -1;
 		foreach ( $bands as $band ) {
-			if ( $band['min_age'] <= $previous_max ) { return new WP_Error( 'ote_overlapping_child_bands', __( 'Child age bands cannot overlap.', 'opentrip-engine' ) ); }
+			if ( $band['min_age'] <= $previous_max ) {
+				return new WP_Error( 'ote_overlapping_child_bands', __( 'Child age bands cannot overlap.', 'opentrip-engine' ) );
+			}
+			if ( -1 !== $previous_max && $band['min_age'] !== $previous_max + 1 ) {
+				return new WP_Error( 'ote_gapped_child_bands', __( 'Child age bands must be contiguous; no ages can be left uncovered.', 'opentrip-engine' ) );
+			}
 			$previous_max = $band['max_age'];
 		}
 		return $bands;
