@@ -740,26 +740,25 @@ final class OpenTrip_Engine {
 			return;
 		}
 		$status = isset( $_POST['ote_booking_status'] ) ? sanitize_key( wp_unslash( $_POST['ote_booking_status'] ) ) : 'pending';
-		$allowed = array( 'pending', 'confirmed', 'cancelled' );
-		if ( ! in_array( $status, $allowed, true ) ) {
+		if ( ! in_array( $status, array( 'pending', 'confirmed', 'cancelled' ), true ) ) {
 			return;
 		}
-		$previous = get_post_meta( $post_id, '_ote_booking_status', true );
-		$departure_id = (int) get_post_meta( $post_id, '_ote_departure_id', true );
-		$seats = (int) get_post_meta( $post_id, '_ote_travellers', true );
-		$inventory = OTE_Departures::instance();
-		if ( 'confirmed' === $status && 'confirmed' !== $previous && ! $inventory->reserve( $departure_id, (int) get_post_meta( $post_id, '_ote_tour_id', true ), $seats ) ) {
-			set_transient( 'ote_inventory_error_' . get_current_user_id(), __( 'Not enough seats remain for this departure. The booking was not confirmed.', 'opentrip-engine' ), 30 );
+
+		$transition = OTE_Departures::instance()->transition_booking(
+			$post_id,
+			(int) get_post_meta( $post_id, '_ote_tour_id', true ),
+			(int) get_post_meta( $post_id, '_ote_departure_id', true ),
+			(int) get_post_meta( $post_id, '_ote_travellers', true ),
+			$status
+		);
+		if ( false === $transition ) {
+			$message = 'confirmed' === $status
+				? __( 'The booking could not be confirmed because seats are unavailable or the inventory could not be updated. The booking status was not changed.', 'opentrip-engine' )
+				: __( 'The reserved seats could not be released. The booking status was not changed; please check the departure inventory.', 'opentrip-engine' );
+			set_transient( 'ote_inventory_error_' . get_current_user_id(), $message, 30 );
 			return;
 		}
-		if ( ( 'cancelled' === $status || 'pending' === $status ) && 'confirmed' === $previous ) {
-			if ( ! $inventory->release( $departure_id, $seats ) ) {
-				set_transient( 'ote_inventory_error_' . get_current_user_id(), __( 'The reserved seats could not be released. The booking status was not changed; please check the departure inventory.', 'opentrip-engine' ), 30 );
-				return;
-			}
-		}
-		update_post_meta( $post_id, '_ote_booking_status', $status );
-		if ( $status !== $previous ) {
+		if ( ! empty( $transition['changed'] ) ) {
 			$this->send_customer_booking_email( $post_id, $status );
 		}
 	}
