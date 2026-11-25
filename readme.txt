@@ -67,6 +67,10 @@ Yes. It provides personal data export and erasure callbacks for booking and revi
 
 Run `composer install` and `vendor/bin/phpunit -c phpunit.xml.dist` after installing the WordPress test library and configuring a test database. GitHub Actions tests WordPress 6.2.2 with PHP 7.4 and latest WordPress with PHP 8.3 against MySQL 8.0. Separate jobs run PHP syntax and lightweight smoke tests across PHP 7.4–8.3. Each WordPress integration matrix leg currently passes 18 tests and 108 assertions, including booking form output, customer/agency email content, email-scoped submission limits, inventory capacity boundaries, transactional booking confirmation/cancellation and privacy erasure. The CI workflow runs multi-process MySQL stress tests on both integration matrix legs: 20 independent booking processes compete for five seats, and 10 processes concurrently confirm the same booking to verify idempotency. Full live browser-driven form-submission tests remain outstanding.
 
+== Contributing ==
+
+Bug reports and feature requests can be submitted using the GitHub issue templates. Please include WordPress, PHP and database versions with bug reports, provide reproducible steps, and remove customer data or credentials from logs. Pull requests should be focused, include tests where practical, follow WordPress security practices, and update documentation for user-facing changes. See CONTRIBUTING.md and CODE_OF_CONDUCT.md in the source repository.
+
 == Changelog ==
 
 = 1.0.0-beta.5 =
