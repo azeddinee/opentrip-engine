@@ -719,7 +719,6 @@ final class OpenTrip_Engine {
 			<?php endforeach; ?>
 		</select></label></p>
 			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
-			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="30" value="0"></label></p>
 			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
 			<p><label><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_child_ages" placeholder="e.g. 5, 9" autocomplete="off"></label></p>
 			<p><label><?php esc_html_e( 'Infants (0–4 years)', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
