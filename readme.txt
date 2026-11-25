@@ -78,6 +78,13 @@ A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. En
 == Changelog ==
 
 = 1.0.0-beta.6 =
+* Add configurable adult, child and infant departure pricing.
+* Add inclusive child age bands and per-room charges.
+* Validate traveller ages and preserve itemized booking-time quote snapshots.
+* Include quote breakdowns in admin booking details and customer receipts.
+
+
+= 1.0.0-beta.6 =
 * Add configurable adult, child, infant and room pricing to departures.
 * Validate child and infant ages and preserve immutable booking quote snapshots.
 * Show the saved quote breakdown in booking administration and customer receipts.
