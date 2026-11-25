@@ -169,6 +169,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		update_post_meta( $review_id, '_ote_review_name', 'Privacy Test Customer' );
 
 		$engine = OpenTrip_Engine::instance();
+		$engine->is_submission_rate_limited( 'booking', $email );
 		$export = $engine->export_personal_data( $email, 1 );
 		$this->assertCount( 2, $export['data'] );
 		$this->assertTrue( $export['done'] );
@@ -181,6 +182,10 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $review_id, '_ote_review_email', true ) );
 		$this->assertSame( '', get_post_field( 'post_content', $review_id ) );
 		$this->assertSame( 'draft', get_post_status( $review_id ) );
+		$this->assertSame( '0', (string) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare(
+			"SELECT COUNT(*) FROM " . OTE_Submission_Limiter::table_name() . " WHERE email_hash = %s",
+			hash_hmac( 'sha256', strtolower( $email ), wp_salt( 'auth' ) )
+		) ) );
 	}
 
 	public function test_booking_and_review_records_are_admin_only() {
