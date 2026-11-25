@@ -89,6 +89,7 @@ jobs:
           exec php /tmp/wp-cli.phar "$@"
           EOF
           chmod +x /usr/local/bin/wp
+          git config --global url."https://github.com/".insteadOf git@github.com:
           wp package install wp-cli/i18n-command
       - name: Generate translation template
         run: composer i18n:pot
