@@ -143,7 +143,7 @@ final class OpenTrip_Engine {
 	}
 
 	public function sanitize_notification_email( $value ) {
-		$email = sanitize_email( $value );
+		$email = is_scalar( $value ) ? sanitize_email( (string) $value ) : '';
 		if ( is_email( $email ) ) {
 			return $email;
 		}
@@ -867,13 +867,13 @@ final class OpenTrip_Engine {
 	}
 
 	public function save_booking_status( $post_id ) {
-		if ( ! isset( $_POST['ote_booking_status_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_booking_status_nonce'] ) ), 'ote_save_booking_status' ) ) {
+		if ( ! is_string( isset( $_POST['ote_booking_status_nonce'] ) ? $_POST['ote_booking_status_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_booking_status_nonce' ) ), 'ote_save_booking_status' ) ) {
 			return;
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		$status = isset( $_POST['ote_booking_status'] ) ? sanitize_key( wp_unslash( $_POST['ote_booking_status'] ) ) : 'pending';
+		$status = sanitize_key( $this->posted_string( 'ote_booking_status' ) );
 		if ( ! in_array( $status, array( 'pending', 'confirmed', 'cancelled' ), true ) ) {
 			return;
 		}
