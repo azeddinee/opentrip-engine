@@ -311,6 +311,7 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$booking_html = $engine->booking_shortcode( array( 'tour_id' => $tour_id ) );
 		$booking_html_second = $engine->booking_shortcode( array( 'tour_id' => $tour_id ) );
 		$review_html = $engine->review_form_shortcode( array( 'tour_id' => $tour_id ) );
+		$review_html_second = $engine->review_form_shortcode( array( 'tour_id' => $tour_id ) );
 
 		$this->assertStringContainsString( 'aria-labelledby=', $booking_html );
 		$this->assertStringContainsString( '<fieldset class="ote-traveller-fields">', $booking_html );
@@ -326,6 +327,11 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'aria-labelledby=', $review_html );
 		$this->assertSame( 1, preg_match( '/<label for="([^"]+-rating)">Rating<\/label><br><select id="\\1"/', $review_html ) );
+		preg_match( '/id="(ote-review-[^"]+-heading)"/', $review_html, $first_review_heading );
+		preg_match( '/id="(ote-review-[^"]+-heading)"/', $review_html_second, $second_review_heading );
+		$this->assertNotEmpty( $first_review_heading[1] );
+		$this->assertNotEmpty( $second_review_heading[1] );
+		$this->assertNotSame( $first_review_heading[1], $second_review_heading[1], 'Repeated review shortcodes must not create duplicate IDs.' );
 		$this->assertStringContainsString( 'name="ote_review_content"', $review_html );
 
 		$inclusions = $engine->inclusions_shortcode( array( 'tour_id' => $tour_id ) );
