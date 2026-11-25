@@ -124,7 +124,7 @@ final class OTE_Departures {
 		$currency = isset( $_POST['currency'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['currency'] ) ) ) : '';
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
-		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || $price < 0 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
 			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		global $wpdb;
