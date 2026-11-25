@@ -27,8 +27,8 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 	public function is_enabled() {
 		$key = (string) get_option( 'ote_stripe_secret_key', '' );
 		return '1' === (string) get_option( 'ote_stripe_enabled', '0' ) &&
-			( 0 === strpos( $key, 'sk_test_' ) || 0 === strpos( $key, 'sk_live_' ) ) &&
-			0 === strpos( (string) get_option( 'ote_stripe_webhook_secret', '' ), 'whsec_' );
+			(bool) preg_match( '/^sk_(test|live)_[A-Za-z0-9]+$/', $key ) &&
+			(bool) preg_match( '/^whsec_[A-Za-z0-9]+$/', (string) get_option( 'ote_stripe_webhook_secret', '' ) );
 	}
 
 	/**
@@ -357,7 +357,7 @@ final class OTE_Stripe_Gateway implements OTE_Payment_Gateway {
 	 */
 	public static function verify_signature( $payload, $header, $secret, $now = null ) {
 		if ( ! is_string( $payload ) || strlen( $payload ) > 1048576 || ! is_string( $header ) ||
-			0 !== strpos( (string) $secret, 'whsec_' ) ) {
+			! preg_match( '/^whsec_[A-Za-z0-9]+$/', (string) $secret ) ) {
 			return false;
 		}
 		$timestamp = null;
