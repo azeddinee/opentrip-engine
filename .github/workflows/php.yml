@@ -95,12 +95,15 @@ jobs:
       - name: Verify ZIP integrity and install layout
         run: |
           unzip -t dist/opentrip-engine-test.zip
-          test -f dist/opentrip-engine/opentrip-engine.php
-          test -f dist/opentrip-engine/readme.txt
-          test -f dist/opentrip-engine/LICENSE
-          test -d dist/opentrip-engine/includes
-          test -d dist/opentrip-engine/assets
-          test ! -e dist/opentrip-engine/tests
-          test ! -e dist/opentrip-engine/vendor
-          php -l dist/opentrip-engine/opentrip-engine.php
-          find dist/opentrip-engine/includes -name '*.php' -print0 | xargs -0 -n1 php -l
+          mkdir -p /tmp/ote-package
+          unzip -q dist/opentrip-engine-test.zip -d /tmp/ote-package
+          PACKAGE=/tmp/ote-package/opentrip-engine
+          test -f "$PACKAGE/opentrip-engine.php"
+          test -f "$PACKAGE/readme.txt"
+          test -f "$PACKAGE/LICENSE"
+          test -d "$PACKAGE/includes"
+          test -d "$PACKAGE/assets"
+          test ! -e "$PACKAGE/tests"
+          test ! -e "$PACKAGE/vendor"
+          php -l "$PACKAGE/opentrip-engine.php"
+          find "$PACKAGE/includes" -name '*.php' -print0 | xargs -0 -n1 php -l
