@@ -2,7 +2,7 @@
 
 A lightweight, open-source tour catalogue and booking-request plugin for WordPress. No WooCommerce required.
 
-**Current status: 1.0.0-beta.6 — traveller-aware quotes, age validation and immutable booking price snapshots.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
+**Current status: 1.0.0-beta.7 — accessible public forms, keyboard focus, reduced motion and translation template.** This release is a booking-request and seat-inventory engine; it does not process payments or taxes.
 
 ## Features
 - Tour custom post type with title, description, excerpt and featured image.
@@ -41,6 +41,7 @@ A lightweight, open-source tour catalogue and booking-request plugin for WordPre
 - Booking and review data are available through WordPress privacy export and erasure tools.
 - Versioned, read-only REST API for public tours, destinations and available departures; see [REST API documentation](docs/REST-API.md).
 - Configurable traveller pricing and booking-time quote snapshots; see [Traveller Pricing guide](docs/TRAVELLER-PRICING.md).
+- Accessible booking/review forms, image alternatives, keyboard focus and gettext translations; see [Accessibility and Translations](docs/ACCESSIBILITY-AND-TRANSLATIONS.md).
 
 ## Testing
 
