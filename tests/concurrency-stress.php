@@ -150,7 +150,7 @@ if ( isset( $argv[1] ) && 'worker' === $argv[1] ) {
 		'success' => false !== $result,
 		'changed' => false !== $result && ! empty( $result['changed'] ),
 	) );
-	exit( false === $result ? 1 : 0 );
+	exit( 0 );
 }
 
 global $wpdb;
@@ -170,6 +170,7 @@ $reservations_table = $wpdb->prefix . 'ote_booking_reservations';
 $created_bookings = array();
 $created_departures = array();
 
+$failure = null;
 try {
 	// Twenty independent bookings race for five seats.
 	$capacity_departure = ote_stress_departure( $tour_id, 5 );
@@ -217,4 +218,8 @@ try {
 		$wpdb->delete( $departures_table, array( 'id' => $departure_id ), array( '%d' ) );
 	}
 	wp_delete_post( $tour_id, true );
+}
+if ( null !== $failure ) {
+	fwrite( STDERR, 'FAIL: ' . $failure . "\\n" );
+	exit( 1 );
 }
