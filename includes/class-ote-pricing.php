@@ -88,9 +88,14 @@ final class OTE_Pricing {
 		if ( $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age ) {
 			return new WP_Error( 'ote_invalid_age_bands', __( 'The departure has overlapping or invalid age bands.', 'opentrip-engine' ) );
 		}
+		foreach ( $child_bands as $band ) {
+			if ( $band['min_age'] < $child_min_age || $band['max_age'] > $child_max_age ) {
+				return new WP_Error( 'ote_invalid_child_band_range', __( 'Configured child age bands must stay within the departure child age limits.', 'opentrip-engine' ) );
+			}
+		}
 
 		foreach ( $child_ages as $age ) {
-			if ( ! is_numeric( $age ) || (int) $age < 0 || (int) $age > 17 || ( empty( $child_bands ) && ( (int) $age < $child_min_age || (int) $age > $child_max_age ) ) ) {
+			if ( ! is_numeric( $age ) || (int) $age != $age || (int) $age < 0 || (int) $age > 17 || ( empty( $child_bands ) && ( (int) $age < $child_min_age || (int) $age > $child_max_age ) ) ) {
 				return new WP_Error(
 					'ote_child_age_outside_band',
 					sprintf(
@@ -103,7 +108,7 @@ final class OTE_Pricing {
 			}
 		}
 		foreach ( $infant_ages as $age ) {
-			if ( ! is_numeric( $age ) || (int) $age < 0 || (int) $age > $infant_max_age ) {
+			if ( ! is_numeric( $age ) || (int) $age != $age || (int) $age < 0 || (int) $age > $infant_max_age ) {
 				return new WP_Error(
 					'ote_infant_age_outside_band',
 					sprintf(
