@@ -511,10 +511,17 @@ final class OpenTrip_Engine {
 					ids.forEach(function(id){var attachment=wp.media.attachment(id);attachment.fetch();selection.add(attachment);});
 				});
 				frame.on('select',function(){
-					var selection=frame.state().get('selection'), ids=[], html='';
-					selection.each(function(attachment){var a=attachment.toJSON();ids.push(a.id);html+='<span class=\"ote-gallery-admin-thumb\"><img src=\"'+(a.sizes&&a.sizes.thumbnail?a.sizes.thumbnail.url:a.url)+'\" alt=\"\"></span>';});
+					var selection=frame.state().get('selection'), ids=[];
+					var $preview=$('#ote_gallery_preview').empty();
+					selection.each(function(attachment){
+						var a=attachment.toJSON(), src=a.sizes&&a.sizes.thumbnail?a.sizes.thumbnail.url:a.url;
+						ids.push(a.id);
+						var $thumb=$('<span>').addClass('ote-gallery-admin-thumb');
+						var $image=$('<img>').attr('src',src).attr('alt','');
+						$thumb.append($image);
+						$preview.append($thumb);
+					});
 					$('#ote_gallery_ids').val(ids.join(','));
-					$('#ote_gallery_preview').html(html);
 				});
 				frame.open();
 			});
