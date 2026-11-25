@@ -842,6 +842,7 @@ final class OpenTrip_Engine {
 			__( 'Infant ages', 'opentrip-engine' ) => implode( ', ', (array) get_post_meta( $post->ID, '_ote_infant_ages', true ) ),
 			__( 'Rooms', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_rooms', true ),
 			__( 'Total travellers', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_travellers', true ),
+			__( 'Price breakdown', 'opentrip-engine' ) => $this->booking_quote_summary( get_post_meta( $post->ID, '_ote_quote_snapshot', true ) ),
 			__( 'Estimated total', 'opentrip-engine' ) => number_format_i18n( (float) get_post_meta( $post->ID, '_ote_total_price', true ), 2 ) . ' ' . get_post_meta( $post->ID, '_ote_currency', true ),
 			__( 'Message', 'opentrip-engine' ) => get_post_meta( $post->ID, '_ote_customer_message', true ),
 		);
@@ -859,6 +860,24 @@ final class OpenTrip_Engine {
 		}
 	}
 
+	/**
+	 * Format the immutable booking quote for admin and customer communications.
+	 *
+	 * @param mixed $quote Saved quote snapshot.
+	 * @return string
+	 */
+	public function booking_quote_summary( $quote ) {
+		if ( ! is_array( $quote ) || empty( $quote['currency'] ) ) {
+			return __( 'Legacy quote; no itemized breakdown was saved.', 'opentrip-engine' );
+		}
+		$parts = array();
+		foreach ( array( 'adults' => __( 'Adults', 'opentrip-engine' ), 'children' => __( 'Children', 'opentrip-engine' ), 'infants' => __( 'Infants', 'opentrip-engine' ), 'rooms' => __( 'Rooms', 'opentrip-engine' ) ) as $key => $label ) {
+			if ( isset( $quote[ $key ]['subtotal'] ) ) {
+				$parts[] = sprintf( '%1$s: %2$s %3$s', $label, number_format_i18n( (float) $quote[ $key ]['subtotal'], 2 ), $quote['currency'] );
+			}
+		}
+		return implode( ' | ', $parts );
+	}
 	public function booking_status_label( $status ) {
 		$labels = array(
 			'pending' => __( 'Pending', 'opentrip-engine' ),
@@ -1152,6 +1171,9 @@ final class OpenTrip_Engine {
 			if ( $lines ) {
 				$details .= "\n\n" . __( 'Price breakdown:', 'opentrip-engine' ) . "\n" . implode( "\n", $lines );
 			}
+		}
+		if ( is_array( $quote ) ) {
+			$details .= "\n" . $this->booking_quote_summary( $quote );
 		}
 		if ( 'pending' === $status ) {
 			$subject = sprintf( __( 'We received your booking request — %s', 'opentrip-engine' ), $reference );
