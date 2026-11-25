@@ -87,6 +87,16 @@ final class OTE_Departures {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Tour Departures', 'opentrip-engine' ); ?></h1>
+			<?php if ( isset( $_GET['created'] ) && '1' === sanitize_key( wp_unslash( $_GET['created'] ) ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Departure created successfully.', 'opentrip-engine' ); ?></p></div>
+			<?php elseif ( isset( $_GET['created'] ) ) : ?>
+				<div class="notice notice-error"><p><?php esc_html_e( 'The departure could not be created. Please review the details and try again.', 'opentrip-engine' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['updated'] ) && '1' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Departure status updated.', 'opentrip-engine' ); ?></p></div>
+			<?php elseif ( isset( $_GET['updated'] ) ) : ?>
+				<div class="notice notice-error"><p><?php esc_html_e( 'The departure status could not be updated. It may be fully booked or already past.', 'opentrip-engine' ); ?></p></div>
+			<?php endif; ?>
 			<p><?php esc_html_e( 'Create dated departures with seat inventory. Only confirmed booking requests consume seats.', 'opentrip-engine' ); ?></p>
 			<h2><?php esc_html_e( 'Add departure', 'opentrip-engine' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
