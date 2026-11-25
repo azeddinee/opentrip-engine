@@ -27,6 +27,14 @@ final class OpenTrip_Engine {
 		return self::$instance;
 	}
 
+
+	private function posted_string( $key ) {
+		if ( ! isset( $_POST[ $key ] ) || ! is_scalar( $_POST[ $key ] ) ) {
+			return '';
+		}
+		return (string) wp_unslash( $_POST[ $key ] );
+	}
+
 	private function __construct() {
 		add_action( 'init', array( $this, 'register_types' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -719,27 +727,27 @@ final class OpenTrip_Engine {
 	}
 
 	public function handle_booking() {
-		if ( empty( $_POST['ote_action'] ) || 'submit_booking' !== sanitize_key( wp_unslash( $_POST['ote_action'] ) ) ) {
+		if ( 'submit_booking' !== sanitize_key( $this->posted_string( 'ote_action' ) ) ) {
 			return;
 		}
-		if ( ! isset( $_POST['ote_booking_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_booking_nonce'] ) ), 'ote_submit_booking' ) ) {
+		if ( ! is_string( isset( $_POST['ote_booking_nonce'] ) ? $_POST['ote_booking_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_booking_nonce' ) ), 'ote_submit_booking' ) ) {
 			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
 			wp_die( esc_html__( 'Your booking request could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
-		$tour_id = isset( $_POST['ote_tour_id'] ) ? absint( $_POST['ote_tour_id'] ) : 0;
+		$tour_id = absint( $this->posted_string( 'ote_tour_id' ) );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) ) {
 			wp_die( esc_html__( 'The selected tour is unavailable.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
-		$name = isset( $_POST['ote_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_name'] ) ) : '';
-		$email = isset( $_POST['ote_email'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['ote_email'] ) ) ) : '';
-		$departure_id = isset( $_POST['ote_departure_id'] ) ? absint( $_POST['ote_departure_id'] ) : 0;
-		$adults = isset( $_POST['ote_adults'] ) ? absint( $_POST['ote_adults'] ) : 0;
-		$children = isset( $_POST['ote_children'] ) ? absint( $_POST['ote_children'] ) : 0;
-		$rooms = isset( $_POST['ote_rooms'] ) ? absint( $_POST['ote_rooms'] ) : 0;
+		$name = sanitize_text_field( $this->posted_string( 'ote_name' ) );
+		$email = strtolower( sanitize_email( $this->posted_string( 'ote_email' ) ) );
+		$departure_id = absint( $this->posted_string( 'ote_departure_id' ) );
+		$adults = absint( $this->posted_string( 'ote_adults' ) );
+		$children = absint( $this->posted_string( 'ote_children' ) );
+		$rooms = absint( $this->posted_string( 'ote_rooms' ) );
 		$travellers = $adults + $children;
-		$message = isset( $_POST['ote_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_message'] ) ) : '';
+		$message = sanitize_textarea_field( $this->posted_string( 'ote_message' ) );
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
 		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
@@ -1133,20 +1141,20 @@ final class OpenTrip_Engine {
 	}
 
 	public function handle_review_submission() {
-		if ( empty( $_POST['ote_review_action'] ) || 'submit_review' !== sanitize_key( wp_unslash( $_POST['ote_review_action'] ) ) ) {
+		if ( 'submit_review' !== sanitize_key( $this->posted_string( 'ote_review_action' ) ) ) {
 			return;
 		}
-		if ( ! isset( $_POST['ote_review_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_review_nonce'] ) ), 'ote_submit_review' ) ) {
+		if ( ! is_string( isset( $_POST['ote_review_nonce'] ) ? $_POST['ote_review_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_review_nonce' ) ), 'ote_submit_review' ) ) {
 			wp_die( esc_html__( 'Security check failed. Please go back and try again.', 'opentrip-engine' ), '', array( 'response' => 403 ) );
 		}
 		if ( ! empty( $_POST['ote_website'] ) ) {
 			wp_die( esc_html__( 'Your review could not be submitted.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
-		$tour_id = isset( $_POST['ote_review_tour_id'] ) ? absint( $_POST['ote_review_tour_id'] ) : 0;
-		$name = isset( $_POST['ote_review_name'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_review_name'] ) ) : '';
-		$email = isset( $_POST['ote_review_email'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['ote_review_email'] ) ) ) : '';
-		$rating = isset( $_POST['ote_review_rating'] ) ? absint( $_POST['ote_review_rating'] ) : 0;
-		$content = isset( $_POST['ote_review_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_review_content'] ) ) : '';
+		$tour_id = absint( $this->posted_string( 'ote_review_tour_id' ) );
+		$name = sanitize_text_field( $this->posted_string( 'ote_review_name' ) );
+		$email = strtolower( sanitize_email( $this->posted_string( 'ote_review_email' ) ) );
+		$rating = absint( $this->posted_string( 'ote_review_rating' ) );
+		$content = sanitize_textarea_field( $this->posted_string( 'ote_review_content' ) );
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
 			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
