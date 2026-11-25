@@ -7,14 +7,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class OTE_REST_API {
-	const NAMESPACE = 'opentrip-engine/v1';
+	const API_NAMESPACE = 'opentrip-engine/v1';
 
 	/**
 	 * Register public read-only routes.
 	 */
 	public static function register_routes() {
 		register_rest_route(
-			self::NAMESPACE,
+			self::API_NAMESPACE,
 			'/tours',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -128,9 +128,9 @@ final class OTE_REST_API {
 		}
 
 		$response = new WP_REST_Response( $items, 200 );
-		$response->header( 'X-WP-Total', (int) $query->found_posts );
-		$response->header( 'X-WP-TotalPages', (int) $query->max_num_pages );
-		$response->header( 'X-OTE-Page', $page );
+		$response->header( 'X-WP-Total', (string) (int) $query->found_posts );
+		$response->header( 'X-WP-TotalPages', (string) (int) $query->max_num_pages );
+		$response->header( 'X-OTE-Page', (string) $page );
 		return $response;
 	}
 
