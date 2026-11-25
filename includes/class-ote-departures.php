@@ -55,6 +55,7 @@ final class OTE_Departures {
 			infant_max_age int(10) unsigned NOT NULL DEFAULT 1,
 			child_min_age int(10) unsigned NOT NULL DEFAULT 2,
 			child_max_age int(10) unsigned NOT NULL DEFAULT 11,
+			child_age_bands longtext NULL,
 			currency char(3) NOT NULL DEFAULT 'USD',
 			status varchar(20) NOT NULL DEFAULT 'open',
 			created_at datetime NOT NULL,
@@ -130,6 +131,7 @@ final class OTE_Departures {
 					<tr><th><label for="ote_infant_max_age"><?php esc_html_e( 'Maximum infant age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="infant_max_age" id="ote_infant_max_age" value="1"></td></tr>
 					<tr><th><label for="ote_child_min_age"><?php esc_html_e( 'Minimum child age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="child_min_age" id="ote_child_min_age" value="2"></td></tr>
 					<tr><th><label for="ote_child_max_age"><?php esc_html_e( 'Maximum child age (inclusive)', 'opentrip-engine' ); ?></label></th><td><input required type="number" min="0" max="17" name="child_max_age" id="ote_child_max_age" value="11"></td></tr>
+					<tr><th><label for="ote_child_age_bands"><?php esc_html_e( 'Optional child age bands (JSON)', 'opentrip-engine' ); ?></label></th><td><textarea name="child_age_bands" id="ote_child_age_bands" rows="4" class="large-text code" placeholder='[{"min_age":2,"max_age":5,"price":75},{"min_age":6,"max_age":11,"price":90}]'></textarea><p class="description"><?php esc_html_e( 'Optional. Each age boundary is inclusive. When supplied, every child age must match one band; prices are in the departure currency.', 'opentrip-engine' ); ?></p></td></tr>
 					<tr><th><label for="ote_departure_currency"><?php esc_html_e( 'Currency', 'opentrip-engine' ); ?></label></th><td><input required type="text" pattern="[A-Za-z]{3}" maxlength="3" name="currency" id="ote_departure_currency" value="USD"></td></tr>
 				</tbody></table>
 				<?php submit_button( __( 'Create departure', 'opentrip-engine' ) ); ?>
@@ -165,10 +167,11 @@ final class OTE_Departures {
 		$infant_max_age = absint( $this->posted_string( 'infant_max_age' ) );
 		$child_min_age = absint( $this->posted_string( 'child_min_age' ) );
 		$child_max_age = absint( $this->posted_string( 'child_max_age' ) );
+		$child_bands = OTE_Pricing::normalize_child_age_bands( $this->posted_string( 'child_age_bands' ) );
 		$currency = strtoupper( sanitize_text_field( $this->posted_string( 'currency' ) ) );
 		$start_obj = DateTime::createFromFormat( '!Y-m-d', $start );
 		$end_obj = DateTime::createFromFormat( '!Y-m-d', $end );
-		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) || ( null !== $adult_price && ( ! is_finite( $adult_price ) || $adult_price < 0 || $adult_price > 9999999999.99 ) ) || ( null !== $child_price && ( ! is_finite( $child_price ) || $child_price < 0 || $child_price > 9999999999.99 ) ) || ! is_finite( $infant_price ) || $infant_price < 0 || $infant_price > 9999999999.99 || ! is_finite( $room_price ) || $room_price < 0 || $room_price > 9999999999.99 || $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age ) {
+		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || ! $start_obj || $start_obj->format( 'Y-m-d' ) !== $start || ! $end_obj || $end_obj->format( 'Y-m-d' ) !== $end || $end < $start || $start < wp_date( 'Y-m-d' ) || $capacity < 1 || $capacity > 10000 || ! is_finite( $price ) || $price < 0 || $price > 9999999999.99 || ! preg_match( '/^[A-Z]{3}$/', $currency ) || ( null !== $adult_price && ( ! is_finite( $adult_price ) || $adult_price < 0 || $adult_price > 9999999999.99 ) ) || ( null !== $child_price && ( ! is_finite( $child_price ) || $child_price < 0 || $child_price > 9999999999.99 ) ) || ! is_finite( $infant_price ) || $infant_price < 0 || $infant_price > 9999999999.99 || ! is_finite( $room_price ) || $room_price < 0 || $room_price > 9999999999.99 || $infant_max_age > 17 || $child_min_age > 17 || $child_max_age > 17 || $child_min_age > $child_max_age || $infant_max_age >= $child_min_age || is_wp_error( $child_bands ) ) {
 			wp_die( esc_html__( 'Please provide valid tour, dates, capacity and price details.', 'opentrip-engine' ), '', array( 'response' => 400 ) );
 		}
 		global $wpdb;
@@ -186,10 +189,11 @@ final class OTE_Departures {
 			'infant_max_age' => $infant_max_age,
 			'child_min_age' => $child_min_age,
 			'child_max_age' => $child_max_age,
+			'child_age_bands' => wp_json_encode( $child_bands ),
 			'currency' => $currency,
 			'status' => 'open',
 			'created_at' => current_time( 'mysql', true ),
-		), array( '%d', '%s', '%s', '%d', '%d', '%f', '%f', '%f', '%f', '%f', '%d', '%d', '%d', '%s', '%s', '%s' ) );
+		), array( '%d', '%s', '%s', '%d', '%d', '%f', '%f', '%f', '%f', '%f', '%d', '%d', '%d', '%s', '%s', '%s', '%s' ) );
 		$redirect = add_query_arg( array( 'post_type' => 'ote_tour', 'page' => 'ote-departures', 'created' => $wpdb->insert_id ? 1 : 0 ), admin_url( 'edit.php' ) );
 		wp_safe_redirect( $redirect );
 		exit;
