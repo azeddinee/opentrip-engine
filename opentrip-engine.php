@@ -343,13 +343,13 @@ final class OpenTrip_Engine {
 	}
 
 	public function save_itinerary( $post_id ) {
-		if ( ! isset( $_POST['ote_itinerary_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_itinerary_nonce'] ) ), 'ote_save_itinerary' ) ) {
+		if ( ! is_string( isset( $_POST['ote_itinerary_nonce'] ) ? $_POST['ote_itinerary_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_itinerary_nonce' ) ), 'ote_save_itinerary' ) ) {
 			return;
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		$json = isset( $_POST['ote_itinerary_json'] ) ? wp_unslash( $_POST['ote_itinerary_json'] ) : '';
+		$json = $this->posted_string( 'ote_itinerary_json' );
 		$data = json_decode( $json, true );
 		if ( '' === trim( $json ) ) {
 			delete_post_meta( $post_id, '_ote_itinerary' );
@@ -431,7 +431,7 @@ final class OpenTrip_Engine {
 	}
 
 	public function save_inclusions( $post_id ) {
-		if ( ! isset( $_POST['ote_inclusions_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_inclusions_nonce'] ) ), 'ote_save_inclusions' ) ) {
+		if ( ! is_string( isset( $_POST['ote_inclusions_nonce'] ) ? $_POST['ote_inclusions_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_inclusions_nonce' ) ), 'ote_save_inclusions' ) ) {
 			return;
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
@@ -440,7 +440,7 @@ final class OpenTrip_Engine {
 		foreach ( array( 'inclusions', 'exclusions' ) as $type ) {
 			$field = 'ote_' . $type;
 			$meta_key = '_ote_' . $type;
-			$raw = isset( $_POST[ $field ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $field ] ) ) : '';
+			$raw = sanitize_textarea_field( $this->posted_string( $field ) );
 			$items = preg_split( '/\\r\\n|\\r|\\n/', $raw );
 			$clean = array();
 			foreach ( $items as $item ) {
@@ -554,13 +554,13 @@ final class OpenTrip_Engine {
 	}
 
 	public function save_gallery( $post_id ) {
-		if ( ! isset( $_POST['ote_gallery_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_gallery_nonce'] ) ), 'ote_save_gallery' ) ) {
+		if ( ! is_string( isset( $_POST['ote_gallery_nonce'] ) ? $_POST['ote_gallery_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_gallery_nonce' ) ), 'ote_save_gallery' ) ) {
 			return;
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		$raw = isset( $_POST['ote_gallery_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ote_gallery_ids'] ) ) : '';
+		$raw = sanitize_text_field( $this->posted_string( 'ote_gallery_ids' ) );
 		$ids = array_filter( array_unique( array_map( 'absint', explode( ',', $raw ) ) ) );
 		$clean = array();
 		foreach ( array_slice( $ids, 0, 40 ) as $id ) {
@@ -602,19 +602,22 @@ final class OpenTrip_Engine {
 	}
 
 	public function save_tour_meta( $post_id ) {
-		if ( ! isset( $_POST['ote_tour_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ote_tour_nonce'] ) ), 'ote_save_tour' ) ) {
+		if ( ! is_string( isset( $_POST['ote_tour_nonce'] ) ? $_POST['ote_tour_nonce'] : null ) || ! wp_verify_nonce( sanitize_text_field( $this->posted_string( 'ote_tour_nonce' ) ), 'ote_save_tour' ) ) {
 			return;
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		$price = isset( $_POST['ote_price'] ) ? (float) wp_unslash( $_POST['ote_price'] ) : 0;
+		$price = (float) $this->posted_string( 'ote_price' );
 		if ( ! is_finite( $price ) || $price > 9999999999.99 ) {
 			$price = 0;
 		}
-		$currency = isset( $_POST['ote_currency'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['ote_currency'] ) ) ) : 'USD';
-		$duration = isset( $_POST['ote_duration'] ) ? substr( sanitize_text_field( wp_unslash( $_POST['ote_duration'] ) ), 0, 80 ) : '';
-		$capacity = isset( $_POST['ote_capacity'] ) ? absint( $_POST['ote_capacity'] ) : 0;
+		$currency = strtoupper( sanitize_text_field( $this->posted_string( 'ote_currency' ) ) );
+		if ( '' === $currency ) {
+			$currency = 'USD';
+		}
+		$duration = substr( sanitize_text_field( $this->posted_string( 'ote_duration' ) ), 0, 80 );
+		$capacity = absint( $this->posted_string( 'ote_capacity' ) );
 
 		update_post_meta( $post_id, '_ote_price', max( 0, $price ) );
 		update_post_meta( $post_id, '_ote_currency', preg_match( '/^[A-Z]{3}$/', $currency ) ? $currency : 'USD' );
