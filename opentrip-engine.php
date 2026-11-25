@@ -863,7 +863,7 @@ final class OpenTrip_Engine {
 				'posts_per_page' => $limit,
 				'fields'         => 'ids',
 				'meta_key'       => $email_meta,
-				'meta_value'     => sanitize_email( $email_address ),
+				'meta_value'     => strtolower( sanitize_email( $email_address ) ),
 			) );
 			if ( count( $ids ) === $limit ) {
 				$has_more = true;
