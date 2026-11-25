@@ -5,6 +5,7 @@
  * Run after the WordPress test library has been installed:
  * WP_TESTS_DIR=/tmp/wordpress-tests-lib php tests/concurrency-stress.php
  */
+require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 require_once __DIR__ . '/bootstrap.php';
 
 function ote_stress_departure( $tour_id, $capacity ) {
