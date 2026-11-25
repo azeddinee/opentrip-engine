@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenTrip Engine
  * Description: A lightweight, open-source tour catalogue and booking-request engine for WordPress.
- * Version: 1.0.0-beta.3
+ * Version: 1.0.0-beta.4
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: opentrip-engine
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OTE_VERSION', '1.0.0-beta.3' );
+define( 'OTE_VERSION', '1.0.0-beta.4' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
 
 final class OpenTrip_Engine {
@@ -565,6 +565,33 @@ final class OpenTrip_Engine {
 		return ob_get_clean();
 	}
 
+	/**
+	 * Apply a privacy-preserving, email-scoped limit to public submissions.
+	 *
+	 * This is a best-effort application-level control, not a replacement for
+	 * edge/WAF rate limiting. It deliberately avoids trusting proxy IP headers.
+	 *
+	 * @param string $type  Submission type: booking or review.
+	 * @param string $email Validated customer email address.
+	 * @return bool Whether the submission limit has been reached.
+	 */
+	public function is_submission_rate_limited( $type, $email ) {
+		$type = sanitize_key( $type );
+		$email = strtolower( sanitize_email( $email ) );
+		if ( ! in_array( $type, array( 'booking', 'review' ), true ) || ! is_email( $email ) ) {
+			return true;
+		}
+		$limit = (int) apply_filters( 'ote_submission_rate_limit', 5, $type, $email );
+		$limit = max( 1, min( 50, $limit ) );
+		$key = 'ote_rl_' . hash_hmac( 'sha256', $type . '|' . $email, wp_salt( 'auth' ) );
+		$count = (int) get_transient( $key );
+		if ( $count >= $limit ) {
+			return true;
+		}
+		set_transient( $key, $count + 1, 15 * MINUTE_IN_SECONDS );
+		return false;
+	}
+
 	public function handle_booking() {
 		if ( empty( $_POST['ote_action'] ) || 'submit_booking' !== sanitize_key( wp_unslash( $_POST['ote_action'] ) ) ) {
 			return;
@@ -590,6 +617,9 @@ final class OpenTrip_Engine {
 		$departure = OTE_Departures::instance()->get_departure( $departure_id, $tour_id );
 		if ( ! $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || strlen( $message ) > 3000 || ! $departure || $adults < 1 || $children > 29 || $travellers > 30 || $rooms < 1 || $rooms > 20 || (int) $departure->capacity - (int) $departure->reserved < $travellers ) {
 			wp_die( esc_html__( 'Please check your name, email, travel date and traveller count.', 'opentrip-engine' ), 400 );
+		}
+		if ( $this->is_submission_rate_limited( 'booking', $email ) ) {
+			wp_die( esc_html__( 'Too many booking requests have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
 		}
 		$booking_id = wp_insert_post( array(
 			'post_type' => 'ote_booking',
@@ -988,6 +1018,9 @@ final class OpenTrip_Engine {
 		$content = isset( $_POST['ote_review_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ote_review_content'] ) ) : '';
 		if ( 'ote_tour' !== get_post_type( $tour_id ) || 'publish' !== get_post_status( $tour_id ) || '' === $name || strlen( $name ) > 120 || ! is_email( $email ) || strlen( $email ) > 254 || $rating < 1 || $rating > 5 || '' === trim( $content ) || strlen( $content ) > 5000 ) {
 			wp_die( esc_html__( 'Please check your name, email, rating and review text.', 'opentrip-engine' ), 400 );
+		}
+		if ( $this->is_submission_rate_limited( 'review', $email ) ) {
+			wp_die( esc_html__( 'Too many reviews have been submitted for this email address. Please wait 15 minutes and try again.', 'opentrip-engine' ), 429 );
 		}
 		$review_id = wp_insert_post( array(
 			'post_type' => 'ote_review',
