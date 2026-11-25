@@ -3,11 +3,11 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.7
+Stable tag: 1.0.0-beta.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A lightweight tour catalogue, departure inventory and accessible booking-request engine for WordPress. Includes keyboard-visible focus, screen-reader labels, reduced-motion support and a gettext translation template.
+A lightweight tour catalogue, departure inventory and accessible booking-request engine for WordPress. Includes optional Stripe-hosted Checkout, signed payment webhooks, keyboard-visible focus, screen-reader labels, reduced-motion support and a gettext translation template.
 
 == Description ==
 
@@ -20,7 +20,8 @@ Publish tours, organize destinations, build day-by-day itineraries, publish tour
 3. Create tours under Tours.
 4. Use [opentrip_tours] to display tours.
 5. Open Tours > Departures and create future dates with capacity and price.
-6. Open Tours > Settings to configure the agency recipient and email notification toggles.
+6. Open Tours > Settings to configure the agency recipient, email notifications and optional Stripe Checkout.
+7. For Stripe payments, configure test credentials and the webhook URL as described in docs/STRIPE-PAYMENTS.md.
 7. Use [opentrip_booking_form] on a single tour page to collect requests.
 
 == Itinerary Builder ==
@@ -79,7 +80,19 @@ A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. En
 
 Public booking and review forms use explicit labels and unique IDs, accessible headings and described age fields. Tour and gallery images have fallback alternative text when Media Library alt text is missing. Keyboard focus indicators and reduced-motion support are included. The gettext template is in languages/opentrip-engine.pot. Install WP-CLI's i18n command package and run composer i18n:pot to refresh it. See docs/ACCESSIBILITY-AND-TRANSLATIONS.md for the audit and translator workflow.
 
+== Stripe Hosted Payments ==
+
+Stripe Checkout is optional and disabled by default. An administrator can create a hosted payment link only after confirming a booking request. The customer enters payment details on Stripe; the plugin does not receive or store card numbers or CVC values. A verified Stripe webhook records payment status separately from booking status. The payment percentage can be set from 1 to 100 percent of the saved booking quote. See docs/STRIPE-PAYMENTS.md for setup, webhook events and security notes.
+
 == Changelog ==
+
+= 1.0.0-beta.8 =
+* Add optional Stripe-hosted Checkout for confirmed booking requests.
+* Add a payment gateway contract/registry, test/live credential validation and non-autoloaded secret storage.
+* Verify signed Stripe webhooks, enforce timestamp tolerance, validate session/booking/amount/currency and process events idempotently.
+* Track payment states separately from booking confirmation, including actual amount received and bounded prior-session history.
+* Add admin payment controls, hosted payment email, privacy export/erasure handling and setup documentation.
+
 
 = 1.0.0-beta.7 =
 * Improve public booking/review form labels, unique IDs, headings and screen-reader descriptions.
