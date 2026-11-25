@@ -337,6 +337,46 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 	}
 
 
+
+	public function test_public_review_ratings_and_tour_images_have_accessible_alternatives() {
+		$tour_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible Image Tour',
+			)
+		);
+		$attachment_id = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/canola.jpg', $tour_id );
+		$this->assertNotWPError( $attachment_id );
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', '' );
+		set_post_thumbnail( $tour_id, $attachment_id );
+		update_post_meta( $tour_id, '_ote_gallery_ids', array( $attachment_id ) );
+
+		$review_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_review',
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible rating review',
+				'post_content' => 'A helpful guest review.',
+			)
+		);
+		update_post_meta( $review_id, '_ote_review_tour_id', $tour_id );
+		update_post_meta( $review_id, '_ote_review_name', 'Guest' );
+		update_post_meta( $review_id, '_ote_review_rating', 4 );
+
+		$engine = OpenTrip_Engine::instance();
+		$tours_html = $engine->tours_shortcode( array( 'limit' => 10 ) );
+		$gallery_html = $engine->gallery_shortcode( array( 'tour_id' => $tour_id ) );
+		$reviews_html = $engine->reviews_shortcode( array( 'tour_id' => $tour_id ) );
+
+		$this->assertStringContainsString( 'alt="Accessible Image Tour"', $tours_html );
+		$this->assertStringContainsString( 'alt="Tour photo 1 for Accessible Image Tour"', $gallery_html );
+		$this->assertStringContainsString( 'role="img" aria-label="4 out of 5 stars"', $reviews_html );
+		$this->assertFileExists( dirname( __DIR__ ) . '/scripts/make-pot.sh' );
+		$this->assertFileExists( dirname( __DIR__ ) . '/languages/README.md' );
+	}
+
+
 	public function test_public_form_handlers_ignore_array_shaped_action_values() {
 		$original_post = $_POST;
 		$_POST = array(
