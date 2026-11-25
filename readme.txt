@@ -3,7 +3,7 @@ Contributors: azeddinee
 Tags: tours, travel, booking, destinations
 Requires at least: 6.2
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta.5
+Stable tag: 1.0.0-beta.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,8 +48,8 @@ When a customer submits a request, the plugin emails a receipt with a reference 
 = Does it process payments? =
 No. OpenTrip Engine collects booking requests but does not process payments.
 
-= What traveller details are captured? =
-Booking requests capture adults, children and rooms required. The estimated total uses the departure's per-traveller price for each adult and child. Room count is recorded but does not affect the price. Infant-specific prices and child discounts are not included yet.
+= What traveller details are captured and how are they priced? =
+Booking requests capture adults, children with ages, infants with ages, and rooms. Each departure can set adult, child, infant and per-room prices, plus inclusive infant and child age limits. Adult price falls back to the existing base price; child price falls back to adult price; infant and room prices are zero unless configured. Every age is validated server-side. Infants count as travellers but do not consume departure seats. The quote is calculated in the departure currency without conversion and saved as a booking-time breakdown, so later rate changes do not alter existing bookings.
 
 = How do departures and seats work? =
 Administrators create dated departures with a capacity and can close or reopen future departures when needed. Customers select a departure when submitting a request. Requests reserve seats only after an administrator confirms them; cancelling a confirmed request releases its seats.
@@ -76,6 +76,11 @@ Bug reports and feature requests can be submitted using the GitHub issue templat
 A read-only public REST API is available under `/wp-json/opentrip-engine/v1`. Endpoints list published tours, retrieve one published tour, list future open departures with remaining seats, and list non-empty destinations. The API never exposes booking/customer records or arbitrary private post metadata. Draft, private and password-protected tours return 404. See docs/REST-API.md in the source repository for request examples, pagination and privacy boundaries.
 
 == Changelog ==
+
+= 1.0.0-beta.6 =
+* Add configurable adult, child, infant and room pricing to departures.
+* Validate child and infant ages and preserve immutable booking quote snapshots.
+* Show the saved quote breakdown in booking administration and customer receipts.
 
 = 1.0.0-beta.5 =
 * Add transactional booking status and per-booking seat reservation ledger.
