@@ -496,6 +496,7 @@ final class OpenTrip_Engine {
 		ob_start();
 		?>
 		<section class="ote-inclusions">
+			<h2><?php esc_html_e( 'Tour inclusions and exclusions', 'opentrip-engine' ); ?></h2>
 			<?php if ( $included ) : ?>
 			<div class="ote-inclusions-column ote-included">
 				<h3><?php esc_html_e( 'What is included', 'opentrip-engine' ); ?></h3>
