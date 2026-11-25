@@ -1234,15 +1234,17 @@ final class OpenTrip_Engine {
 		}
 		?>
 		<h2 class="ote-review-form-title"><?php esc_html_e( 'Leave a review', 'opentrip-engine' ); ?></h2>
-		<form method="post" class="ote-review-form">
+		<?php $form_id = wp_unique_id( 'ote-review-' ); ?>
+		<form method="post" class="ote-review-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
+			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Write a guest review', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_review_action" value="submit_review">
 			<input type="hidden" name="ote_review_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_review', 'ote_review_nonce' ); ?>
 			<p class="ote-review-trap" aria-hidden="true"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></p>
-			<p><label for="ote_review_name"><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?></label><br><input id="ote_review_name" required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></label></p>
-			<p><label for="ote_review_email"><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?></label><br><input id="ote_review_email" required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></label></p>
-			<p><label for="ote_review_rating"><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?></label><br><select id="ote_review_rating" required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></label></p>
-			<p><label for="ote_review_content"><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?></label><br><textarea id="ote_review_content" required name="ote_review_content" rows="5" maxlength="5000"></textarea></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Your name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_review_name" maxlength="100" autocomplete="name"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-email' ); ?>"><?php esc_html_e( 'Email (not displayed publicly)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-email' ); ?>" required type="email" name="ote_review_email" maxlength="190" autocomplete="email"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-rating' ); ?>"><?php esc_html_e( 'Rating', 'opentrip-engine' ); ?></label><br><select id="<?php echo esc_attr( $form_id . '-rating' ); ?>" required name="ote_review_rating"><option value=""><?php esc_html_e( 'Choose a rating', 'opentrip-engine' ); ?></option><?php for ( $rating = 5; $rating >= 1; $rating-- ) : ?><option value="<?php echo esc_attr( $rating ); ?>"><?php echo esc_html( sprintf( _n( '%d star', '%d stars', $rating, 'opentrip-engine' ), $rating ) ); ?></option><?php endfor; ?></select></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-content' ); ?>"><?php esc_html_e( 'Your review', 'opentrip-engine' ); ?></label><br><textarea id="<?php echo esc_attr( $form_id . '-content' ); ?>" required name="ote_review_content" rows="5" maxlength="5000"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Submit review', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
