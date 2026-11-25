@@ -90,5 +90,23 @@ final class OTE_Submission_Limiter {
 		}
 
 		return $count > $limit;
+	/**
+	 * Remove short-lived limiter records for a privacy erasure request.
+	 *
+	 * @param string $email Email address supplied to the privacy tool.
+	 */
+	public static function erase_email( $email ) {
+		global $wpdb;
+		$email = strtolower( sanitize_email( $email ) );
+		if ( ! is_email( $email ) ) {
+			return;
+		}
+		$wpdb->delete(
+			self::table_name(),
+			array( 'email_hash' => hash_hmac( 'sha256', $email, wp_salt( 'auth' ) ) ),
+			array( '%s' )
+		);
+	}
+
 	}
 }
