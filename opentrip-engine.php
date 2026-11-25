@@ -716,28 +716,33 @@ final class OpenTrip_Engine {
 		}
 		?>
 		<h2 class="ote-booking-form-title"><?php esc_html_e( 'Booking request', 'opentrip-engine' ); ?></h2>
-		<form method="post" class="ote-booking-form">
+		<?php $form_id = wp_unique_id( 'ote-booking-' ); ?>
+		<form method="post" class="ote-booking-form" aria-labelledby="<?php echo esc_attr( $form_id . '-heading' ); ?>">
+			<h2 id="<?php echo esc_attr( $form_id . '-heading' ); ?>"><?php esc_html_e( 'Request a booking', 'opentrip-engine' ); ?></h2>
 			<input type="hidden" name="ote_action" value="submit_booking">
 			<input type="hidden" name="ote_tour_id" value="<?php echo esc_attr( $tour_id ); ?>">
 			<?php wp_nonce_field( 'ote_submit_booking', 'ote_booking_nonce' ); ?>
 			<div class="ote-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;"><label><?php esc_html_e( 'Leave this field empty', 'opentrip-engine' ); ?><input type="text" name="ote_website" tabindex="-1" autocomplete="off"></label></div>
-			<p><label for="ote_name"><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?></label><br><input id="ote_name" required type="text" name="ote_name" autocomplete="name"></label></p>
-			<p><label for="ote_email"><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?></label><br><input id="ote_email" required type="email" name="ote_email" autocomplete="email"></label></p>
-		<p><label for="ote_departure_id"><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?></label><br>
-		<select id="ote_departure_id" required name="ote_departure_id">
-			<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
-			<?php foreach ( $available_departures as $departure ) : ?>
-			<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
-			<?php endforeach; ?>
-		</select></label></p>
-			<p><label for="ote_adults"><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?></label><br><input id="ote_adults" required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
-			<p><label for="ote_children"><?php esc_html_e( 'Children', 'opentrip-engine' ); ?></label><br><input id="ote_children" required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
-			<p><label for="ote_child_ages"><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="ote_child_ages" type="text" name="ote_child_ages" placeholder="<?php esc_attr_e( 'e.g. 5, 9', 'opentrip-engine' ); ?>" aria-describedby="ote-booking-age-help" autocomplete="off"></p>
-			<p><label for="ote_infants"><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?></label><br><input id="ote_infants" required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
-			<p><label for="ote_infant_ages"><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="ote_infant_ages" type="text" name="ote_infant_ages" placeholder="<?php esc_attr_e( 'e.g. 0, 1', 'opentrip-engine' ); ?>" aria-describedby="ote-booking-age-help" autocomplete="off"></p>
-			<p><label for="ote_rooms"><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?></label><br><input id="ote_rooms" required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
-			<p id="ote-booking-age-help" class="ote-price-note"><?php esc_html_e( 'Enter one whole-number age for every child and infant, separated by commas. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
-			<p><label for="ote_message"><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?></label><br><textarea id="ote_message" name="ote_message" rows="4"></textarea></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Full name', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-name' ); ?>" required type="text" name="ote_name" autocomplete="name"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-email' ); ?>"><?php esc_html_e( 'Email address', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-email' ); ?>" required type="email" name="ote_email" autocomplete="email"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-departure' ); ?>"><?php esc_html_e( 'Departure date', 'opentrip-engine' ); ?></label><br>
+			<select id="<?php echo esc_attr( $form_id . '-departure' ); ?>" required name="ote_departure_id">
+				<option value=""><?php esc_html_e( 'Choose a departure', 'opentrip-engine' ); ?></option>
+				<?php foreach ( $available_departures as $departure ) : ?>
+				<option value="<?php echo esc_attr( $departure->id ); ?>"><?php echo esc_html( $departure->start_date . ' – ' . $departure->end_date . ' | ' . max( 0, (int) $departure->capacity - (int) $departure->reserved ) . ' ' . __( 'seats left', 'opentrip-engine' ) . ' | ' . number_format_i18n( isset( $departure->adult_price ) && null !== $departure->adult_price ? (float) $departure->adult_price : (float) $departure->price, 2 ) . ' ' . $departure->currency ); ?></option>
+				<?php endforeach; ?>
+			</select></p>
+			<fieldset class="ote-traveller-fields">
+				<legend><?php esc_html_e( 'Travellers', 'opentrip-engine' ); ?></legend>
+				<p><label for="<?php echo esc_attr( $form_id . '-adults' ); ?>"><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-adults' ); ?>" required type="number" name="ote_adults" min="1" max="30" value="1"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-children' ); ?>"><?php esc_html_e( 'Children', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-children' ); ?>" required type="number" name="ote_children" min="0" max="29" value="0"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-child-ages' ); ?>"><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-child-ages' ); ?>" type="text" name="ote_child_ages" inputmode="numeric" placeholder="<?php esc_attr_e( 'For example: 5, 9', 'opentrip-engine' ); ?>" aria-describedby="<?php echo esc_attr( $form_id . '-age-help' ); ?>" autocomplete="off"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-infants' ); ?>"><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-infants' ); ?>" required type="number" name="ote_infants" min="0" max="30" value="0"></p>
+				<p><label for="<?php echo esc_attr( $form_id . '-infant-ages' ); ?>"><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-infant-ages' ); ?>" type="text" name="ote_infant_ages" inputmode="numeric" placeholder="<?php esc_attr_e( 'For example: 0, 1', 'opentrip-engine' ); ?>" aria-describedby="<?php echo esc_attr( $form_id . '-age-help' ); ?>" autocomplete="off"></p>
+			</fieldset>
+			<p id="<?php echo esc_attr( $form_id . '-age-help' ); ?>" class="ote-price-note"><?php esc_html_e( 'Enter one whole-number age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-rooms' ); ?>"><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?></label><br><input id="<?php echo esc_attr( $form_id . '-rooms' ); ?>" required type="number" name="ote_rooms" min="1" max="20" value="1"></p>
+			<p><label for="<?php echo esc_attr( $form_id . '-message' ); ?>"><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?></label><br><textarea id="<?php echo esc_attr( $form_id . '-message' ); ?>" name="ote_message" rows="4"></textarea></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
 		</form>
 		<?php
