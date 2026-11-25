@@ -1,7 +1,7 @@
 name: PHP and WordPress tests
 
 concurrency:
-  group: opentrip-ci-${{ github.ref }}
+  group: opentrip-ci-v2-${{ github.ref }}
   cancel-in-progress: true
 
 on:
