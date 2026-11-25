@@ -81,6 +81,23 @@ jobs:
     name: Build and validate installable ZIP
     steps:
       - uses: actions/checkout@v5
+      - name: Install WP-CLI and the i18n command
+        run: |
+          curl -fsSLo /tmp/wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          cat > /usr/local/bin/wp <<'EOF'
+          #!/usr/bin/env sh
+          exec php /tmp/wp-cli.phar "$@"
+          EOF
+          chmod +x /usr/local/bin/wp
+          wp package install wp-cli/i18n-command
+      - name: Generate translation template
+        run: composer make-pot
+      - name: Upload translation template
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentrip-engine-translation-template
+          path: languages/opentrip-engine.pot
+          if-no-files-found: error
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
