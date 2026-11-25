@@ -205,4 +205,109 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( current_user_can( 'read_post', $review_id ) );
 	}
 
+	public function test_public_submission_rate_limit_is_email_scoped_and_separates_forms() {
+		$engine = OpenTrip_Engine::instance();
+		$email = 'limit-' . wp_generate_password( 8, false ) . '@example.com';
+
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			$this->assertFalse( $engine->is_submission_rate_limited( 'booking', $email ) );
+		}
+		$this->assertTrue( $engine->is_submission_rate_limited( 'booking', strtoupper( $email ) ) );
+		$this->assertFalse( $engine->is_submission_rate_limited( 'review', $email ) );
+		$this->assertTrue( $engine->is_submission_rate_limited( 'invalid', $email ) );
+		$this->assertTrue( $engine->is_submission_rate_limited( 'booking', 'not-an-email' ) );
+	}
+
+	public function test_booking_form_renders_honeypot_and_bounded_input_fields() {
+		$tour_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'publish',
+				'post_title'  => 'Booking Form Test Tour',
+			)
+		);
+		$html = OpenTrip_Engine::instance()->booking_shortcode( array( 'tour_id' => $tour_id ) );
+
+		$this->assertStringContainsString( 'name="ote_website"', $html );
+		$this->assertStringContainsString( 'name="ote_name"', $html );
+		$this->assertStringContainsString( 'name="ote_email"', $html );
+		$this->assertStringContainsString( 'name="ote_message"', $html );
+		$this->assertStringContainsString( 'name="ote_adults"', $html );
+	}
+
+	public function test_customer_booking_emails_are_sent_for_supported_statuses() {
+		$booking_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_booking',
+				'post_status' => 'private',
+				'post_title'  => 'Email Test Booking',
+			)
+		);
+		update_post_meta( $booking_id, '_ote_customer_email', 'traveller@example.com' );
+		update_post_meta( $booking_id, '_ote_customer_name', 'Test Traveller' );
+		update_post_meta( $booking_id, '_ote_tour_id', 123 );
+		update_post_meta( $booking_id, '_ote_booking_reference', 'OTE-EMAIL-1' );
+		update_post_meta( $booking_id, '_ote_travel_date', '2027-06-01' );
+		update_post_meta( $booking_id, '_ote_travellers', 2 );
+		update_post_meta( $booking_id, '_ote_total_price', 250 );
+		update_post_meta( $booking_id, '_ote_currency', 'USD' );
+
+		$sent = array();
+		$capture = function( $short_circuit, $atts ) use ( &$sent ) {
+			$sent[] = $atts;
+			return true;
+		};
+		add_filter( 'pre_wp_mail', $capture, 10, 2 );
+
+		$engine = OpenTrip_Engine::instance();
+		$engine->send_customer_booking_email( $booking_id, 'pending' );
+		$engine->send_customer_booking_email( $booking_id, 'confirmed' );
+		$engine->send_customer_booking_email( $booking_id, 'unsupported' );
+
+		remove_filter( 'pre_wp_mail', $capture, 10 );
+		$this->assertCount( 2, $sent );
+		$this->assertSame( 'traveller@example.com', $sent[0]['to'] );
+		$this->assertStringContainsString( 'received your booking request', strtolower( $sent[0]['subject'] ) );
+		$this->assertStringContainsString( 'OTE-EMAIL-1', $sent[0]['message'] );
+		$this->assertStringContainsString( 'confirmed', strtolower( $sent[1]['subject'] ) );
+	}
+
+	public function test_repeated_single_seat_reservations_never_exceed_capacity() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ote_departures';
+		$tour_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'ote_tour',
+				'post_status' => 'publish',
+				'post_title'  => 'Capacity Boundary Test Tour',
+			)
+		);
+		$wpdb->insert(
+			$table,
+			array(
+				'tour_id'    => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+10 days' ) ),
+				'end_date'   => wp_date( 'Y-m-d', strtotime( '+11 days' ) ),
+				'capacity'   => 3,
+				'reserved'   => 0,
+				'price'      => 100,
+				'currency'   => 'USD',
+				'status'     => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+		);
+		$departure_id = (int) $wpdb->insert_id;
+		$inventory = OTE_Departures::instance();
+		$successes = 0;
+		for ( $attempt = 0; $attempt < 10; $attempt++ ) {
+			if ( $inventory->reserve( $departure_id, $tour_id, 1 ) ) {
+				$successes++;
+			}
+		}
+		$this->assertSame( 3, $successes );
+		$this->assertSame( '3', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$table} WHERE id = %d", $departure_id ) ) );
+		$wpdb->delete( $table, array( 'id' => $departure_id ), array( '%d' ) );
+	}
+
 }
