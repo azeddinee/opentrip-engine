@@ -120,3 +120,11 @@ jobs:
           test ! -e "$PACKAGE/vendor"
           php -l "$PACKAGE/opentrip-engine.php"
           find "$PACKAGE/includes" -name '*.php' -print0 | xargs -0 -n1 php -l
+          mv dist/opentrip-engine-test.zip dist/opentrip-engine-1.0.0-beta.7.zip
+      - name: Upload installable plugin ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentrip-engine-1.0.0-beta.7
+          path: dist/opentrip-engine-1.0.0-beta.7.zip
+          if-no-files-found: error
+          retention-days: 90
