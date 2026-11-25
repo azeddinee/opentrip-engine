@@ -272,6 +272,94 @@ class OTE_Plugin_Integration_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'confirmed', strtolower( $sent[1]['subject'] ) );
 	}
 
+
+	public function test_booking_status_and_seat_reservation_are_idempotent_and_transactional() {
+		global $wpdb;
+		$departures_table = $wpdb->prefix . 'ote_departures';
+		$reservations_table = $wpdb->prefix . 'ote_booking_reservations';
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Transactional Test Tour' )
+		);
+		$wpdb->insert(
+			$departures_table,
+			array(
+				'tour_id' => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+20 days' ) ),
+				'end_date' => wp_date( 'Y-m-d', strtotime( '+22 days' ) ),
+				'capacity' => 3,
+				'reserved' => 0,
+				'price' => 100,
+				'currency' => 'USD',
+				'status' => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+		);
+		$departure_id = (int) $wpdb->insert_id;
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Transactional Booking' )
+		);
+		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+
+		$inventory = OTE_Departures::instance();
+		$first = $inventory->transition_booking( $booking_id, $tour_id, $departure_id, 2, 'confirmed' );
+		$second = $inventory->transition_booking( $booking_id, $tour_id, $departure_id, 2, 'confirmed' );
+
+		$this->assertNotFalse( $first );
+		$this->assertTrue( $first['changed'] );
+		$this->assertNotFalse( $second );
+		$this->assertFalse( $second['changed'] );
+		$this->assertSame( '2', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$departures_table} WHERE id = %d", $departure_id ) ) );
+		$this->assertSame( '1', (string) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$reservations_table} WHERE booking_id = %d", $booking_id ) ) );
+
+		$cancelled = $inventory->transition_booking( $booking_id, $tour_id, $departure_id, 2, 'cancelled' );
+		$this->assertNotFalse( $cancelled );
+		$this->assertSame( '0', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$departures_table} WHERE id = %d", $departure_id ) ) );
+		$this->assertSame( '0', (string) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$reservations_table} WHERE booking_id = %d", $booking_id ) ) );
+
+		$reconfirmed = $inventory->transition_booking( $booking_id, $tour_id, $departure_id, 2, 'confirmed' );
+		$this->assertNotFalse( $reconfirmed );
+		$this->assertSame( '2', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$departures_table} WHERE id = %d", $departure_id ) ) );
+		$wpdb->delete( $reservations_table, array( 'booking_id' => $booking_id ), array( '%d' ) );
+		$wpdb->delete( $departures_table, array( 'id' => $departure_id ), array( '%d' ) );
+	}
+
+	public function test_failed_booking_confirmation_rolls_back_status_and_reservation() {
+		global $wpdb;
+		$departures_table = $wpdb->prefix . 'ote_departures';
+		$reservations_table = $wpdb->prefix . 'ote_booking_reservations';
+		$tour_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_tour', 'post_status' => 'publish', 'post_title' => 'Full Departure Test Tour' )
+		);
+		$wpdb->insert(
+			$departures_table,
+			array(
+				'tour_id' => $tour_id,
+				'start_date' => wp_date( 'Y-m-d', strtotime( '+20 days' ) ),
+				'end_date' => wp_date( 'Y-m-d', strtotime( '+21 days' ) ),
+				'capacity' => 1,
+				'reserved' => 1,
+				'price' => 100,
+				'currency' => 'USD',
+				'status' => 'open',
+				'created_at' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s' )
+		);
+		$departure_id = (int) $wpdb->insert_id;
+		$booking_id = self::factory()->post->create(
+			array( 'post_type' => 'ote_booking', 'post_status' => 'private', 'post_title' => 'Cannot Fit Booking' )
+		);
+		update_post_meta( $booking_id, '_ote_booking_status', 'pending' );
+
+		$result = OTE_Departures::instance()->transition_booking( $booking_id, $tour_id, $departure_id, 1, 'confirmed' );
+		$this->assertFalse( $result );
+		$this->assertSame( 'pending', get_post_meta( $booking_id, '_ote_booking_status', true ) );
+		$this->assertSame( '0', (string) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$reservations_table} WHERE booking_id = %d", $booking_id ) ) );
+		$this->assertSame( '1', (string) $wpdb->get_var( $wpdb->prepare( "SELECT reserved FROM {$departures_table} WHERE id = %d", $departure_id ) ) );
+		$wpdb->delete( $departures_table, array( 'id' => $departure_id ), array( '%d' ) );
+	}
+
 	public function test_repeated_single_seat_reservations_never_exceed_capacity() {
 		global $wpdb;
 		$table = $wpdb->prefix . 'ote_departures';
