@@ -986,6 +986,11 @@ final class OpenTrip_Engine {
 			$decimals = OTE_Stripe_Gateway::currency_decimals( $currency );
 			echo '<p><strong>' . esc_html__( 'Requested payment:', 'opentrip-engine' ) . '</strong> ' . esc_html( number_format_i18n( (float) $amount, $decimals ) . ' ' . $currency ) . '</p>';
 		}
+		$paid_amount = get_post_meta( $post->ID, '_ote_payment_paid_amount', true );
+		$paid_currency = (string) get_post_meta( $post->ID, '_ote_payment_paid_currency', true );
+		if ( '' !== (string) $paid_amount && $paid_currency ) {
+			echo '<p><strong>' . esc_html__( 'Amount received:', 'opentrip-engine' ) . '</strong> ' . esc_html( number_format_i18n( (float) $paid_amount, OTE_Stripe_Gateway::currency_decimals( $paid_currency ) ) . ' ' . $paid_currency ) . '</p>';
+		}
 		$attention = get_post_meta( $post->ID, '_ote_payment_attention', true );
 		if ( $attention ) {
 			echo '<div class="notice notice-warning inline"><p>' . esc_html( $attention ) . '</p></div>';
@@ -1257,6 +1262,8 @@ final class OpenTrip_Engine {
 						'Payment status'    => get_post_meta( $post_id, '_ote_payment_status', true ),
 						'Payment amount'    => get_post_meta( $post_id, '_ote_payment_amount', true ),
 						'Payment currency'  => get_post_meta( $post_id, '_ote_payment_currency', true ),
+						'Payment received'  => get_post_meta( $post_id, '_ote_payment_paid_amount', true ),
+						'Payment received currency' => get_post_meta( $post_id, '_ote_payment_paid_currency', true ),
 						'Payment transaction ID' => get_post_meta( $post_id, '_ote_payment_transaction_id', true ),
 						'Payment created'   => get_post_meta( $post_id, '_ote_payment_created_at', true ),
 						'Payment updated'   => get_post_meta( $post_id, '_ote_payment_updated_at', true ),
