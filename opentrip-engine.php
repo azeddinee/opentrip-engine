@@ -721,10 +721,10 @@ final class OpenTrip_Engine {
 			<p><label><?php esc_html_e( 'Adults', 'opentrip-engine' ); ?><br><input required type="number" name="ote_adults" min="1" max="30" value="1"></label></p>
 			<p><label><?php esc_html_e( 'Children', 'opentrip-engine' ); ?><br><input required type="number" name="ote_children" min="0" max="29" value="0"></label></p>
 			<p><label><?php esc_html_e( 'Child ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_child_ages" placeholder="e.g. 5, 9" autocomplete="off"></label></p>
-			<p><label><?php esc_html_e( 'Infants (0–4 years)', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
+			<p><label><?php esc_html_e( 'Infants', 'opentrip-engine' ); ?><br><input required type="number" name="ote_infants" min="0" max="30" value="0"></label></p>
 			<p><label><?php esc_html_e( 'Infant ages (comma-separated)', 'opentrip-engine' ); ?><br><input type="text" name="ote_infant_ages" placeholder="e.g. 0, 1" autocomplete="off"></label></p>
 			<p><label><?php esc_html_e( 'Rooms required', 'opentrip-engine' ); ?><br><input required type="number" name="ote_rooms" min="1" max="20" value="1"></label></p>
-			<p class="ote-price-note"><?php esc_html_e( 'Enter an age for every child and infant. Infant seats are not included in departure seat capacity. Any configured room charge is added per room.', 'opentrip-engine' ); ?></p>
+			<p class="ote-price-note"><?php esc_html_e( 'Enter an age for every child and infant. Infants do not use departure seats. Configured room charges are added per room.', 'opentrip-engine' ); ?></p>
 			<p><label><?php esc_html_e( 'Message (optional)', 'opentrip-engine' ); ?><br><textarea name="ote_message" rows="4"></textarea></label></p>
 			<p><button type="submit"><?php esc_html_e( 'Send booking request', 'opentrip-engine' ); ?></button></p>
 		</form>
