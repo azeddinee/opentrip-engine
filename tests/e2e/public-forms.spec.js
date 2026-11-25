@@ -45,7 +45,7 @@ test.describe('public booking and review shortcodes', () => {
 
 		await page.getByRole('button', { name: 'Send booking request' }).click();
 
-		await expect(page.getByRole('alert')).toContainText('A child age does not match any configured child age band.');
+		await expect(page.getByRole('alert')).toContainText('Child ages must be between 2 and 11 years.');
 	});
 
 	test('review form accepts a review and announces moderation status', async ({ page }) => {
