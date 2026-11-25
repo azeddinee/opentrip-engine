@@ -202,12 +202,23 @@ final class OTE_REST_API {
 				'id'          => (int) $term->term_id,
 				'name'        => (string) $term->name,
 				'slug'        => (string) $term->slug,
-				'description' => (string) $term->description,
+				'description' => sanitize_textarea_field( $term->description ),
 				'count'       => (int) $term->count,
 				'link'        => is_wp_error( $term_link ) ? '' : esc_url_raw( $term_link ),
 			);
 		}
 		return rest_ensure_response( $items );
+	}
+
+	/**
+	 * Return a normalized ISO-style currency code.
+	 *
+	 * @param mixed $value Stored currency value.
+	 * @return string
+	 */
+	private static function public_currency( $value ) {
+		$currency = strtoupper( sanitize_text_field( is_scalar( $value ) ? (string) $value : '' ) );
+		return preg_match( '/^[A-Z]{3}$/', $currency ) ? $currency : 'USD';
 	}
 
 	/**
@@ -333,7 +344,7 @@ final class OTE_REST_API {
 			'excerpt'        => sanitize_text_field( $tour->post_excerpt ? $tour->post_excerpt : wp_trim_words( wp_strip_all_tags( $tour->post_content ), 55 ) ),
 			'content'        => wp_kses_post( $tour->post_content ),
 			'price'          => (float) get_post_meta( $tour_id, '_ote_price', true ),
-			'currency'       => (string) ( get_post_meta( $tour_id, '_ote_currency', true ) ? get_post_meta( $tour_id, '_ote_currency', true ) : 'USD' ),
+			'currency'       => self::public_currency( get_post_meta( $tour_id, '_ote_currency', true ) ),
 			'duration'       => sanitize_text_field( (string) get_post_meta( $tour_id, '_ote_duration', true ) ),
 			'featured_image' => $featured_image,
 			'destinations'   => $destinations,
