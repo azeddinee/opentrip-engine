@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'OTE_VERSION', '1.0.0-beta.4' );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-departures.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-ote-submission-limiter.php';
 
 final class OpenTrip_Engine {
 	private static $instance = null;
@@ -53,6 +54,7 @@ final class OpenTrip_Engine {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_notices', array( $this, 'inventory_admin_notice' ) );
 		add_action( 'init', array( OTE_Departures::instance(), 'maybe_install' ) );
+		add_action( 'init', array( 'OTE_Submission_Limiter', 'maybe_install' ) );
 		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_privacy_exporter' ) );
 		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_privacy_eraser' ) );
 		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
@@ -61,6 +63,7 @@ final class OpenTrip_Engine {
 	public static function activate() {
 		self::instance()->register_types();
 		OTE_Departures::install();
+		OTE_Submission_Limiter::install();
 		flush_rewrite_rules();
 	}
 
@@ -576,20 +579,7 @@ final class OpenTrip_Engine {
 	 * @return bool Whether the submission limit has been reached.
 	 */
 	public function is_submission_rate_limited( $type, $email ) {
-		$type = sanitize_key( $type );
-		$email = strtolower( sanitize_email( $email ) );
-		if ( ! in_array( $type, array( 'booking', 'review' ), true ) || ! is_email( $email ) ) {
-			return true;
-		}
-		$limit = (int) apply_filters( 'ote_submission_rate_limit', 5, $type, $email );
-		$limit = max( 1, min( 50, $limit ) );
-		$key = 'ote_rl_' . hash_hmac( 'sha256', $type . '|' . $email, wp_salt( 'auth' ) );
-		$count = (int) get_transient( $key );
-		if ( $count >= $limit ) {
-			return true;
-		}
-		set_transient( $key, $count + 1, 15 * MINUTE_IN_SECONDS );
-		return false;
+		return OTE_Submission_Limiter::is_limited( $type, $email );
 	}
 
 	public function handle_booking() {
