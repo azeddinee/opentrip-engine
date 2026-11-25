@@ -54,7 +54,8 @@ Run the lightweight departure inventory smoke tests with `php tests/departures-s
 5. Add destination terms under **Tours → Destinations**.
 6. Place `[opentrip_tours]` on a page.
 7. Open **Tours → Departures** and create dated departures with capacity and price.
-8. Add `[opentrip_booking_form]` to a single tour template/page.
+8. Open **Tours → Settings** to configure the agency notification address and email toggles.
+9. Add `[opentrip_booking_form]` to a single tour template/page.
 
 ## Itinerary workflow in 0.5.0
 Edit a tour and use the **Day-by-Day Itinerary** panel. Enter a JSON array with one object per day. Supported keys are `day`, `title`, `city`, `activities`, `overnight`, `meals` and `transport`. Add `[opentrip_itinerary]` to the tour template or page to display the schedule. The editor currently uses JSON rather than a drag-and-drop repeater; invalid JSON is not saved.
