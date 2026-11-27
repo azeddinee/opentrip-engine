@@ -2,6 +2,8 @@
 
 OpenTrip Engine exposes a versioned, read-only REST API for public tour catalogue data. It is intended for headless websites, mobile apps and third-party integrations.
 
+For copy-paste cURL and JavaScript examples, see the [read-only REST API quick start](REST-API-USAGE.md).
+
 ## Base URL
 
 `https://example.com/wp-json/opentrip-engine/v1`
